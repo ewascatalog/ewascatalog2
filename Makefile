@@ -19,17 +19,19 @@ genes: $(FILE_DIR)/gene_annotation.txt
 database: $(FILE_DIR)/published-ewas/*.txt $(FILE_DIR)/aries-ewas/*.txt
 	bash database/create-database.sh $(DB) $(FILE_DIR) $(SETTINGS)
 
-$(WEBSITE_DIR)/website/manage.py: website/website/website/*.py website/website/catalog/*.py
+$(WEBSITE_DIR)/manage.py: website/website/website/*.py website/website/catalog/*.py
 	#bash website/install-dependencies.sh
 	mkdir -p $(WEBSITE_DIR)
-	rm -rf $(WEBSITE_DIR)/website
-	cp -rv website/website $(WEBSITE_DIR)
-	cp settings.env $(WEBSITE_DIR)/website
-	cp $(FILE_DIR)/catalog-download/ewascatalog.txt.gz $(WEBSITE_DIR)/website/catalog/static/docs
+	rm -rf $(WEBSITE_DIR)/*
+	cp -rv website/website/* $(WEBSITE_DIR)
+	cp $(SETTINGS) $(WEBSITE_DIR)
+	mkdir -p $(WEBSITE_DIR)/catalog/static/tmp
+	mkdir -p $(WEBSITE_DIR)/catalog/static/docs
+	cp $(FILE_DIR)/catalog-download/ewascatalog.txt.gz $(WEBSITE_DIR)/catalog/static/docs
 
-website: $(WEBSITE_DIR)/website/manage.py
+website: $(WEBSITE_DIR)/manage.py
 
-startwebsite: $(WEBSITE_DIR)/website/manage.py
+startwebsite: $(WEBSITE_DIR)/manage.py
 	python3 $< runserver
 
 ## to do: command to start webserver 
