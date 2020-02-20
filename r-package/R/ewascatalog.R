@@ -1,0 +1,41 @@
+#' ewascatalog
+#'
+#' ewascatalog queries the EWAS Catalog from R.
+#' @param query Query text.
+#' @param type Type of query, either 'cpg', 'region', 'gene' or 'trait' (Default: 'cpg').
+#' @return Data frame of EWAS Catalog results.
+#' @examples
+#' # CpG
+#' res <- ewascatalog("cg00029284","cpg")
+#' 
+#' # Region
+#' res <- ewascatalog("6:15000000-25000000","region")
+#' 
+#' # Gene
+#' res <- ewascatalog("FTO","gene")
+#' 
+#' # Trait
+#' res <- ewascatalog("body mass index","trait")
+#' @author James R Staley <js16174@bristol.ac.uk>
+#' @export
+ewascatalog <- function(query,type=c("cpg","region","gene","trait")){
+    type <- match.arg(type)
+    if (type == "region") {
+        ub <- as.numeric(sub("*.-", "", sub(".*:", "", query)))
+        lb <- as.numeric(sub("-.*", "", sub(".*:", "", query)))
+        dist <- ub - lb
+        if(any(dist>10000000)) stop("region query can be maximum of 10mb in size")
+    }
+    else if (type == "trait") {
+        query <- sub(" ", "+", tolower(query))
+    }
+    json_file <- paste0("http://www.ewascatalog.org/api/?",type, "=", query)
+    json_data <- fromJSON(file=json_file)
+    if(length(json_data)==0){
+      return(NULL)
+    }
+    fields <- json_data$fields
+    results <- as.data.frame(matrix(unlist(json_data$results), ncol=length(fields), byrow=T))
+    names(results) <- fields
+    results
+}

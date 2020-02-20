@@ -1,0 +1,57 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+
+<div class="information">
+   <h1>Data download</h1>
+   <p class="small">&nbsp;</p> 
+   <a href='../../static/docs/EWAS_Catalog_03-07-2019.txt.gz' download style="font-size : 15pt" class="btn btn-default"><span class="glyphicon glyphicon-download-alt"></span> Download all results</a>
+   <p class="small">&nbsp;</p> 
+   <a name="variables"></a><p>NB: This dataset is a tab-deliminated tsv file.</p>
+   <p class="small">&nbsp;</p> 
+   <h2>Variables</h2>      
+   <p>This dataset has the following pieces of information:</p>
+   <ul>
+      <li>Author - the first author of the publication (surname then initials).</li>
+      <li>Consortium - the name of the consortium.</li>
+      <li>PMID - the PubMedID of the publication.</li>
+      <li>Date - the date the paper was published (YY-MM-DD).</li>
+      <li>Trait - the name of the trait.</li>
+      <li>EFO - the corresponding <a href="http://www.ebi.ac.uk/efo/">ontology term(s)</a> for the trait. </li>
+      <li>Analysis - description of the analysis performed.</li>
+      <li>Source - the table where the result can be found in the paper.</li>
+      <li>Outcome - the outcome of the analysis.</li>
+      <li>Exposure - the exposure of the analysis.</li>
+      <li>Covariates - the covariates adjusted for in the analysis.</li>
+      <li>Outcome_Units - the units of the outcome.</li>
+      <li>Exposure_Units - the units of the exposure.</li>
+      <li>Methylation_Array - the array used to measure the methylation.</li>
+      <li>Tissue - the tissue in which the methylation was measured.</li>
+      <li>Further_Details - any further details on the analysis.</li>
+      <li>N - the total number of participants used in the analysis.</li>
+      <li>N_Cohorts - the total number of cohorts used in the analysis.</li>
+      <li>Categories - the total number of individuals in each category (e.g. 200 smokers, 150 never smokers).</li>
+      <li>Age - the mean age of the participants in years.</li>
+      <li>N_Males - the total number of males used in the analysis.</li>
+      <li>N_Females - the total number of females used in the analysis.</li>
+      <li>N_EUR - the total number of European participants.</li>
+      <li>N_EAS - the total number of East Asian participants.</li>
+      <li>N_SAS - the total number of South Asian participants.</li>
+      <li>N_AFR - the total number of African participants.</li>
+      <li>N_AMR - the total number of Admixed American participants.</li>
+      <li>N_OTH - the total number of participants of non-EUR, non-EAS, non-SAS, non-AFR, non-AMR ancestry.</li>
+      <li>CpG - the CpG site.</li>
+      <li>Location - the location of the CpG based on hg19 coordinates.</li>
+      <li>Chr - the chromosome where the CpG is located based on hg19 coordinates.</li>
+      <li>Pos - the position where the CpG is located based on hg19 coordinates.</li>
+      <li>Gene - the gene where the CpG is mapped to based on the Ilumina manifest.</li>
+      <li>Type - the type of CpG (e.g. CpG island).</li>
+      <li>Beta - the effect estimate.</li>
+      <li>SE - the standard error of beta.</li>
+      <li>P - <i>p</i>-value.</li>
+      <li>Details - any additional details on the analysis (e.g. sub-trait).</li>
+   </ul>
+   <p> NB: Missing information is left blank. </p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,646 @@
+##################################################################
+# README: Create Django web app                                  #
+#                                                                #
+# James Staley                                                   #
+# University of Bristol                                          #
+# james.staley@bristol.ac.uk                                     #
+##################################################################
+
+##################################################################
+##### Libraries #####
+##################################################################
+
+alias python=python3
+pip install virtualenv
+pip install django
+sudo apt-get install python-dev python3-dev
+sudo apt-get install libmysqlclient-dev
+pip install mysqlclient
+pip install django-excel
+
+##################################################################
+##### General commands #####
+##################################################################
+
+# Migrate
+python manage.py migrate
+
+# Fake migrate
+python manage.py migrate --fake
+
+# Makemigrations
+python manage.py makemigrations
+
+# Collect static files
+python manage.py collectstatic
+
+# Remove migrations
+find . -path "catalog/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "catalog/migrations/*.pyc"  -delete
+
+# Runserver 
+python manage.py runserver
+
+##################################################################
+##### Set-up filing structure #####
+##################################################################
+
+django-admin startproject input_ewas
+cd ./input_ewas
+
+##################################################################
+##### Edit input_ewas/settings.py #####
+##################################################################
+
+import environ
+
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, "settings.env"))
+
+SECRET_KEY = env.str('INPUT_SECRET_KEY')
+
+# TIME_ZONE:
+TIME_ZONE = 'Europe/London'
+
+# STATIC:
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+# ALLOWED_HOSTS:
+# ALLOWED_HOSTS = ['127.0.0.1', '.ewasinput.org']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'input.ewascatalog.org', 'www.input.ewascatalog.org']
+
+# DATABASE:
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'EWAS_Catalog_Input',
+#        'USER': 'ewasinput',
+#        'PASSWORD': '...',
+#        'HOST': 'db',
+#        'PORT': '3306'
+#    }
+#}
+DATABASES = {'default': env.db('INPUT_DATABASE_URL')}
+
+##################################################################
+##### Inspect MySQL database #####
+##################################################################
+
+python manage.py inspectdb
+
+##################################################################
+##### Create the application #####
+##################################################################
+
+# Start application
+python manage.py startapp catalog
+
+# Add app to installed apps in input_ewas/settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'catalog',
+]
+
+##################################################################
+##### Create the model relating to a table in the db #####
+##################################################################
+
+# Replace the details in catalog/models.py with:
+from django.db import models
+from django.utils import timezone
+
+class Study(models.Model):
+    id = models.CharField(max_length=20, primary_key=True)
+    study = models.CharField(max_length=20)
+    author = models.CharField(max_length=20)
+    pmid = models.CharField(max_length=20)
+    analysis = models.CharField(max_length=20)
+
+    class Meta:
+        db_table = 'study'
+
+    def __str__(self):
+        return self.study
+
+##################################################################
+##### Admin #####
+##################################################################
+
+# Replace the details in catalog/admin.py with:
+from django.contrib import admin
+from .models import Study
+
+admin.site.register(Study)
+
+# Create superuser
+python manage.py createsuperuser
+
+# Add details
+Username (leave blank to use 'james'): admin
+Email address: admin@ewasinput.org
+Password: 
+Password (again):
+
+# If you run the server the admin account now can add data into the study MySQL database
+
+##################################################################
+##### URLs #####
+##################################################################
+
+# Replace the details in input_ewas/urls.py
+from django.conf.urls import include, url
+from django.contrib import admin
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    url(r'', include('catalog.urls')),
+]
+
+# Create catalog/urls.py
+from django.conf.urls import url
+from . import views
+
+urlpatterns = [
+    url(r'^$', views.catalog_info, name='catalog_info'),
+]
+
+##################################################################
+##### Views #####
+##################################################################
+
+# Replace the detaild in catalog/views.py
+from django.shortcuts import render
+
+def catalog_info(request):
+    return render(request, 'catalog/catalog_info.html', {})
+
+# Create templates 
+mkdir catalog/templates
+mkdir catalog/templates/catalog
+echo "" > catalog/templates/catalog/catalog_info.html
+
+# If runserver is run the home page should be blank
+
+# Add default base.html
+cp ${PROJECT_DIRECTORY}/Documents/EWAS_Catalog/input_data/website/basics/base.html catalog/templates/catalog
+
+# Add CSS file
+mkdir catalog/static
+mkdir catalog/static/css
+cp ${PROJECT_DIRECTORY}/Documents/EWAS_Catalog/input_data/website/basics/templates.css catalog/static/css/template.css
+
+# Add images
+mkdir catalog/static/images
+cp ${PROJECT_DIRECTORY}/Documents/EWAS_Catalog/input_data/website/basics/*.png catalog/static/images/
+
+##################################################################
+##### Create entry form #####
+##################################################################
+
+# Create input html
+mkdir catalog/templates/catalog/input
+echo "" > catalog/templates/catalog/input/catalog_studyinfo.html
+
+# Add input url to url.py
+urlpatterns = [
+    url(r'^input/$', views.catalog_info, name='catalog_info'),
+    url(r'^$', views.catalog_info, name='catalog_info'),
+    url(r'^input/studyinfo$', views.catalog_studyinfo, name='catalog_info'),
+]
+
+# Add catalog input to views.py
+def catalog_input(request):
+    return render(request, 'catalog/input/catalog_studyinfo.html', {})
+
+# Create forms.py
+echo "" > catalog/forms.py
+
+# Add form to forms.py
+from django import forms
+from .models import Study
+
+class StudyForm(forms.ModelForm):
+
+    class Meta:
+        model = Study
+        fields = ('id', 'study', 'author', 'pmid', 'analysis')
+
+# Add link to catalog_info.html
+<a href="/input/studyinfo" class="btn btn-default">Input New Study</a> 
+
+# Add catalog study info input to views.py
+def catalog_studyinfo(request):
+    if request.method == "POST":
+        form = StudyForm(request.POST)
+        if form.is_valid():
+            study = form.save(commit=False)
+            study.save()
+            return render(request, 'catalog/catalog_info.html')
+    else:
+        form = StudyForm()
+    return render(request, 'catalog/input/catalog_studyinfo.html', {'form': form})
+
+# Add form to catalog_studyinfo.html
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+   <div class="catalog">
+       <h1>Study information</h1>
+       <p>&nbsp;</p>
+       <form method="POST" class="catalog-form">{% csrf_token %}
+       {{ form.as_p }}
+       <button type="submit" class="save btn btn-default">Save</button>
+       <a href="/input/studyinfo" class="btn btn-default">Next</a>
+   </div>
+{% endblock %}
+
+# Add StudyForm to views.py
+from .forms import StudyForm
+
+##################################################################
+##### Serve files with apache2 #####
+##################################################################
+
+# Install necessary packages
+sudo apt-get update
+sudo apt-get install python3-pip apache2 libapache2-mod-wsgi-py3
+
+# Create directory to save Django app
+mkdir ~/myproject
+cd ~/myproject
+
+# Create virtual environment
+virtualenv myprojectenv
+
+# Activate virtual environment
+source myprojectenv/bin/activate
+
+# Install packages
+pip install django
+
+# Create app and deactivate
+deactivate
+
+# Configure apache2
+sudo -i
+gedit /etc/apache2/sites-available/000-default.conf
+
+# Default apache2 configuration (000-default.conf)
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    Alias /static ${PROJECT_DIRECTORY}/ewascatalog/catalog/static
+    <Directory ${PROJECT_DIRECTORY}/ewascatalog/catalog/static>
+        Require all granted
+    </Directory>
+
+    <Directory ${PROJECT_DIRECTORY}/ewascatalog/ewas>
+        <Files wsgi.py>
+            Require all granted
+        </Files>
+    </Directory>
+
+    WSGIDaemonProcess ewascatalog python-home=${PROJECT_DIRECTORY}/ewascatalog/myprojectenv python-path=${PROJECT_DIRECTORY}/ewascatalog
+    WSGIProcessGroup ewascatalog
+    WSGIScriptAlias / ${PROJECT_DIRECTORY}/ewascatalog/ewas/wsgi.py
+</VirtualHost>
+
+# Restart, start and stop apache2
+sudo service apache2 restart
+sudo service apache2 start
+sudo service apache2 stop
+
+# Enable/disable virtual hosts
+sudo a2ensite example.com.conf
+sudo a2dissite example.com.conf
+
+# Enable WGSI module
+sudo a2enmod wsgi
+
+# For further details see: https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-apache-and-mod_wsgi-on-ubuntu-14-04
+
+##################################################################
+##### Cron #####
+##################################################################
+
+# Delete files after a certain time period
+#!/bin/bash
+ 
+find /code/catalog/static/tmp/* -mmin +1 -exec rm -f {} \;
+find /code/catalog/templates/catalog/tmp/* -mmin +1 -exec rm -f {} \;
+
+# Crontab file 
+00 * * * * root /remove.sh
+
+##################################################################
+##### Docker #####
+##################################################################
+
+# Install docker
+sudo apt-get update
+sudo apt-get install docker-ce
+
+# Install docker-compose
+sudo curl -L https://github.com/docker/compose/releases/download/1.24.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+
+# Install docker-machine
+sudo curl -L https://github.com/docker/machine/releases/download/v0.16.1/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine &&
+chmod +x /tmp/docker-machine &&
+sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
+
+# Create symbolic link
+ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+# List all containers
+sudo docker ps -a
+
+# Start container
+sudo docker start container_id
+
+# Stop container
+sudo docker stop container_id
+
+# Remove container
+sudo docker rm container_id
+
+# Build docker container
+sudo docker build
+
+# Run container
+docker run -it -p
+
+# Remove docker cache
+sudo docker system prune -a
+
+# Remove redundant images
+sudo docker rmi $(sudo docker images -f "dangling=true" -q)
+
+# Stop and remove all containers
+sudo docker stop $(sudo docker ps -a -q)
+sudo docker rm $(sudo docker ps -a -q)
+
+# Compose build
+sudo docker-compose build
+
+# Compose up
+sudo docker-compose up -d
+
+# Create Dockerfile
+FROM python:3
+ENV PYTHONUNBUFFERED 1
+RUN mkdir /code
+WORKDIR /code
+ADD requirements.txt /code/
+RUN pip install -r requirements.txt
+ADD . /code/
+
+# Create requirements.txt
+Django>=1.8,<2.0
+mysqlclient
+
+# Create docker-compose.yml
+web:
+  build: .
+  container_name: ewascatalog
+  command: python manage.py runserver 0.0.0.0:8000
+  volumes:
+    - .:/code
+  ports:
+    - "8000:8000"
+  links:
+    - db
+db:
+  env_file:
+    - ../../../settings.env
+  image: mysql
+  container_name: ewascatalog_db
+  environment:
+     - MYSQL_ROOT_PASSWORD=${DATABASE_ROOT_PASSWORD}
+     - MYSQL_USER=${DATABASE_USER}
+     - MYSQL_PASSWORD=${DATABASE_PASSWORD}
+     - MYSQL_DATABASE=${DATABASE_NAME}
+
+
+# Change ownership of folders and files
+sudo chown -R $USER:$USER .
+
+# Open bash session
+sudo docker exec -i -t ewascatalog /bin/bash
+
+# File permissions of files and folders have to be at least read-only!!!
+
+##################################################################
+##### Django with Docker #####
+##################################################################
+
+# Start Django project
+sudo docker-compose run web django-admin.py startproject ewas .
+
+# Edit settings.py
+
+import environ
+
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, "settings.env"))
+
+SECRET_KEY = env.str('INPUT_SECRET_KEY')
+
+# TIME_ZONE:
+TIME_ZONE = 'Europe/London'
+
+# STATIC:
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+# ALLOWED_HOSTS:
+# ALLOWED_HOSTS = ['127.0.0.1', '.ewasinput.org']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'input.ewascatalog.org', 'www.input.ewascatalog.org']
+
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'EWAS_Catalog_Input',
+#        'USER': 'ewasinput',
+#        'PASSWORD': '...',
+#        'HOST': 'db',
+#        'PORT': '3306'
+#    }
+#}
+DATABASES = {'default': env.db('INPUT_DATABASE_URL')}
+
+# Makemigrations
+sudo docker-compose run web python manage.py makemigrations
+
+# Migrations
+sudo docker-compose run web python manage.py migrate
+
+# Create superuser
+sudo docker-compose run web python manage.py createsuperuser
+
+##################################################################
+##### MySQL with Docker #####
+##################################################################
+
+# Connect to MySQL
+sudo docker start ewascatalog_db
+sudo docker exec -it ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD}
+sudo docker exec -it ewascataloginput_db mysql -uroot -p${INPUT_DATABASE_ROOT_PASSWORD}
+
+# Add to database
+sudo docker start ewascatalog_db
+sudo docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} EWAS_Catalog < ewas_catalog.sql
+
+# MySQL Dump
+sudo docker exec ewascataloginput_db /usr/bin/mysqldump -u root --password=${INPUT_DATABASE_ROOT_PASSWORD} ${INPUT_DATABASE_NAME} study analysis participants results > backup.sql
+
+##################################################################
+##### Niginx and Gunicorn with Docker #####
+##################################################################
+
+# Add Gunicorn to requirements.txt
+Django
+mysqlclient
+gunicorn
+
+# Add nginx folder to the project directory
+project
+  --nginx
+    --Dockerfile
+    --sites-enabled
+      --django_project
+  --django_project
+  --django_app
+  --manage.py
+  --Dockerfile
+  --requirements.txt
+
+# Sites enabled in django_project
+server {
+
+    listen 80;
+    server_name example.org;
+    charset utf-8;
+
+    location /media {
+        autoindex on;    
+        alias /code/catalog/media; 
+    }
+
+    location /static {
+        autoindex on;    
+        alias /code/catalog/static; 
+    }
+
+    location /admin/media {
+        alias /usr/local/lib/python2.7/site-packages/django/contrib/;  
+    }
+
+    location / {
+        proxy_pass http://web:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+}
+
+# Nginx Dockerfile
+FROM tutum/nginx
+RUN rm /etc/nginx/sites-enabled/default
+ADD sites-enabled/ /etc/nginx/sites-enabled
+
+# Add nginx to overall Dockerfile
+nginx:
+  restart: always
+  build: ./nginx/
+  container_name: ewascatalog_nginx
+  ports:
+    - "80:80"
+  volumes:
+    - .:/code
+  volumes_from:
+    - web
+  links:
+    - web:web
+
+##################################################################
+##### Google Analytics #####
+##################################################################
+
+# Add google analytics code to base.html
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-105090005-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+
+##### Optional #####
+
+# Add the following to settings.py
+GOOGLE_ANALYTICS_PROPERTY_ID = 'UA-XXXXXXXX-X'
+GOOGLE_ANALYTICS_DOMAIN = 'ewascatalog.org'
+
+# Create context_processor.py and save in django app
+from django.conf import settings
+
+def google_analytics(request):
+    """
+    Use the variables returned in this function to
+    render your Google Analytics tracking code template.
+    """
+    ga_prop_id = getattr(settings, 'GOOGLE_ANALYTICS_PROPERTY_ID', False)
+    ga_domain = getattr(settings, 'GOOGLE_ANALYTICS_DOMAIN', False)
+    if not settings.DEBUG and ga_prop_id and ga_domain:
+        return {
+            'GOOGLE_ANALYTICS_PROPERTY_ID': ga_prop_id,
+            'GOOGLE_ANALYTICS_DOMAIN': ga_domain,
+        }
+    return {}
+
+# Add context processor to settings.py
+TEMPLATE_CONTEXT_PROCESSORS = ('website.context_processors.google_analytics',)
+
+# Add google analytics code to base.html
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', '{{ GOOGLE_ANALYTICS_PROPERTY_ID }}', '{{ GOOGLE_ANALYTICS_DOMAIN }}');
+  ga('send', 'pageview');
+
+</script>
+
+##################################################################
+##### MySQL #####
+##################################################################
+
+# Delete row
+delete from study where id="ID";
+
+# Update row
+update study set author = 'author' where author='author';
+
+# Change column
+alter table `results` change column `dmr` `details` VARCHAR(200) NOT NULL;
+
+# Modify column
+alter table `analysis` modify column `exposure` VARCHAR(200);
