@@ -1,6 +1,6 @@
-The website code can be found in `website`.
-All that this missing from there are large data files with
-EWAS summary statistics and a file `settings.env`.
+The website code can be found in `website/`.
+All that this missing from there is the downloadable
+EWAS summary statistics file and `settings.env`.
 These files are copied into position when the website
 is setup in the project `Makefile`.
 
@@ -13,7 +13,6 @@ in `views.py` that define the behavior of each page.
 The the `views.py` functions link to the appropriate
 html templates files in the `templates` directory.
 
-
 ## Origins of the website files
 
 The basic template for the website was created using the following django command:
@@ -25,8 +24,6 @@ The SECRET_KEY in `website/website/settings.py` was then copied
 to the file `../settings.env` for security reasons.
 
 The `website/website/settings.py` file was then edited to its current form.
-
-The file `../settings.env` was copied to the `website` directory.
 
 The `catalog` app was added.
 ```
@@ -53,7 +50,7 @@ Additional files and code were added to the
 to define the EWAS Catalog website.
 
 
-## Tinkering with the database in Python
+## Debugging Python access to the database
 
 Login and show the first p-value for CpG site 'cg00029284'
 (*Note:* The value for "password" is

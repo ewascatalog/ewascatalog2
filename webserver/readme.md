@@ -2,46 +2,73 @@
 
 **Note**: these instructions are somewhat generic, will need some customizing.
 
+## File permissions
+
+The Apache2 web server must be able to write to
+the `website/catalog/static/tmp/` directory
+and read everything else including `settings.env`.
+
+We can set the file permissions as follows:
+```
+sudo chmod -R o-rwx ${WEBSITE_DIR}
+sudo chgrp -R www-data ${WEBSITE_DIR}
+sudo chmod -R g-w ${WEBSITE_DIR}
+sudo chmod -R g+w ${WEBSITE_DIR}/catalog/static/tmp
+```
+
 ## Install necessary packages
+
 ```
 sudo apt-get update
 sudo apt-get install apache2 libapache2-mod-wsgi-py3
 ```
 
-## Create directory to save Django app
-For now we'll call it `~/myproject`.
+## Create a Python virtual environment
 
-## Create virtual environment
+This is necessary to ensure that Python package version changes
+on the computer don't affect this application.
+This virtual environment is referenced below in the virtual host
+configuration file for the web server.
+
+Initalize the environment.
 ```
-virtualenv myprojectenv
+virtualenv -p /usr/bin/python3 ${WEBSITE_DIR}/ewascatalogenv
 ```
 
-## Activate virtual environment
+Activate the environment.
 ```
-source myprojectenv/bin/activate
+source ${WEBSITE_DIR}/ewascatalogenv/bin/activate
 ```
 
-## Create app and deactivate
+Install the necessary packages by 
+running the `../website/install-dependencies.sh` script.
+```
+bash ../website/install-dependencies.sh
+```
+
+Deactivate the virtual environment.
 ```
 deactivate
 ```
 
-## Install apache config file
+## Install apache virtual host config file
+
+Edit 000-default.conf so that the website directory is correct.
 ```
-cp apache2-files/000-default.conf /etc/apache2/sites-available
+sudo cp 000-default.conf /etc/apache2/sites-available/
 ```
 
-## Restart, start and stop apache2
+## Restart the webserver
+
 ```
 sudo service apache2 restart
-sudo service apache2 start
-sudo service apache2 stop
 ```
 
-## Enable/disable virtual hosts
+## Enable the virtual host
+
 ```
-sudo a2ensite example.com.conf
-sudo a2dissite example.com.conf
+sudo a2ensite 000-default.conf
+systemctl reload apache2
 ```
 
 ## Enable WGSI module
@@ -49,27 +76,30 @@ sudo a2dissite example.com.conf
 sudo a2enmod wsgi
 ```
 
-For further details see: https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-apache-and-mod_wsgi-on-ubuntu-14-04
-
-
 ## Start the EWAS catalog
 
 ```
-run web django-admin.py startproject ewas .
-python manage.py runserver
+python ${WEBSITE_DIR}/manage.py runserver
 ```
 
-## To delete temporary files periodically ...
+If something fails, error messages can be found here:
+`/var/log/apache2/error.log`.
 
-Create a script `/remove.sh` that deletes temporary files.
+
+## Incorporating changes 
+
+The website must be restarted after any changes.  Here are the steps:
 ```
-#!/bin/bash
- 
-find /catalog/static/tmp/* -mmin +1 -exec rm -f {} \;
-find /catalog/templates/catalog/tmp/* -mmin +1 -exec rm -f {} \;
+sudo service apache2 restart
 ```
 
-Add the following the /etc/crontab file:
+If changes to the virtual host file (000-default.conf) were made: 
 ```
-00 * * * * root /remove.sh
+sudo a2ensite 000-default.conf
+systemctl reload apache2
+```
+
+Finally the website Django server must be restarted.
+```
+python ${WEBSITE_DIR}/manage.py runserver
 ```
