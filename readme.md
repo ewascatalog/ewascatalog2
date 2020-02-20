@@ -54,7 +54,13 @@ You may need to update this information in `settings.env`.
 make website
 ```
 
-### Make it live
+### Ensure python dependencies installed
+
+```
+make depenencies
+```
+
+### Make the website live
 
 ```
 make startwebsite
@@ -79,8 +85,9 @@ make startwebsite
   the 'published-ewas/' folder but it needs to be simplified and the
   instructions clearer.
 
-* Add commands to Makefile to set up the web server.  Right now we
-  just have the Django server running.
+* There are instructions for setting up the webserver (see
+  webserver/readme.md), but much of that could be automated
+  within the Makfile.
 
 * Add commands to Makefile to get the website running in a docker
   container.

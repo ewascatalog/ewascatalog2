@@ -2,20 +2,6 @@
 
 **Note**: these instructions are somewhat generic, will need some customizing.
 
-## File permissions
-
-The Apache2 web server must be able to write to
-the `website/catalog/static/tmp/` directory
-and read everything else including `settings.env`.
-
-We can set the file permissions as follows:
-```
-sudo chmod -R o-rwx ${WEBSITE_DIR}
-sudo chgrp -R www-data ${WEBSITE_DIR}
-sudo chmod -R g-w ${WEBSITE_DIR}
-sudo chmod -R g+w ${WEBSITE_DIR}/catalog/static/tmp
-```
-
 ## Install necessary packages
 
 ```
@@ -53,9 +39,14 @@ deactivate
 
 ## Install apache virtual host config file
 
-Edit 000-default.conf so that the website directory is correct.
+Below we convert the template config file
+to match our configuration defined by `settings.env`
+and copy it to the apache2 configuration directory:
 ```
-sudo cp 000-default.conf /etc/apache2/sites-available/
+set -a
+. ../../settings.env && envsubst < 000-default.template > 000-default.conf
+set +a
+sudo mv 000-default.conf /etc/apache2/sites-available/
 ```
 
 ## Restart the webserver
