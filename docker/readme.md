@@ -3,43 +3,51 @@ getting the website running in a docker container.  Needs organizing and
 corresponding code added to `../Makefile` so that it is automated as
 much as possible.
 
+## If docker is not installed (on an Ubuntu machine)
+
+Remove anything out-of-date:
+```
+sudo apt-get remove docker docker-engine docker.io
+```
+
+Install docker:
+```
+sudo apt install docker.io
+```
+
+Setup docker to run automatically at startup:
+```
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+## Create docker container
+
+In the main project directory, 
+create `Dockerfile` specifying commands to build the container,
+`requirements.txt` to define python dependencies,
+`docker-compose.yml` specifying required services
+(web server and database). 
 
 
-docker-ce
-docker-compose
-docker-machine
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Navigate to directory
-cd /path/to/directory
-
-# Docker container
+```
+cd ${WEBSITE_DIR}
 docker-compose build
+```
+
+
+## Start the container
+
+```
+cd ${WEBSITE_DIR}
 docker-compose up -d
-docker-compose stop
+```
 
-# Migrate
-docker-compose run web python manage.py makemigrations
-docker-compose run web python manage.py migrate
-docker-compose run web python manage.py createsuperuser
-  Username (leave blank to use 'root'): root
-  Email address: ${DOCKER_EMAIL}
-  Password: ${DOCKER_PASSWORD}
-  Password (again): ${DOCKER_PASSWORD}
+To stop it, just run `docker-compute stop`.
 
+
+
+```
 # Add EWAS Catalog MySQL database
 docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} < ./mysql/initial/database.sql
 docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} ${DATABASE_NAME} < ./mysql/cpgs/cpgs.sql
@@ -63,3 +71,4 @@ RUN apt-get install -y r-base
 
 # Sometimes the following needs to be re-copied: RUN apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
 # To install an R package: RUN R -e "install.packages('dplyr', repos = 'http://cran.us.r-project.org')"
+```
