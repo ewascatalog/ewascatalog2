@@ -17,8 +17,9 @@ rm(list=ls())
 closeAllConnections()
 
 ##### Libraries ######
-library(data.table)
-library(biomaRt)
+source("load-library.r")
+load.library("data.table")
+load.library("biomaRt", bioc=T)
 
 ##### Working directory #####
 #setwd()

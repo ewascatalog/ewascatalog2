@@ -57,7 +57,7 @@ make website
 ### Ensure python dependencies installed
 
 ```
-make depenencies
+make dependencies
 ```
 
 ### Make the website live

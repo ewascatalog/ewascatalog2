@@ -13,6 +13,7 @@ sudo apt-get remove docker docker-engine docker.io
 Install docker:
 ```
 sudo apt install docker.io
+sudo apt install docker-compose
 ```
 
 Setup docker to run automatically at startup:
@@ -21,54 +22,55 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-## Create docker container
-
-In the main project directory, 
-create `Dockerfile` specifying commands to build the container,
-`requirements.txt` to define python dependencies,
-`docker-compose.yml` specifying required services
-(web server and database). 
-
+## Add user to docker group
 
 ```
-cd ${WEBSITE_DIR}
-docker-compose build
+sudo usermod -a -G docker [USER]
+```
+You will need to log out and then back
+in again for this to take effect.
+
+## Navigate to the container website
+
+First obtain the container IP address.
+```
+docker inspect dev.ewascatalog | grep '"IPAddress"' | head -n 1
+```
+Make sure that this address is permitted in `website/website/settings.py`.
+
+Access the website here, e.g.
+```
+lynx [IP-ADDRESS]:8000
+```
+Note that the port is set in the 'gunicorn'
+startup command in docker-compose.yml.
+
+## Access to the docker container
+
+To get bash shell access to running container:
+```
+docker exec -it dev.ewascatalog bash
+```
+
+To copy a file from the host machine into a docker container:
+```
+docker cp local-file dev.ewascatalog:/destination-directory
+```
+
+## Save/restore the database
+
+Save the database (variables refer to settings.env):
+```
+docker exec ewascatalog_db sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
+```
+
+Restore the database:
+```
+docker exec -i ewascatalog_db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < /some/path/on/your/host/all-databases.sql
 ```
 
 
-## Start the container
-
-```
-cd ${WEBSITE_DIR}
-docker-compose up -d
-```
-
-To stop it, just run `docker-compute stop`.
 
 
 
-```
-# Add EWAS Catalog MySQL database
-docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} < ./mysql/initial/database.sql
-docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} ${DATABASE_NAME} < ./mysql/cpgs/cpgs.sql
-docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} ${DATABASE_NAME} < ./mysql/genes/genes.sql
-docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} ${DATABASE_NAME} < ./mysql/catalog/refresh.sql
-docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} ${DATABASE_NAME} < ./mysql/catalog/19-07-03/database.sql
-docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} ${DATABASE_NAME} < ./mysql/aries/refresh.sql
-docker exec -i ewascatalog_db mysql -uroot -p${DATABASE_ROOT_PASSWORD} ${DATABASE_NAME} < ./mysql/aries/catalog/database.sql
 
-# Docker-compose up
-docker-compose up -d
-
-# R download
-# Add the following to the Dockerfile:
-RUN apt-get update
-RUN apt-get install -y dirmngr apt-transport-https ca-certificates software-properties-common gnupg2
-RUN apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
-RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/debian stretch-cran35/'
-RUN apt-get update
-RUN apt-get install -y r-base
-
-# Sometimes the following needs to be re-copied: RUN apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
-# To install an R package: RUN R -e "install.packages('dplyr', repos = 'http://cran.us.r-project.org')"
-```

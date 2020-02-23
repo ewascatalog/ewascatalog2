@@ -9,6 +9,16 @@ sudo apt-get update
 sudo apt-get install apache2 libapache2-mod-wsgi-py3
 ```
 
+## Add user to www-data group
+
+To give the server access to website files,
+they will need to belong to group 'www-data'.
+To change group ownership, the current user
+will need to belong to the 'www-data' group.
+```
+sudo usermod -a -G www-data [USER]
+```
+
 ## Create a Python virtual environment
 
 This is necessary to ensure that Python package version changes

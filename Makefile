@@ -4,52 +4,72 @@
 SETTINGS=../settings.env
 include $(SETTINGS)
 
-$(FILE_DIR)/cpg_annotation.txt:
-	Rscript --vanilla annotations/create-cpg-annotation.r $@
+## Commands for building the running the docker container:
+## 
+## make all
+##   execute the entire pipeline (all commands below)
+## make website
+##   copy the website files to their destination
+## make docker-build
+##   copy docker files to website
+##   and build the docker container
+## make docker-start
+##   start the docker container running
+## make installr
+##   install R in the container
+## make database 
+##   create and populate the database for access
 
-$(FILE_DIR)/gene_annotation.txt:
-	Rscript --vanilla annotations/create-gene-annotation.r $@
+## Other useful commands:
+## 
+## make docker-stop
+##   stop the docker container
+## make docker-rm
+##   delete the docker container
 
-cpgs: $(FILE_DIR)/cpg_annotation.txt
-	bash database/create-cpg-annotation.sh $(DB) $(FILE_DIR)
 
-genes: $(FILE_DIR)/gene_annotation.txt
-	bash database/create-gene-annotation.sh $(DB) $(FILE_DIR)
-
-database: $(FILE_DIR)/published-ewas/*.txt $(FILE_DIR)/aries-ewas/*.txt
-	bash database/create-database.sh $(DB) $(FILE_DIR) $(SETTINGS)
-
-dependencies:
-	bash website/install-dependencies.sh
-
-$(WEBSITE_DIR)/manage.py: website/website/website/*.py website/website/catalog/*.py
-	## prepare to copy
-	mkdir -p $(WEBSITE_DIR)
-	## delete old versions 
-	rm -rf $(WEBSITE_DIR)/*
-	## copy the website files
-	cp -rv website/website/* $(WEBSITE_DIR)
-	## copy over settings.env
-	cp $(SETTINGS) $(WEBSITE_DIR)
-	## create directory for temporary files
-	mkdir -p $(WEBSITE_DIR)/catalog/static/tmp
-	## copy ewas catalog download file
-	mkdir -p $(WEBSITE_DIR)/catalog/static/docs
-	cp $(FILE_DIR)/catalog-download/ewascatalog.txt.gz \
-	   $(WEBSITE_DIR)/catalog/static/docs
-	## set file permissions for apache2 web server
-	chmod -R o-rwx ${WEBSITE_DIR}
-	chgrp -R www-data ${WEBSITE_DIR}
-	chmod -R g-w ${WEBSITE_DIR}
-	chmod -R g+w ${WEBSITE_DIR}/catalog/static/tmp
+all:
+	make website
+	make docker-build
+	make docker-start
+	make r
+	make database
 
 website: $(WEBSITE_DIR)/manage.py
+
+$(WEBSITE_DIR)/manage.py: website/website/website/*.py
+$(WEBSITE_DIR)/manage.py: website/website/catalog/*.py
+$(WEBSITE_DIR)/manage.py:
+	bash website/install.sh $(WEBSITE_DIR) $(FILE_DIR) ${SETTINGS}
 
 startwebsite: $(WEBSITE_DIR)/manage.py
 	python3 $< runserver
 
-## to do: command to start webserver 
+DOCKER_FILES=Dockerfile docker-compose.yml requirements.txt
 
-## to do: command to get website running in a docker container
+docker-build: $(WEBSITE_DIR)/manage.py
+docker-build: $(addprefix docker/,$(DOCKER_FILES))
+docker-build:
+	bash docker/build.sh ${SETTINGS} \
+		$(addprefix docker/,$(DOCKER_FILES))
+
+docker-start: $(WEBSITE_DIR)/manage.py
+docker-start: $(addprefix $(WEBSITE_DIR)/,$(DOCKER_FILES))
+docker-start:
+	bash docker/start.sh ${SETTINGS}
+
+installr:
+	bash docker/install-r.sh
+
+database:
+	cp -rv database $(WEBSITE_DIR}
+	docker-compose exec -w /code/database dev.ewascatalog_db \
+		bash create.sh ../settings.env
+
+docker-stop:
+	bash docker/stop.sh ${SETTINGS}
+
+docker-rm:
+	bash docker/rm.sh ${SETTINGS}
 
 ## to do: command to update database

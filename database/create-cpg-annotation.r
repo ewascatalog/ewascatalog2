@@ -23,10 +23,11 @@ options(stringsAsFactors = F)
 #setwd()
 
 ##### Libraries ####
-suppressMessages(library(data.table))
-suppressMessages(library(Hmisc))
-suppressMessages(library(dplyr))
-suppressWarnings(suppressMessages(library(meffil)))
+source("load-library.r")
+load.library("data.table")
+load.library("Hmisc")
+load.library("dplyr")
+load.library("http://github.com/perishky/meffil")
 
 ###################################################################
 ##### Methylation annotation #####
