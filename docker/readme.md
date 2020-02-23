@@ -1,9 +1,17 @@
-This directory contains instructions and miscellaneous files for
-getting the website running in a docker container.  Needs organizing and
-corresponding code added to `../Makefile` so that it is automated as
-much as possible.
+This folder contains files needed to 'dockerize' the website:
+docker-compose.yml, Dockerfile, requirements.txt.
+These files are copied to the website base directory by the Makefile
+before building the docker container.
 
-## If docker is not installed (on an Ubuntu machine)
+Makefile executes scripts here for building the docker container (build.sh),
+starting the docker container (start.sh),
+stopping the docker container (stop.sh),
+and installing R in the container (install-r.sh). 
+
+The remainder of this document gives information
+for working with containers.
+
+## If docker is not installed (on an Ubuntu machine) ...
 
 Remove anything out-of-date:
 ```
@@ -24,6 +32,9 @@ sudo systemctl enable docker
 
 ## Add user to docker group
 
+For a user to run docker commands,
+they will need to belong to the docker
+linux permissions group.
 ```
 sudo usermod -a -G docker [USER]
 ```

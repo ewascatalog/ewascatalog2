@@ -73,3 +73,5 @@ docker-rm:
 	bash docker/rm.sh ${SETTINGS}
 
 ## to do: command to update database
+## to do: command to update website code
+

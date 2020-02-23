@@ -92,3 +92,7 @@ make startwebsite
 * Add commands to Makefile to get the website running in a docker
   container.
 
+* Add the following installations to the container build:
+  apt install libcurl4-openssl-dev
+  apt install libxml2-dev
+  apt install libssl-dev

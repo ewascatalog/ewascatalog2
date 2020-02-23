@@ -1,6 +1,10 @@
-# Instructions for installing the web server
+# Instructions for installing the web server (optional)
 
-**Note**: these instructions are somewhat generic, will need some customizing.
+These instructions are only needed to make the website available
+via an Apache2 webserver outside of docker container.
+This potentially makes development of the website
+a bit more convenient.
+
 
 ## Install necessary packages
 
