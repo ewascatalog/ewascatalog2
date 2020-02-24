@@ -51,7 +51,7 @@ data <- data[!grepl("^RP", data$hgnc_symbol),]
 
 ##### Remove duplicates #####
 data <- data[data$hgnc_symbol!="",c("ensembl_gene_id", "hgnc_symbol", "chromosome_name", "start_position", "end_position", "gene_biotype")]
-data <- data[!duplicated(data),]
+#data <- data[!duplicated(data),]
 
 # Tabulate duplicates
 data[duplicated(data$hgnc_symbol) | duplicated(data$hgnc_symbol, fromLast=T),]

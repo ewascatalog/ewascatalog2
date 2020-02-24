@@ -63,7 +63,7 @@ annotation_epic <- annotation_epic[,c("CpG", "Location", "Chr", "Pos", "Gene", "
 
 # Combined
 annotation <- rbind(annotation_450, annotation_epic)
-annotation <- annotation[!duplicated(annotation),]
+annotation <- annotation[match(unique(annotation$CpG), annotation$CpG),]
 annotation <- annotation[grepl("^c", annotation$CpG),]
 annotation[annotation==""] <- "-"; annotation[is.na(annotation)] <- "-"
 write.table(annotation, file=filename, row.names=F, quote=F, sep="\t")

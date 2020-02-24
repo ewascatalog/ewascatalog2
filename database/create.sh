@@ -5,7 +5,9 @@ SETTINGS=$1
 source ${SETTINGS}
 
 FILE=${FILE_DIR}/cpg_annotation.txt
-Rscript --vanilla create-cpg-annotation.r ${FILE}
+if [ ! -f "$FILE" ]; then
+    Rscript --vanilla create-cpg-annotation.r ${FILE}
+fi
 
 FILE=$(FILE_DIR)/gene_annotation.txt
 Rscript --vanilla create-gene-annotation.r ${FILE}
