@@ -19,6 +19,6 @@ Rscript -e "install.packages('Hmisc')"
 Rscript -e "install.packages('dplyr')"
 Rscript -e "install.packages('devtools')"
 Rscript -e "install.packages('BiocManager')"
-Rscript -e "BiocManager::install('BiomaRt')"
+Rscript -e "BiocManager::install('biomaRt')"
 Rscript -e "devtools::install_github('https://github.com/perishky/meffil')"
 
