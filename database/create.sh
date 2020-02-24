@@ -1,16 +1,21 @@
 #!/bin/bash
 
 SETTINGS=$1
+FILE_DIR=$2
 
 source ${SETTINGS}
 
+##########################################################
+## create cpg/gene annotation files
 FILE=${FILE_DIR}/cpg_annotation.txt
-if [ ! -f "$FILE" ]; then
+if [ ! -f ${FILE} ]; then
     Rscript --vanilla create-cpg-annotation.r ${FILE}
 fi
 
 FILE=$(FILE_DIR)/gene_annotation.txt
-Rscript --vanilla create-gene-annotation.r ${FILE}
+if [ ! -f ${FILE} ]; then
+    Rscript --vanilla create-gene-annotation.r ${FILE}
+fi
 
 ##########################################################
 ## Initialise database

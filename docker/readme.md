@@ -3,9 +3,6 @@ This folder contains files needed to 'dockerize' the website:
 These files are copied to the website base directory by the
 project `Makefile` before building the docker container.
 
-There are scripts here for building the docker container (build.sh)
-and installing R in the container (install-r.sh). 
-
 The remainder of this document gives information
 for working with docker.
 
@@ -44,12 +41,12 @@ in again for this to take effect.
 
 Save the database (variables defined in settings.env):
 ```
-docker exec ewascatalog_db sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > ${FILES}/database-dump/dump.sql
+docker exec dev.ewascatalog_db sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > ${FILES}/database-dump/dump.sql
 ```
 
 Restore the database:
 ```
-docker exec -i ewascatalog_db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < ${FILES}/database-dump/dump.sql
+docker exec -i dev.ewascatalog_db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < ${FILES}/database-dump/dump.sql
 ```
 
 
