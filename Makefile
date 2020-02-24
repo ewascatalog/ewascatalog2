@@ -61,18 +61,16 @@ docker-start: $(WEBSITE_DIR)/manage.py
 docker-start: $(addprefix $(WEBSITE_DIR)/,$(DOCKER_FILES))
 docker-start:
 	cd $(WEBSITE_DIR); docker-compose up -d
-	$(eval IPADDRESS=$(shell docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-9.]*//g'))
-	@echo "Website is here: $(IPADDRESS):8000"
 
 installr:
 	cp docker/install-r.sh $(WEBSITE_DIR)
-	cd $(WEBSITE_DIR); docker-compose exec web cd code; bash install-r.sh
+	cd $(WEBSITE_DIR); docker-compose exec web bash -c "cd /code; bash install-r.sh"
 
 database:
 	cp -rv database $(WEBSITE_DIR)
 	cd $(WEBSITE_DIR); docker-compose-mount $(FILES_DIR) as volume at /files
 	cd $(WEBSITE_DIR); docker-compose exec db \
-		cd code/database; bash create.sh ../settings.env /files
+		bash -c "cd /code/database; bash create.sh ../settings.env /files"
 	cd $(WEBSITE_DIR); docker-compose-release volume mounted at /files
 
 docker-stop:
