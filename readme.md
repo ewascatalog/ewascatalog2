@@ -6,7 +6,7 @@ This repository contains all code related to the EWAS Catalog.
 The catalog website and database is installed by [Makefile] commands
 in a docker container. 
 
-> The file [not-docker.md] contains information about
+> The file <not-docker.md> contains information about
 > installing the EWAS Catalog outside of a docker container.
 
 Files are divided into the following directories:
