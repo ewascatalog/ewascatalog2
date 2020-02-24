@@ -56,7 +56,7 @@ docker-build:
 docker-start: $(WEBSITE_DIR)/manage.py
 docker-start: $(addprefix $(WEBSITE_DIR)/,$(DOCKER_FILES))
 docker-start:
-	bash docker/start.sh ${SETTINGS}
+	cd $(WEBSITE_DIR); docker-compose up -d
 
 installr:
 	bash docker/install-r.sh
@@ -67,10 +67,10 @@ database:
 		bash create.sh ../settings.env
 
 docker-stop:
-	bash docker/stop.sh ${SETTINGS}
+	cd $(WEBSITE_DIR); docker-compose stop
 
 docker-rm:
-	bash docker/rm.sh ${SETTINGS}
+	cd $(WEBSITE_DIR); docker-compose rm
 
 ## to do: command to update database
 ## to do: command to update website code

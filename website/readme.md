@@ -52,7 +52,8 @@ to define the EWAS Catalog website.
 
 ## Debugging Python access to the database
 
-Login and show the first p-value for CpG site 'cg00029284'
+Below is code for logging in to the database in Python
+and showing the first p-value for CpG site 'cg00029284'
 (*Note:* The value for "password" is
 the value `DATABASE_PASSWORD` in the file `settings.env`). 
 ```

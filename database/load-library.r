@@ -15,7 +15,7 @@ load.library <- function(pkg, bioc=F, ...) {
     if (!basename(pkg) %in% installed) {
       if (!"devtools" %in% installed)
         load.library("devtools")
-      devtools::install_git(pkg, ...)
+      devtools::install_github(pkg, ...)
       pkg <- basename(pkg)
     }
   }

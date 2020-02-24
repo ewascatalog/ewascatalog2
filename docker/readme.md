@@ -1,15 +1,13 @@
 This folder contains files needed to 'dockerize' the website:
-docker-compose.yml, Dockerfile, requirements.txt.
-These files are copied to the website base directory by the Makefile
-before building the docker container.
+`docker-compose.yml`, `Dockerfile`, `python-requirements.txt`.
+These files are copied to the website base directory by the
+project `Makefile` before building the docker container.
 
-Makefile executes scripts here for building the docker container (build.sh),
-starting the docker container (start.sh),
-stopping the docker container (stop.sh),
+There are scripts here for building the docker container (build.sh)
 and installing R in the container (install-r.sh). 
 
 The remainder of this document gives information
-for working with containers.
+for working with docker.
 
 ## If docker is not installed (on an Ubuntu machine) ...
 
@@ -41,43 +39,17 @@ sudo usermod -a -G docker [USER]
 You will need to log out and then back
 in again for this to take effect.
 
-## Navigate to the container website
-
-First obtain the container IP address.
-```
-docker inspect dev.ewascatalog | grep '"IPAddress"' | head -n 1
-```
-Make sure that this address is permitted in `website/website/settings.py`.
-
-Access the website here, e.g.
-```
-lynx [IP-ADDRESS]:8000
-```
-Note that the port is set in the 'gunicorn'
-startup command in docker-compose.yml.
-
-## Access to the docker container
-
-To get bash shell access to running container:
-```
-docker exec -it dev.ewascatalog bash
-```
-
-To copy a file from the host machine into a docker container:
-```
-docker cp local-file dev.ewascatalog:/destination-directory
-```
 
 ## Save/restore the database
 
-Save the database (variables refer to settings.env):
+Save the database (variables defined in settings.env):
 ```
-docker exec ewascatalog_db sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
+docker exec ewascatalog_db sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > ${FILES}/database-dump/dump.sql
 ```
 
 Restore the database:
 ```
-docker exec -i ewascatalog_db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < /some/path/on/your/host/all-databases.sql
+docker exec -i ewascatalog_db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < ${FILES}/database-dump/dump.sql
 ```
 
 

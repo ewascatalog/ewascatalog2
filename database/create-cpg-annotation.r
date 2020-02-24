@@ -27,7 +27,7 @@ source("load-library.r")
 load.library("data.table")
 load.library("Hmisc")
 load.library("dplyr")
-load.library("http://github.com/perishky/meffil")
+load.library("https://github.com/perishky/meffil")
 
 ###################################################################
 ##### Methylation annotation #####

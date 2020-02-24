@@ -15,5 +15,10 @@ ${DOCKEXEC} add-apt-repository 'deb https://cloud.r-project.org/bin/linux/debian
 ${DOCKEXEC} apt-get update
 ${DOCKEXEC} apt-get install -y r-base
 
-
+## the following are required for typical R packages
+${DOCKEXEC} apt install libcurl4-openssl-dev
+${DOCKEXEC} apt install libxml2-dev
+${DOCKEXEC} apt install libssl-dev
+${DOCKEXEC} apt install libcairo2-dev
+${DOCKEXEC} apt install libxt-dev
 

@@ -2,9 +2,6 @@
 
 These instructions are only needed to make the website available
 via an Apache2 webserver outside of docker container.
-This potentially makes development of the website
-a bit more convenient.
-
 
 ## Install necessary packages
 
@@ -40,10 +37,9 @@ Activate the environment.
 source ${WEBSITE_DIR}/ewascatalogenv/bin/activate
 ```
 
-Install the necessary packages by 
-running the `../website/install-dependencies.sh` script.
+Install the necessary Python packages:
 ```
-bash ../website/install-dependencies.sh
+pip install -r ../docker/python-requirements.txt
 ```
 
 Deactivate the virtual environment.
@@ -104,7 +100,7 @@ sudo a2ensite 000-default.conf
 systemctl reload apache2
 ```
 
-Finally the website Django server must be restarted.
+Finally the website Django server must be (re)started.
 ```
 python ${WEBSITE_DIR}/manage.py runserver
 ```
