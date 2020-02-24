@@ -1,11 +1,13 @@
 #!/bin/bash
 
 apt update
+apt upgrade 
 apt install -y dirmngr apt-transport-https ca-certificates software-properties-common gnupg2
 apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
-add-apt-repository 'deb https://cloud.r-project.org/bin/linux/debian stretch-cran35/'
+add-apt-repository 'deb https://cloud.r-project.org/bin/linux/debian buster-cran35/'
+  ## this repository name should match the debian version found in /etc/apt/sources.list
 apt update
-apt install -y r-base
+apt install -y r-base r-base-dev
 
 ## the following are required for typical R packages
 apt install libcurl4-openssl-dev
