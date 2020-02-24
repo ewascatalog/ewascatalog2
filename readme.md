@@ -3,17 +3,17 @@
 Instructions, code and data for installing the EWAS Catalog.
 
 This repository contains all code related to the EWAS Catalog.
-The catalog website and database is installed by [Makefile] commands
+The catalog website and database is installed by [Makefile](Makefile) commands
 in a docker container. 
 
-> The file <not-docker.md> contains information about
+> The file [not-docker.md](not-docker.md) contains information about
 > installing the EWAS Catalog outside of a docker container.
 
 Files are divided into the following directories:
 
 - `published-ewas`: collected published EWAS summary statistics
 - `website`: website python code (Django)
-- `database`: scripts for creating and populating the database from data found in the ${FILES_DIR} (see below)
+- `database`: scripts for creating and populating the database from data found in the `FILES_DIR` (see below)
 - `docker`: initialization files and scripts for installing the website and database within a docker container
 - `r-package`: R package for accessing the database
 - `logo`: logo graphics files
@@ -28,7 +28,7 @@ A copy is located here:
 You will need to at least set `WEBSITE_DIR` (the location of the running website when running)
 and `FILE_DIR` (the location of data files used to populate the database). 
 
-The file [Makefile] defines the system pipeline.
+The file [Makefile](Makefile) defines the system pipeline.
 You will need to make sure it can find `settings.env`.
 
 ## Running docker commands
@@ -44,7 +44,7 @@ will need to logout and then login.
 
 ## Installing the catalog as docker container
 
-The entire pipeline is defined in [Makefile].
+The entire pipeline is defined in [Makefile](Makefile).
 To build the entire catalog system from
 files to running container, running the following
 command in the current directory.

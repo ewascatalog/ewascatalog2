@@ -66,4 +66,4 @@ Here `${SETTINGS}` is the location of `settings.env`, and
 
 ## Web server
 
-See [../webserver/readme.md](../webserver/readme.md). 
+See [webserver/readme.md](webserver/readme.md). 

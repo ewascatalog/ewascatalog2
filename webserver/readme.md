@@ -54,7 +54,7 @@ to match our configuration defined by `settings.env`
 and copy it to the apache2 configuration directory:
 ```
 set -a
-. ../../settings.env && envsubst < 000-default.template > 000-default.conf
+. ${SETTINGS} && envsubst < 000-default.template > 000-default.conf
 set +a
 sudo mv 000-default.conf /etc/apache2/sites-available/
 ```
