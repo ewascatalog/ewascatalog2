@@ -87,7 +87,7 @@ You may need to update this information in `settings.env`.
 
 First obtain the container IP address.
 ```
-docker inspect dev.ewascatalog | grep '"IPAddress"' | head -n 1
+docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-9.]*//g'
 ```
 Make sure that this address is permitted in `website/website/settings.py`.
 

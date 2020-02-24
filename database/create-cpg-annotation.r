@@ -23,11 +23,10 @@ options(stringsAsFactors = F)
 #setwd()
 
 ##### Libraries ####
-source("load-library.r")
-load.library("data.table")
-load.library("Hmisc")
-load.library("dplyr")
-load.library("https://github.com/perishky/meffil")
+library(data.table)
+library(Hmisc)
+library(dplyr)
+library(meffil)
 
 ###################################################################
 ##### Methylation annotation #####
