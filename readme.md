@@ -111,6 +111,9 @@ docker cp local-file dev.ewascatalog:/destination-directory
 
 ## **To do**
 
+* Need to complete database construction commands in Makfile
+  Basically, just need to mount ${FILES_DIR} in the container.
+
 * Not known how published EWAS summary statistics get from
   'published-ewas/study-files/' to the tables in
   'files/published-ewas/'.  
@@ -124,3 +127,6 @@ docker cp local-file dev.ewascatalog:/destination-directory
   adding summary data to the database, this includes full statistics
   from GEO and ARIES as well as published studies (not sure there is
   a reason to have separate procedures and database tables for these).
+
+* Installing R packages in the container sometimes freezes my
+  office machine. It seems like there is some 

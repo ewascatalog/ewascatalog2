@@ -24,8 +24,3 @@ mkdir -p ${WEBSITE_DIR}/catalog/static/docs
 cp ${FILE_DIR}/catalog-download/ewascatalog.txt.gz \
    ${WEBSITE_DIR}/catalog/static/docs
 
-## set file permissions for web server
-chmod -R o-rwx ${WEBSITE_DIR}
-chgrp -R www-data ${WEBSITE_DIR}
-chmod -R g-w ${WEBSITE_DIR}
-chmod -R g+w ${WEBSITE_DIR}/catalog/static/tmp

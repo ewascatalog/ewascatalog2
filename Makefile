@@ -1,5 +1,12 @@
-## Makefile requires settings for variables FILE_DIR, WEBSITE_DIR and DB. 
-## These can be found in the following file:
+## Makefile requires settings for variables FILE_DIR, WEBSITE_DIR and the database
+
+FILE_DIR=../files
+## A copy of the FILE_DIR folder is here: /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2
+
+WEBSITE_DIR=../running
+## Base directory of the website directory
+
+## Database settings can be found in the settings.env file
 ##   /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/scripts/ewascatalog2/settings.env
 SETTINGS=../settings.env
 include $(SETTINGS)
@@ -32,7 +39,7 @@ all:
 	make website
 	make docker-build
 	make docker-start
-	make r
+	make installr
 	make database
 
 website: $(WEBSITE_DIR)/manage.py
@@ -40,18 +47,15 @@ website: $(WEBSITE_DIR)/manage.py
 $(WEBSITE_DIR)/manage.py: website/website/website/*.py
 $(WEBSITE_DIR)/manage.py: website/website/catalog/*.py
 $(WEBSITE_DIR)/manage.py:
-	bash website/install.sh $(WEBSITE_DIR) $(FILE_DIR) ${SETTINGS}
+	bash website/install.sh $(WEBSITE_DIR) $(FILE_DIR) $(SETTINGS)
 
-startwebsite: $(WEBSITE_DIR)/manage.py
-	python3 $< runserver
-
-DOCKER_FILES=Dockerfile docker-compose.yml requirements.txt
+DOCKER_FILES=Dockerfile docker-compose.yml python-requirements.txt
 
 docker-build: $(WEBSITE_DIR)/manage.py
 docker-build: $(addprefix docker/,$(DOCKER_FILES))
 docker-build:
-	bash docker/build.sh ${SETTINGS} \
-		$(addprefix docker/,$(DOCKER_FILES))
+	cp $(addprefix docker/, $(DOCKER_FILES)) $(WEBSITE_DIR)
+	cd $(WEBSITE_DIR); docker-compose build
 
 docker-start: $(WEBSITE_DIR)/manage.py
 docker-start: $(addprefix $(WEBSITE_DIR)/,$(DOCKER_FILES))
@@ -59,12 +63,16 @@ docker-start:
 	cd $(WEBSITE_DIR); docker-compose up -d
 
 installr:
-	bash docker/install-r.sh
+	cp docker/install-r.sh $(WEBSITE_DIR)
+	docker-compose exec -w /code/ dev.ewascatalog \
+		bash install-r.sh
 
 database:
 	cp -rv database $(WEBSITE_DIR}
+	docker-compose-mount $(FILES_DIR) as volume at /files
 	docker-compose exec -w /code/database dev.ewascatalog_db \
-		bash create.sh ../settings.env
+		bash create.sh ../settings.env /files
+	docker-compose-release volume mounted at /files
 
 docker-stop:
 	cd $(WEBSITE_DIR); docker-compose stop
@@ -74,4 +82,5 @@ docker-rm:
 
 ## to do: command to update database
 ## to do: command to update website code
+
 

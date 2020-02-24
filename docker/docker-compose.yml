@@ -14,5 +14,4 @@ db:
   image: mysql:5.7
   container_name: dev.ewascatalog_db
   volumes:
-    - ${FILE_DIR}:/files
     - .:/code
