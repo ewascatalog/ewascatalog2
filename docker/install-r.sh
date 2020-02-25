@@ -16,11 +16,7 @@ apt install libssl-dev
 apt install libcairo2-dev
 apt install libxt-dev
 
-Rscript -e "install.packages('data.table')"
-Rscript -e "install.packages('Hmisc')"
-Rscript -e "install.packages('dplyr')"
-Rscript -e "install.packages('devtools')"
-Rscript -e "install.packages('BiocManager')"
-Rscript -e "BiocManager::install('biomaRt')"
-Rscript -e "devtools::install_github('https://github.com/perishky/meffil')"
+
+
+
 

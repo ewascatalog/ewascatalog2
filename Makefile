@@ -67,10 +67,14 @@ docker-start: $(addprefix $(WEBSITE_DIR)/,$(DOCKER_FILES))
 docker-start:
 	cd $(WEBSITE_DIR); docker-compose up -d
 
-r:
+r: docker/install-r.sh docker/install-packages.r
 	cp docker/install-r.sh $(WEBSITE_DIR)
 	cd $(WEBSITE_DIR); docker-compose exec web \
 	        bash -c "cd /code; bash install-r.sh"
+	cp docker/install-packages.r $(WEBSITE_DIR)
+	cd $(WEBSITE_DIR); docker-compose exec web \
+	        bash -c "cd /code; Rscript install-packages.r"
+## could save time by saving contents of /usr/local/lib/R/site-library
 
 database:
 	cp -rv database $(WEBSITE_DIR)
@@ -78,12 +82,14 @@ database:
 	        bash -c "cd /code/database; bash create-annotations.sh /files"
 	cd $(WEBSITE_DIR); docker-compose exec db \
 		bash -c "cd /code/database; bash create.sh ../settings.env /files"
+## could save time by saving contents of /var/db/mysql/
 
 docker-stop:
 	cd $(WEBSITE_DIR); docker-compose stop
 
 docker-rm:
 	cd $(WEBSITE_DIR); docker-compose rm
+
 
 ## to do: command to update database
 ## to do: command to update website code
