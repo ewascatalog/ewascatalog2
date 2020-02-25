@@ -5,6 +5,8 @@ web:
   volumes:
     - .:/code
     - ${FILES_DIR}:/files
+  expose:
+    - 8000
   links:
     - db:db
   command: gunicorn website.wsgi:application --timeout 600 -w 2 -b :8000
@@ -13,9 +15,24 @@ db:
   env_file:
     - ./settings.env
   ports:
-    - '3306'
+    - 3306
   image: mysql:5.7
   container_name: dev.ewascatalog_db
   volumes:
     - .:/code
     - ${FILES_DIR}:/files
+
+nginx:
+  restart: always
+  build: ./webserver/
+  container_name: dev.ewascatalog_srv
+  volumes:
+    - .:/code
+  volumes_from:
+    - web
+  links:
+    - web:web
+  ports: 
+    - "8080:80"
+  links:
+    - web  

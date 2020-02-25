@@ -28,7 +28,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, "settings.env"))
 SECRET_KEY = env.str('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'ewascatalog.org', 'www.ewascatalog.org', 'it054408.users.bris.ac.uk', '172.17.0.3']
 
@@ -121,5 +121,5 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/' ## prefix of the url for static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'catalog', 'static') ## path to the static files

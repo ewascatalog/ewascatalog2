@@ -1,4 +1,4 @@
-# EWAS Catalog
+# EWAS Catalog website
 
 Instructions, code and data for installing the EWAS Catalog.
 
@@ -6,32 +6,27 @@ This repository contains all code related to the EWAS Catalog.
 The catalog website and database is installed by [Makefile](Makefile) commands
 in a docker container. 
 
-> The file [not-docker.md](not-docker.md) contains information about
-> installing the EWAS Catalog outside of a docker container.
-
 Files are divided into the following directories:
 
 - `published-ewas`: collected published EWAS summary statistics
 - `website`: website python code (Django)
 - `database`: scripts for creating and populating the database from data found in the `FILES_DIR` (see below)
 - `docker`: initialization files and scripts for installing the website and database within a docker container
+- `webserver`: configuration files for the webserver
 - `r-package`: R package for accessing the database
 - `logo`: logo graphics files
 
 ## Environment
 
-Required variables for defining the environment can be found in `settings.env`.
+Variables for the accessing the database can be found in `settings.env`.
 A copy is located here:
 ```
 /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/scripts/ewascatalog2/settings.env
 ```
-You will need to at least set `WEBSITE_DIR` (the location of the running website when running)
-and `FILE_DIR` (the location of data files used to populate the database). 
-
-The file [Makefile](Makefile) defines the system pipeline.
-You will need to make sure it can find `settings.env`.
 
 ## Running docker commands
+
+The system will run within a Docker container. 
 
 For a user to run docker commands,
 they will need to belong to the 'docker'
@@ -42,72 +37,83 @@ sudo usermod -a -G docker [USER]
 For this change to take effect, the user
 will need to logout and then login.
 
-## Installing the catalog as docker container
+## Building the EWAS Catalog
 
-The entire pipeline is defined in [Makefile](Makefile).
-To build the entire catalog system from
-files to running container, running the following
-command in the current directory.
+The entire pipeline is defined in [Makefile](Makefile)
+and the catalog can be built with the following command
+(when the current directory is the base directory
+of this repository):
 
 ```
 make all
 ```
 
-This command is defined as the following sequence of 'make' commands:
+*Before* running it, however, you will need to assign values to
+`FILES_DIR`, `WEBSITE_DIR` and `SETTINGS`.
 
-1. `make website`: copies the website to a requested directory (`WEBSITE_DIR` defined in `settings.env`).
-2. `make docker-build`: copy docker files to the website and builds the docker container.
-3. `make docker-start`: starts the docker container running.
-4. `make installr`: installs R in the running container.
-5. `make database`: copies database-related scripts to the container and then creates and populates the database.
+`FILES_DIR` should provide the path to the directory
+containing catalog data files.
+> A copy of this directory is here:
+> /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2
 
-## Managing the docker container
+`WEBSITE_DIR` should provide the path to the base directory
+where the website files will be located on the host machine.
 
-### Stopping the container
-```
-make docker-stop
-```
+`SETTINGS` should provide the path to the `settings.env` file
+described earlier.
 
-### Deleting the container
+That single step is actually composed of a sequence of several sub-steps:
 
-If the container is no longer needed or should be re-created,
-then the current container should be deleted:
-```
-make docker-rm
-```
+1. `make website`: copies the website to `WEBSITE_DIR`
+2. `make docker-build`: copy docker files to the website and build the docker container
+3. `make docker-start`: start the docker container running
+4. `make r`: install R in the running container
+5. `make database`: create and populates the database with EWAS summary statistics
 
-### Database access port and hostname
+## Navigating to the website
 
-The port and hostname for the database can be found in
-`/etc/mysql/my.cnf` or `/etc/mysql/mysql.conf.d/mysqld.cnf`
-in the container.
-You may need to update this information in `settings.env`.
+The website can be found at `localhost:8080`
+or `[host IP address]:8080` or `[host name]:8080`.
 
-### Accessing the container website
+## Making changes
 
-First obtain the container IP address.
-```
-docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-9.]*//g'
-```
-Make sure that this address is permitted in `website/website/settings.py`.
-Seems to be "172.17.0.3".
+Files used by the system can be found and modified in `WEBSITE_DIR`.
+For example, the query-generated TSV can be found in `WEBSITE_DIR/catalog/static/tmp`.
+The contents of some files can be changed while the system runs
+without having to restart.
 
-The URL on the local machine to the website will be
-the IP address followed by ":8000".  
-Note that the port is set in the 'gunicorn'
-startup command in docker/docker-compose.yml.
+Some changes will require restarting or rebuilding the container
+to have effect:
 
-### Command-line access to the docker container
+- `make docker-stop`: stop the container.  It can be restarted with `make docker-start`.
+- `make docker-rm`: remove the container.  To be started again, it will need to be rebuilt.
+  This command is needed if you want to make major changes to the system.
 
-To get bash shell access to running container:
+## Command-line access to docker
+
+To get bash shell access to the website running in the container:
 ```
 docker exec -it dev.ewascatalog bash
 ```
 
-### Copying files to the container
+For debugging purposes, it may be useful to look at:
+- web server (`dev.ewascatalog_srv`) logs in `/var/log/nginx`.
+- mysql (`dev.ewascatalog_db`) files in: `/var/db/mysql/`.
 
+## Database access port 
+
+The files `docker/docker-compose.yml` and `settings.env`
+refer to a port for accessing the MySQL database.
+It should match ports referenced in 
+`/etc/mysql/my.cnf` or `/etc/mysql/mysql.conf.d/mysqld.cnf`
+of the container.
+
+## Container IP address
+
+The container IP address is typically '172.17.0.3', but
+this can be verified:
 ```
-docker cp local-file dev.ewascatalog:/destination-directory
+docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-9.]*//g'
 ```
 
 ## **To do**
@@ -125,3 +131,6 @@ docker cp local-file dev.ewascatalog:/destination-directory
   adding summary data to the database, this includes full statistics
   from GEO and ARIES as well as published studies (not sure there is
   a reason to have separate procedures and database tables for these).
+
+* Should have a command in the Makefile for creating a backup of the
+  container. Building is pretty quick except for installing R packages ...

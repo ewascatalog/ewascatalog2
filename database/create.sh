@@ -16,8 +16,9 @@ DB_EXISTS=`echo $?`
 if [ ${DB_EXISTS} -eq 1 ]; then
     echo "Creating ${DB}"
     ${ROOT_CMD} -e "create database ${DB}"
-    ${ROOT_CMD} -e "grant select on *.* to '${DATABASE_USER}'@'%' identified by '${DATABASE_PASSWORD}'"
 fi
+
+${ROOT_CMD} -e "grant select on *.* to '${DATABASE_USER}'@'%' identified by '${DATABASE_PASSWORD}'"
 
 ##########################################################
 ## Create CpG table

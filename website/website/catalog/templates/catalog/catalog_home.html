@@ -15,6 +15,7 @@ p.big {
 {% extends 'catalog/base.html' %}
 
 {% block content %}
+{% load static %}
 
 <div class="information">
    <h1>Search</h1>
@@ -39,7 +40,7 @@ p.big {
       <a onclick="myFunction()" href="/?query=6:15000000-25000000">6:15000000-25000000</a>,
       <a onclick="myFunction()" href="/?query=body+mass+index">body mass index</a>.
       <center><p>&nbsp;</p> 
-      <p id="text" style="display:none"><img src="../../static/images/load.gif" width="80px" height="auto"/></p></center>
+      <p id="text" style="display:none"><img src="{% static 'images/load.gif' %}" width="80px" height="auto"/></p></center>
 
       
    </div>

@@ -1,11 +1,12 @@
 {% extends 'catalog/base.html' %}
 
 {% block content %}
+{% load static %}
 
 <div class="information">
    <h1>Data download</h1>
    <p class="small">&nbsp;</p> 
-   <a href='../../static/docs/ewascatalog.txt.gz' download style="font-size : 15pt" class="btn btn-default"><span class="glyphicon glyphicon-download-alt"></span> Download all results</a>
+   <a href="{% static "" %}/docs/ewascatalog.txt.gz" download style="font-size : 15pt" class="btn btn-default"><span class="glyphicon glyphicon-download-alt"></span> Download all results</a>
    <p class="small">&nbsp;</p> 
    <a name="variables"></a><p>NB: This dataset is a tab-deliminated tsv file.</p>
    <p class="small">&nbsp;</p> 

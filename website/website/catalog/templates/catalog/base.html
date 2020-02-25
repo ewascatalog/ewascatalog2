@@ -29,15 +29,15 @@
       </script>
       <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css"></style>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-      <link rel="stylesheet" href="../../static/css/static.css">
-      <link rel="shortcut icon" type="image/png" href="../../static/images/favicon.ico"/>
+      <link rel="stylesheet" href="{% static 'css/static.css' %}">
+      <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
    </head>
    <body>
       <div>
          <nav class="navbar navbar-inverse navbar-fixed-top">
             <div class="container">
             <div id="beta-icon" style="display: none">
-                <img src="../../static/images/logo1.png" width="35px" height="auto"/>
+                <img src={% static "images/logo1.png" %} width="35px" height="auto"/>
             </div>
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
@@ -46,7 +46,7 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>                        
                     </button>
-                    <a class="navbar-brand" href="{% url 'catalog_home' %}"><p><img src="../../static/images/logo1.png" width="30px" height="auto"/> EWAS Catalog</p></a>
+                    <a class="navbar-brand" href="{% url 'catalog_home' %}"><p><img src="{% static 'images/logo1.png' %}" width="30px" height="auto"/> EWAS Catalog</p></a>
                 </div>
                 <div class="collapse navbar-collapse" id="myNavbar">
                    <ul class="nav navbar-nav">
@@ -58,8 +58,8 @@
                        <li><a href="{% url 'catalog_download' %}">Download</a></li>
                    </ul>
                    <ul class="nav navbar-nav navbar-right"> 
-                      </li><a class="navbar-brand" href="http://www.bris.ac.uk/social-community-medicine/"><img src="../../static/images/bristol.png" width="80px" height="auto"/></a></li>
-                      </li><a class="navbar-brand" href="http://www.bristol.ac.uk/integrative-epidemiology/"><img src="../../static/images/ieu_nav.png" width="75px" height="auto"/></a></li>
+                      </li><a class="navbar-brand" href="http://www.bris.ac.uk/social-community-medicine/"><img src="{% static 'images/bristol.png' %}" width="80px" height="auto"/></a></li>
+                      </li><a class="navbar-brand" href="http://www.bristol.ac.uk/integrative-epidemiology/"><img src="{% static 'images/ieu_nav.png' %}" width="75px" height="auto"/></a></li>
                    </ul>
                 </div>
             </div>
@@ -68,7 +68,7 @@
       <div class="page-header">
       <div class="container">
          <h1> 
-            <img id="smallimage" src="../../static/images/logo2.png" width="180px" height="auto" style="float: left;"</img>
+            <img id="smallimage" src="{% static 'images/logo2.png' %}" width="180px" height="auto" style="float: left;"</img>
             <p class="information"> &nbsp;</p>
             <a href="/">  EWAS Catalog <sub>&beta;</sub> </a>
             <p id="small" class="h2">  The MRC-IEU catalog of epigenome-wide association studies</p>
@@ -90,10 +90,10 @@
       </div>
       <div class="footer">
          <p>
-            <a id="small" href="http://www.bris.ac.uk/social-community-medicine/"><img src="../../static/images/bristol_red.png" width="100px" height="auto"/></a>
-            <a id="small" href="http://www.bristol.ac.uk/integrative-epidemiology/"><img src="../../static/images/ieu.png" width="100px" height="auto"/></a>
+            <a id="small" href="http://www.bris.ac.uk/social-community-medicine/"><img src="{% static 'images/bristol_red.png' %}" width="100px" height="auto"/></a>
+            <a id="small" href="http://www.bristol.ac.uk/integrative-epidemiology/"><img src="{% static 'images/ieu.png' %}" width="100px" height="auto"/></a>
             Copyright © 2018 MRC-IEU University of Bristol. All rights reserved. <a href="{% url 'catalog_about' %}#terms">Terms of use</a>. 
-            <!--<a id="small" href="http://github.com/jrs95"><img src="../../static/images/owl1.png" width="50px" height="auto"/></a> -->
+            <!--<a id="small" href="http://github.com/jrs95"><img src="{% static 'images/owl1.png' %}" width="50px" height="auto"/></a> -->
          </p>
       </div>
    </body>

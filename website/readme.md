@@ -1,8 +1,9 @@
-The website code can be found in `website/`.
-All that this missing from there is the downloadable
+The website code can be found in the `website/` directory.
+
+All that is missing from there is the downloadable
 EWAS summary statistics file and `settings.env`.
 These files are copied into position when the website
-is setup in the project `Makefile`.
+is setup in the project [Makefile](../Makefile).
 
 ## How to modify the website
 
@@ -15,13 +16,13 @@ html templates files in the `templates` directory.
 
 ## Origins of the website files
 
-The basic template for the website was created using the following django command:
+The basic template for the website was created using Django:
 ```
 django-admin startproject website
 ```
 
 The SECRET_KEY in `website/website/settings.py` was then copied
-to the file `../settings.env` for security reasons.
+into `settings.env` for security reasons.
 
 The `website/website/settings.py` file was then edited to its current form.
 
@@ -48,24 +49,6 @@ python website/manage.py inspectdb
 Additional files and code were added to the
 `website/catalog` directory 
 to define the EWAS Catalog website.
-
-
-## Debugging Python access to the database
-
-Below is code for logging in to the database in Python
-and showing the first p-value for CpG site 'cg00029284'
-(*Note:* The value for "password" is
-the value `DATABASE_PASSWORD` in the file `settings.env`). 
-```
-import MySQLdb
-import MySQLdb.cursors
-db = MySQLdb.connect(host="127.0.0.1",user="ewas",password="password",db="ewascatalog")
-cur = db.cursor();
-cur.execute("select studies.*,results.* from results join studies on results.study_id=studies.study_id where cpg='cg00029284'")
-cols = [x[0] for x in cur.description]
-data = cur.fetchall();
-data[1][cols.index("p")] 
-```					
 
 
 

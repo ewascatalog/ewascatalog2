@@ -1,7 +1,9 @@
+# EWAS Catalog and Docker
+
 This folder contains files needed to 'dockerize' the website:
 `docker-compose.yml`, `Dockerfile`, `python-requirements.txt`.
 These files are copied to the website base directory by the
-project `Makefile` before building the docker container.
+project [Makefile](../Makefile) before building the docker container.
 
 The remainder of this document gives information
 for working with docker.
@@ -25,7 +27,7 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-## Add user to docker group
+## Docker group needed to run docker commands
 
 For a user to run docker commands,
 they will need to belong to the docker
@@ -36,19 +38,75 @@ sudo usermod -a -G docker [USER]
 You will need to log out and then back
 in again for this to take effect.
 
+## Defining the docker container environment
 
-## Save/restore the database (optional)
+Docker only needs `Dockerfile` to create the environment.
+However, we are using `docker-compose` which provides
+a slightly more convenient layer on top of docker,
+hence `docker-compose.yml`.
 
-Save the database (variables defined in settings.env):
+### `docker-compose.yml`
+
+This file defines the services, networks and volumes
+of the container.
+
+Below, we define three services, 'web', 'db' and 'nginx'. 
+
 ```
-docker exec dev.ewascatalog_db sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > ${FILES}/database-dump/dump.sql
+web:                                 ## name of service to reference in docker-compose commands
+  restart: always                    ## restart the service if at all possible
+  build: .                           ## host directory containing Dockerfile
+  container_name: dev.ewascatalog    ## name of container to reference in docker commands
+  volumes:                          
+    - .:/code                        ## volume at /code/ in container linking to host directory '.' 
+    - ${FILES_DIR}:/files            ## volume at /files/ in container linking to ${FILES_DIR} on host
+  links:
+    - db:db                          ## allows 'web' to access 'db' service using 'db' 
+  command: gunicorn website.wsgi:application --timeout 600 -w 2 -b :8000
+                                     ## use gunicorn communicate between the website and our python code
+				     ## note: 'application' object is created in our website/wsgi.py
+				   
+db:                                  ## name of service to reference in docker-compose commands 
+  env_file:
+    - ./settings.env                 ## variables defining the database environment/access
+  ports:
+    - '3306'                         ## mysql server port
+  image: mysql:5.7                   ## specify the docker image of the mysql server
+  container_name: dev.ewascatalog_db ## name of container to reference in docker commands
+  volumes:                           ## see above
+    - .:/code
+    - ${FILES_DIR}:/files
+
+nginx:                               ## name of webserver service (we use NGINX)
+  restart: always                    ## restart service if at all possible
+  build: ./webserver/                ## host directory containing the Dockerfile
+  container_name: dev.ewascatalog_srv
+  volumes:                           ## see above
+    - .:/code                        
+  volumes_from:
+    - web                   
+  links:                          
+    - web:web                        ## allows web server to access the website code as 'web'
+  ports: 
+    - "8080:80"                      ## website requests to the host machine at port 8080
+                                     ##  will be forwarded to port 80 of this container
+				     ##  where the nginx web server will be listening
 ```
 
-Restore the database:
-```
-docker exec -i dev.ewascatalog_db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < ${FILES}/database-dump/dump.sql
-```
 
+### Dockerfile python
+
+Commands for preparing the docker container.
+
+```
+FROM python:3                                ## use python3
+ENV PYTHONUNBUFFERED 1                       ## flush log messages immediately, no buffering
+RUN mkdir /code                              ## make the /code/ directory for the website
+WORKDIR /code                                ## set working directory to /code/
+ADD python-requirements.txt /code/           ## copy 'python-requirements.txt' to the container
+RUN pip install -r python-requirements.txt   ## install python libraries in the file
+ADD . /code/                                 ## copy the current directory (website) to /code/
+```
 
 
 

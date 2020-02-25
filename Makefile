@@ -22,7 +22,7 @@ include $(SETTINGS)
 ##   and build the docker container
 ## make docker-start
 ##   start the docker container running
-## make installr
+## make r
 ##   install R in the container
 ## make database 
 ##   create and populate the database for access
@@ -40,7 +40,7 @@ all:
 	make website
 	make docker-build
 	make docker-start
-	make installr
+	make r
 	make database
 
 website: $(WEBSITE_DIR)/manage.py
@@ -59,6 +59,7 @@ docker-build:
 	FILES_DIR=$(realpath $(FILES_DIR)) envsubst \
 	  < docker/docker-compose.yml \
 	  > $(WEBSITE_DIR)/docker-compose.yml
+	cp -r webserver $(WEBSITE_DIR)
 	cd $(WEBSITE_DIR); docker-compose build
 
 docker-start: $(WEBSITE_DIR)/manage.py
@@ -66,7 +67,7 @@ docker-start: $(addprefix $(WEBSITE_DIR)/,$(DOCKER_FILES))
 docker-start:
 	cd $(WEBSITE_DIR); docker-compose up -d
 
-installr:
+r:
 	cp docker/install-r.sh $(WEBSITE_DIR)
 	cd $(WEBSITE_DIR); docker-compose exec web \
 	        bash -c "cd /code; bash install-r.sh"
