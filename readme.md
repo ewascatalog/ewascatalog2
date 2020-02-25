@@ -53,8 +53,11 @@ make all
 
 `FILES_DIR` should provide the path to the directory
 containing catalog data files.
-> A copy of this directory is here:
-> /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2
+
+A copy of this directory is here:
+```
+/projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2
+```
 
 `WEBSITE_DIR` should provide the path to the base directory
 where the website files will be located on the host machine.
