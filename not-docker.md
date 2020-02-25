@@ -24,6 +24,9 @@ The port and hostname for the database can be found in
 `/etc/mysql/my.cnf` or `/etc/mysql/mysql.conf.d/mysqld.cnf`.
 You may need to update this information in `settings.env`.
 
+Note that `DATABASE_HOST` in `settings.env` will
+need to be changed from `db` (for docker) to `127.0.0.1`.
+
 ## Install R
 
 On an Ubuntu system, you'll need to do something like this:

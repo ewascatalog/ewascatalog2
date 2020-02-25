@@ -37,7 +37,7 @@ You will need to log out and then back
 in again for this to take effect.
 
 
-## Save/restore the database
+## Save/restore the database (optional)
 
 Save the database (variables defined in settings.env):
 ```

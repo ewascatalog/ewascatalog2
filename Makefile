@@ -1,7 +1,7 @@
 ## Makefile requires settings for variables FILE_DIR, WEBSITE_DIR and the database
 
-FILE_DIR=../files
-## A copy of the FILE_DIR folder is here: /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2
+FILES_DIR=../files
+## A copy of the FILES_DIR folder is here: /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2
 
 WEBSITE_DIR=../running
 ## Base directory of the website directory
@@ -34,6 +34,7 @@ include $(SETTINGS)
 ## make docker-rm
 ##   delete the docker container
 
+.PHONY: website docker-build docker-start r database docker-stop docker-rm
 
 all:
 	make website
@@ -47,7 +48,7 @@ website: $(WEBSITE_DIR)/manage.py
 $(WEBSITE_DIR)/manage.py: website/website/website/*.py
 $(WEBSITE_DIR)/manage.py: website/website/catalog/*.py
 $(WEBSITE_DIR)/manage.py:
-	bash website/install.sh $(WEBSITE_DIR) $(FILE_DIR) $(SETTINGS)
+	bash website/install.sh $(WEBSITE_DIR) $(FILES_DIR) $(SETTINGS)
 
 DOCKER_FILES=Dockerfile docker-compose.yml python-requirements.txt
 
@@ -55,6 +56,9 @@ docker-build: $(WEBSITE_DIR)/manage.py
 docker-build: $(addprefix docker/,$(DOCKER_FILES))
 docker-build:
 	cp $(addprefix docker/, $(DOCKER_FILES)) $(WEBSITE_DIR)
+	FILES_DIR=$(realpath $(FILES_DIR)) envsubst \
+	  < docker/docker-compose.yml \
+	  > $(WEBSITE_DIR)/docker-compose.yml
 	cd $(WEBSITE_DIR); docker-compose build
 
 docker-start: $(WEBSITE_DIR)/manage.py
@@ -64,14 +68,15 @@ docker-start:
 
 installr:
 	cp docker/install-r.sh $(WEBSITE_DIR)
-	cd $(WEBSITE_DIR); docker-compose exec web bash -c "cd /code; bash install-r.sh"
+	cd $(WEBSITE_DIR); docker-compose exec web \
+	        bash -c "cd /code; bash install-r.sh"
 
 database:
 	cp -rv database $(WEBSITE_DIR)
-	cd $(WEBSITE_DIR); docker-compose-mount $(FILES_DIR) as volume at /files
+	cd $(WEBSITE_DIR); docker-compose exec web \
+	        bash -c "cd /code/database; bash create-annotations.sh /files"
 	cd $(WEBSITE_DIR); docker-compose exec db \
 		bash -c "cd /code/database; bash create.sh ../settings.env /files"
-	cd $(WEBSITE_DIR); docker-compose-release volume mounted at /files
 
 docker-stop:
 	cd $(WEBSITE_DIR); docker-compose stop

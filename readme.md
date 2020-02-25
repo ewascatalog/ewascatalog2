@@ -90,6 +90,7 @@ First obtain the container IP address.
 docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-9.]*//g'
 ```
 Make sure that this address is permitted in `website/website/settings.py`.
+Seems to be "172.17.0.3".
 
 The URL on the local machine to the website will be
 the IP address followed by ":8000".  
@@ -111,9 +112,6 @@ docker cp local-file dev.ewascatalog:/destination-directory
 
 ## **To do**
 
-* Need to complete database construction commands in Makfile
-  Basically, just need to mount ${FILES_DIR} in the container.
-
 * Not known how published EWAS summary statistics get from
   'published-ewas/study-files/' to the tables in
   'files/published-ewas/'.  
@@ -123,10 +121,7 @@ docker cp local-file dev.ewascatalog:/destination-directory
   'files/aries-ewas/'. In fact, we may want a single procedure for all 
   EWAS with full summary data.  
 
-* In general, need a single method for
+* Need a single method for
   adding summary data to the database, this includes full statistics
   from GEO and ARIES as well as published studies (not sure there is
   a reason to have separate procedures and database tables for these).
-
-* Installing R packages in the container sometimes freezes my
-  office machine. It seems like there is some 
