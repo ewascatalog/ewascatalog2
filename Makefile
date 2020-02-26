@@ -84,6 +84,9 @@ database:
 		bash -c "cd /code/database; bash create.sh ../settings.env /files"
 ## could save time by saving contents of /var/db/mysql/
 
+update-website: website
+	cd $(WEBSITE_DIR); docker-compose restart web
+
 docker-stop:
 	cd $(WEBSITE_DIR); docker-compose stop
 
