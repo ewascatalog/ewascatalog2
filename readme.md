@@ -81,11 +81,14 @@ or `[host IP address]:8080` or `[host name]:8080`.
 
 Changes to the repository can be reflected in the running EWAS catalog as follows:
 
-- `website`: Run `make update-website` and reload the website in the browser.
+- `website/`: Run `make update-website` and reload the website in the browser.
   This will copy the files to the running website
-  and restart the 'web' docker container (defined [docker/docker-compose.yml](docker/docker-compose.yml)).
-- `database`: This is more complicated. Details can be found [database/readme.md](database/readme.md).
-- `docker`: Probably need to stop and start the whole thing (i.e. `make docker-stop` and then `make docker-start`).
+  and restart the 'web' docker service (defined [docker/docker-compose.yml](docker/docker-compose.yml)).
+- `database/`: This is more complicated. Details can be found [database/readme.md](database/readme.md).
+- `docker/`: Probably need to stop and start the whole thing (i.e. `make docker-stop` and then `make docker-start`).
+- `webserver/`: Run `make update-webserver` and reload the website in the browser.
+  This will copy the files to the running website
+  and restart the 'nginx' docker service (defined [docker/docker-compose.yml](docker/docker-compose.yml)).
 
 Note that the running website will be accessing files in `WEBSITE_DIR`.
 It is possible to edit files in `WEBSITE_DIR/catalog/static`

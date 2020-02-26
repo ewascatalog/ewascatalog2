@@ -87,6 +87,12 @@ database:
 update-website: website
 	cd $(WEBSITE_DIR); docker-compose restart web
 
+update-webserver: 
+	cp -r webserver $(WEBSITE_DIR)
+	cd $(WEBSITE_DIR); docker-compose stop nginx
+	cd $(WEBSITE_DIR); docker-compose build nginx
+	cd $(WEBSITE_DIR); docker-compose start nginx
+
 docker-stop:
 	cd $(WEBSITE_DIR); docker-compose stop
 
@@ -95,6 +101,6 @@ docker-rm:
 
 
 ## to do: command to update database
-## to do: command to update website code
+
 
 
