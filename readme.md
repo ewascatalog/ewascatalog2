@@ -128,7 +128,9 @@ this can be verified:
 docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-9.]*//g'
 ```
 
-## **To do**
+## Next steps
+
+### To do
 
 * Not known how published EWAS summary statistics get from
   'published-ewas/study-files/' to the tables in
@@ -146,3 +148,15 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 
 * Should have a command in the Makefile for creating a backup of the
   container. Building is pretty quick except for installing R packages ...
+    
+### Errors
+    
+* 'Acetoacetate' is an ARIES EWAS trait but searching for it produces 
+  no results.
+
+### New features
+
+* Create an intermediate page between search and results that allows the 
+  user to refine their query (e.g. related trait, particular study).
+
+* Enrichment test for a set of CpG sites
