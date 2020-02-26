@@ -12,7 +12,7 @@ create and populate the database.
 
 `create-annotations.sh` generates files
 `cpg-annotation.txt` and `gene-anntoation.txt` using R scripts
-(in the `${FILES_DIR}` directory defined in [Makefile](../Makefile)).
+(in the `FILES_DIR` directory defined in [Makefile](../Makefile)).
 
 `create.sh` uses these files to create the 'cpgs' and 'genes'
 tables and files from `${FILES_DIR}/published-ewas` to create

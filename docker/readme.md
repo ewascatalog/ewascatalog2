@@ -3,7 +3,7 @@
 This folder contains files needed to 'dockerize' the website:
 `docker-compose.yml`, `Dockerfile`, `python-requirements.txt`.
 These files are copied to the website base directory by the
-project [Makefile](../Makefile) before building the docker container.
+project [Makefile](../Makefile) before building the docker containers.
 
 The remainder of this document gives information
 for working with docker.
@@ -40,9 +40,10 @@ in again for this to take effect.
 
 ## Defining the docker container environment
 
-Docker only needs `Dockerfile` to create the environment.
+Docker itself only looks at a `Dockerfile` to create the environment.
 However, we are using `docker-compose` which provides
-a slightly more convenient layer on top of docker,
+a more convenient layer on top of docker
+for defining multiple cooperating containers,
 hence `docker-compose.yml`.
 
 ### `docker-compose.yml`
@@ -90,11 +91,11 @@ nginx:                               ## name of webserver service (we use NGINX)
   ports: 
     - "8080:80"                      ## website requests to the host machine at port 8080
                                      ##  will be forwarded to port 80 of this container
-				     ##  where the nginx web server will be listening
+                				     ##  where the nginx web server will be listening
 ```
 
 
-### Dockerfile python
+### Dockerfile for python requirements
 
 Commands for preparing the docker container.
 
