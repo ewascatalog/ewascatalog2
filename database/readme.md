@@ -2,7 +2,7 @@
 
 The scripts in this directory are for creating and populating the database.
 
-These scripts are all copied to the docker container by the
+The scripts are all copied to the docker container by the
 [Makefile](../Makefile)
 and then, in the container,
 `create-annotations.sh` is executed to create
@@ -33,7 +33,15 @@ ROOT_CMD="mysql -uroot -p${MYSQL_ROOT_PASSWORD}"
 ${ROOT_CMD} ${DB} -e "drop database ${DB}" 
 ## or just delete the cpgs table
 ${ROOT_CMD} ${DB} -e "drop table cpgs"
+## recreate anything that was deleted using updated code/data files
+make database
 ```
 
-
-
+It is possible to get direct access to the running database
+and experiment with changes.
+```
+## start a bash session in the database container
+docker exec -it dev.ewascatalog_db bash
+## start a mysql session (see settings.env for password) 
+mysql -uroot -p${MYSQL_ROOT_PASSWORD} ewascatalog
+```

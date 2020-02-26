@@ -49,11 +49,10 @@ make all
 ```
 
 *Before* running it, however, you will need to assign values to
-`FILES_DIR`, `WEBSITE_DIR` and `SETTINGS`.
+variables `FILES_DIR`, `WEBSITE_DIR` and `SETTINGS` in [Makefile](Makefile).
 
 `FILES_DIR` should provide the path to the directory
 containing catalog data files.
-
 A copy of this directory is here:
 ```
 /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2
@@ -71,7 +70,7 @@ That single step is actually composed of a sequence of several sub-steps:
 2. `make docker-build`: copy docker files to the website and build the docker container
 3. `make docker-start`: start the docker container running
 4. `make r`: install R in the running container
-5. `make database`: create and populates the database with EWAS summary statistics
+5. `make database`: create and populate the database with EWAS summary statistics
 
 ## Navigating to the website
 
@@ -80,19 +79,26 @@ or `[host IP address]:8080` or `[host name]:8080`.
 
 ## Making changes
 
-Files used by the system can be found and modified in `WEBSITE_DIR`.
-For example, the query-generated TSV can be found in `WEBSITE_DIR/catalog/static/tmp`.
-The contents of some files can be changed while the system runs
-without having to restart.
+Changes to the repository can be reflected in the running EWAS catalog as follows:
 
-Some changes will require restarting or rebuilding the container
-to have effect:
+- `website`: Run `make update-website` and reload the website in the browser.
+  This will copy the files to the running website
+  and restart the 'web' docker container (defined [docker/docker-compose.yml](docker/docker-compose.yml)).
+- `database`: This is more complicated. Details can be found [database/readme.md](database/readme.md).
+- `docker`: Probably need to stop and start the whole thing (i.e. `make docker-stop` and then `make docker-start`).
 
-- `make docker-stop`: stop the container.  It can be restarted with `make docker-start`.
-- `make docker-rm`: remove the container.  To be started again, it will need to be rebuilt.
-  This command is needed if you want to make major changes to the system.
+Note that the running website will be accessing files in `WEBSITE_DIR`.
+It is possible to edit files in `WEBSITE_DIR/catalog/static`
+and `WEBSITE_DIR/catalog/template` directly and observe the effects.
+Query-generated TSV files will appear here: `WEBSITE_DIR/catalog/static/tmp`.
 
-## Command-line access to docker
+To completely take the whole system down and rebuild,
+it will need to be stopped (`make docker-stop`),
+the docker containers deleted (`make docker-rm`),
+the files deleted (`sudo rm -r WEBSITE_DIR`),
+and rebuilt (`make all`).
+
+## Command-line access to running docker containers
 
 To get bash shell access to the website running in the container:
 ```
@@ -100,8 +106,8 @@ docker exec -it dev.ewascatalog bash
 ```
 
 For debugging purposes, it may be useful to look at:
-- web server (`dev.ewascatalog_srv`) logs in `/var/log/nginx`.
-- mysql (`dev.ewascatalog_db`) files in: `/var/db/mysql/`.
+- web server (`docker exec -it dev.ewascatalog_srv`) logs in `/var/log/nginx`.
+- mysql (`docker exec -it dev.ewascatalog_db`) files in: `/var/db/mysql/`.
 
 ## Database access port 
 
