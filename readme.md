@@ -156,7 +156,7 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 
 * Searching for gene names only works if the name is in all caps.
 
-* When ZOOMA is down you can't search for in the database at all.
+* When ZOOMA is down you can't search for traits in the database at all.
 
 ### New features
 
