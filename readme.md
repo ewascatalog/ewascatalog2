@@ -154,6 +154,10 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 * 'Acetoacetate' is an ARIES EWAS trait but searching for it produces 
   no results.
 
+* Searching for gene names only works if the name is in all caps.
+
+* When ZOOMA is down you can't search for in the database at all.
+
 ### New features
 
 * Create an intermediate page between search and results that allows the 
