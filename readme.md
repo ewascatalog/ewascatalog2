@@ -154,6 +154,8 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
   container. Building is pretty quick except for installing R packages ...
 
 * Update the acknowledgements section on the about page https://www.ewascatalog.org/about. Just need to add names to the template file.
+
+* Contact PACE members for full summary statistics of already published articles. Try Gemma first and test out the upload page (see New features below)
     
 ### Errors
     
