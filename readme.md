@@ -166,6 +166,8 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 
 * When ZOOMA is down you can't search for traits in the database at all.
 
+* No P-values for ARIES analysis on website. They're present on the original website.
+
 ### New features
 
 * Create an intermediate page between search and results that allows the 
