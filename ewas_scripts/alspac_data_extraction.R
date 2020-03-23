@@ -116,66 +116,75 @@ all_labels <- map_df(seq_along(res), function(x) {
 	return(out)
 })
 
-grep("age", nams, value = T, ignore.case = T)
 
 # ------------------------------------------------------------------------------------
-# extracting age of participant for each questionnaire
+# Start cleaning data
 # ------------------------------------------------------------------------------------
-grep("_age_", colnames(res), value = T, ignore.case = T)
-age_info <- c("Mother's_age_on_completion_of_questionnaire", 
-	# "NAT_mothers_age_at_birth",  -- means age of Mum's mum
-	# "Nat_mothers_age_now",  -- means age of Mum's mum
-	"DV:_Maternal_age_in_years_at_completion_of_'Your_Pregnancy'_questionnaire:_C_fil", 
-	# "Age_at_attendance_(years):_FOF1", -- Dad's age
-	"Age_at_attendance_(years):_FOM1",
-	"Age_at_attendance_(years):_FOM2",
-	"Age_at_attendance_(years):_FOM3",
-	"Age_at_attendance_(years):_FOM4",
-	"Age_participant_had_BCG_(years):_FOM4",
-	"Age_of_child_at_completion_(months)",
-	"DV:_Age_of_child_at_completion_(months)",
-	"DV:_Age_of_child_at_completion_(weeks)",
-	"DV:_Assumptions_made_in_calculating_child's_age_at_completion",
-	"DV:_Age_of_mother_at_completion_(years)",
-	"DV:_Age_of_Mother_At_Completion_(Years)",
-	"Age_of_Child_At_Completion_(Years)",
-	"DV:_Age_of_study_child_at_completion_(months)", 
-	"DV:_Age_of_study_child_at_completion_(weeks)", 
-	"DV:_Age_of_respondent_at_completion_of_questionnaire_(years)", 
-	"DV:_Age_of_study_child_at_completion_of_questionnaire_(months)", 
-	"DV:_Age_of_study_child_at_completion_of_questionnaire_(weeks)", 
-	"DV:_Age_of_respondent_at_completion_of_questionnaire_(years)", 
-	"DV:_Age_of_study_child_at_completion_(months)", 
-	"DV:_Age_of_study_child_at_completion_(weeks)", 
-	"DV:_Age_of_respondent_at_completion_of_questionnaire_(years)", 
-	"DV:_Age_of_study_child_at_completion_(months)", 
-	"DV:_Age_of_study_child_at_completion_(weeks)", 
-	"DV:_Age_of_Mother_At_Completion_(Years)", 
-	"DV:_Age_of_study_child_at_completion_(months)", 
-	"DV:_Age_of_study_child_at_completion_(weeks)", 
-	"DV:_Age_of_respondent_at_completion_of_questionnaire_(years)", 
-	"DV:_Age_of_study_child_at_completion_(months)", 
-	"DV:_Age_of_study_child_at_completion_(weeks)", 
-	"DV:_Age_of_respondent_at_completion_of_questionnaire_(years)", 
-	"DV:_Age_of_study_child_at_completion_(months)", 
-	"DV:_Age_of_study_child_at_completion_(weeks)",
-	"DV:_Age_of_respondent_at_completion_of_questionnaire_(years)", 
-	"DV:_Age_of_study_child_at_completion_(months)",
-	"DV:_Age_of_study_child_at_completion_(weeks)", 
-	"DV:_Age_of_study_child_at_completion_(years)", 
-	"DV:_YP's_age_in_years_at_time_questionnaire_was_completed", 
-	"DV:_Mothers_age_in_years_at_time_questionnaire_was_completed", 
-	"DV:_Age_of_study_child_at_completion_(months)", 
-	"DV:_Age_of_study_child_at_completion_(weeks)", 
-	"DV:_Age_of_carer_at_completion_(years)", 
-	"DV:_Age_of_study_child_at_telephone_interview_(months)", 
-	"DV:_Age_of_study_child_at_telephone_interview_(weeks)", 
-	"DV:_Age_of_carer_at_telephone_interview_(years)",
-	"DV:_F1_F2:_Maternal_age_in_years_at_completion_of__'About_Yourself'_questionnair", 
-	"DV:_H1_H2:_Maternal_age_in_years_at_completion_of_'Me_and_My_Baby'_questionnaire", 
-	"DV:_N2_N3:_Maternal_age_in_years_at_completion_of_'Caring_for_a_Toddler'_questio", 
-	"DV:_Mothers_age_in_years_at_time_questionnaire_was_completed"
-	)
+
+# making the data factors makes it easy to extract extra data labels!
+fact_res <- as_factor(res)
+# find the variables that signify missing or withdrawn consent data
+unique(all_labels$lab)
+
+na_vars <- unique(c(grep("missing|consent", all_labels$lab, ignore.case = TRUE, value = TRUE),
+				  "Mother of trip/quad", 
+				  "Did not attend clinic", 
+				  "Unresolvable", 
+				  "Value outside possibel range (negative value)", 
+				  "Insufficient sample for analysis", 
+				  grep("Out of detectable range", all_labels$lab, value = TRUE), 
+				  "Outside of standard calibration curve (<780 ng/ml or >100,000 ng/ml)", 
+				  "Insufficient sample for assay", 
+				  grep("detection limit of test", all_labels$lab, value = TRUE)
+				  ))
+
+
+fact_res[] <- lapply(seq_along(fact_res), function(x) {
+	var <- fact_res[[x]] 
+	out <- mapvalues(var, from=na_vars, to=rep(NA, length(na_vars)))
+	return(out)
+})
+
+cat_vars <- map_chr(seq_along(fact_res), function(x) {
+	phen_levels <- levels(fact_res[[x]])
+	if (is.null(phen_levels)) return("NULL")
+	# remove missing and consent withdrawn
+	phen_levels <- phen_levels[-grep("missing|consent", phen_levels, ignore.case = TRUE)]
+	if (length(phen_levels) < 20 & length(phen_levels) > 2) {
+		return(colnames(fact_res[x]))
+	} else {
+		return("NULL")
+	}
+})
+cat_vars <- cat_vars[cat_vars != "NULL"]
+cat_var_full_names <- get_full_names(res[, cat_vars])
+# no categorical variables!!! --> WOOP WOOP!
+
+# --------------------------------------------------------------
+# remove phenotypes with too much missing data
+# --------------------------------------------------------------
+missing_dat <- map_df(seq_along(fact_res), function(x) {
+	out <- data.frame(phen = colnames(fact_res[x]), na_count = sum(is.na(fact_res[[x]])))
+	return(out)
+})
+sum(missing_dat$na_count > nrow(res)/2) # 18 phenotypes have over 50% missing data
+to_rm <- missing_dat[missing_dat$na_count > nrow(res)/2, "phen"]
+res2 <- fact_res %>%
+	dplyr::select(-one_of(to_rm))
+
+# select only variables left
+#### CHANGE THIS!!!!!!
+res2[,-c(1:3)] <- lapply(seq_along(res2)[-c(1:3)], function(x) {
+	print(x)
+	var <- res2[[x]]
+	label <- attributes(var)$label
+	out <- unfactor(var)
+	attributes(out)$label <- label
+	return(out)
+})
+dim(res2)
+
+
 age_info <- age_info[!duplicated(age_info)]
 
 str(res[,1:10])
