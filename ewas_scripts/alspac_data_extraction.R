@@ -14,6 +14,7 @@ alspac_data_dir <- args[2]
 output_path <- args[3]
 aries_ids <- args[4]
 timepoints <- args[5]
+password <- args[6]
 message("working directory is: ", wd)
 message("alspac data directory is: ", alspac_data_dir)
 message("the ouput path is: ", output_path)
@@ -45,42 +46,30 @@ data(useful)
 # -------------------------------------------------------
 
 # Read in the ARIES IDs and extract ones from timepoint of interest
-IDs <- read.delim("", header = T, stringsAsFactors = F)
+IDs <- read_tsv(aries_ids)
 IDs <- dplyr::filter(IDs, time_point == timepoints)
 str(IDs)
 
 # -------------------------------------------------------
-# Extract all the Mum's data in ALSPAC
+# extraction setup
 # -------------------------------------------------------
 
-if (timepoints %in% c("FOM", "antenatel")) {
-	tim <- c("Adult", "Mother")
-} else if (timepoints %in% c("FOF")) {
-	tim <- c("Adult", "Father")
-} else {
-	tim <- c("Child")
+if ("FOM" %in% timepoints) {
+	tim_dat <- "FOM1"
+	file <- "FOM1_3a.dta"
 }
 
+new_current <- current %>%
+	dplyr::filter(obj %in% file)
 
-# Get adult data
-unique(current$path)
-
-# paths of interest -- DOUBLE CHECK THIS!
-PoI <- c(
-
-)
+# paths of interest
+# PoI <- c()
 
 labs_to_na <- function(x) {
 	labs <- attr(x, "labels")
 	x[x %in% labs] <- NA
 	return(x)
 }
-
-### REMOVING SOCIAL CLASS AND OBSTETRIC BECAUSE AGE OF PARTICIPANT NOT EASILY ACCESSIBLE!!!
-
-# for ewas catalog:
-new_current <- current %>%
-	dplyr::filter(path %in% PoI[-c(1, 3, 6)])
 
 # ------------------------------------------------------------------------------------
 # Extract data 
@@ -94,7 +83,7 @@ mult_cols <- grep("mult", colnames(result), value = T)
 
 res <- result[, !(colnames(result) %in% mult_cols)]
 dim(new_current)
-dup_names <- new_current[duplicated(new_current$name),"name"]
+dup_names <- new_current[duplicated(new_current$name), "name"]
 # just aln is duplicated! 
 new_current <- dplyr::filter(new_current, name %in% colnames(res)) %>%
 	filter(!duplicated(name))
