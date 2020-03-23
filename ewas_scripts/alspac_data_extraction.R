@@ -25,7 +25,7 @@ stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
 stopifnot(file.exists(aries_ids))
 
-pkgs <- c("alspac", "tidyverse", "haven", "readxl")
+pkgs <- c("alspac", "tidyverse", "haven", "readxl", "varhandle")
 lapply(pkgs, require, character.only = T)
 setDataDir(alspac_data_dir)
 
@@ -173,10 +173,12 @@ res2 <- fact_res %>%
 	dplyr::select(-one_of(to_rm))
 
 # select only variables left
-#### CHANGE THIS!!!!!!
-res2[,-c(1:3)] <- lapply(seq_along(res2)[-c(1:3)], function(x) {
+x <- seq_along(res2)[1]
+res2[] <- lapply(seq_along(res2), function(x) {
 	print(x)
+	col_nam <- colnames(res2)[x]
 	var <- res2[[x]]
+	if (col_nam %in% c("aln", qlet_cols)) return(var)
 	label <- attributes(var)$label
 	out <- unfactor(var)
 	attributes(out)$label <- label
@@ -184,8 +186,67 @@ res2[,-c(1:3)] <- lapply(seq_along(res2)[-c(1:3)], function(x) {
 })
 dim(res2)
 
+# ------------------------------------------------------------------------------------
+# Sorting binary vals
+# ------------------------------------------------------------------------------------
+is.binary <- function(v) {
+  x <- unique(v)
+  length(x) - sum(is.na(x)) == 2L
+}
 
-age_info <- age_info[!duplicated(age_info)]
+bin_vars <- map_lgl(res2, is.binary)
+
+res_bin <- res2[, bin_vars]
+res2 <- res2[, !(colnames(res2) %in% colnames(res_bin))]
+
+# removing any extra labels! 
+res2[] <- lapply(seq_along(res2), function(x) {
+	col_nam <- colnames(res2)[x]
+	var <- res2[[x]]
+	print(x)
+	if (col_nam %in% c("aln", qlet_cols)) return(var)
+	label <- attributes(var)$label
+	out <- as.numeric(var)
+	attributes(out)$label <- label
+	return(out)
+})
+
+# Removal of categories where there are <100 values
+missing <- sapply(res2, function(x) {sum(is.na(x))})
+names(missing)
+vars_rm <- missing[missing > (nrow(res2) / 2)]
+length(vars_rm) # 9 variables removed due to lack of people
+res3 <- res2 %>%
+	dplyr::select(-one_of(names(vars_rm)))
+dim(res3)
+
+uniq_vals <- sapply(res_bin, function(x) length(unique(x[!is.na(x)])))
+# remove any without 2 unique values
+to_rm <- names(uniq_vals)[uniq_vals != 2]
+res_bin <- res_bin[, !(colnames(res_bin) %in% to_rm)]
+
+# remove binary variables with too few cases
+# -- removing if less than 10% cases or controls
+few_cases <- apply(res_bin, 2, function(x) {sum(unique(x)[1] == x, na.rm = T) < (nrow(res_bin) / 10)})
+few_controls <- apply(res_bin, 2, function(x) {sum(unique(x)[2] == x, na.rm = T) < (nrow(res_bin) / 10)})
+
+cc_var_rm <- unique(c(names(which(few_controls)), names(which(few_cases))))
+cc_var_rm <- cc_var_rm[!cc_var_rm %in% qlet_cols]
+length(cc_var_rm) # 51
+res_bin <- dplyr::select(res_bin, -one_of(cc_var_rm))
+
+# remove binary variables with too much missing
+missing <- sapply(res_bin, function(x) {sum(is.na(x))})
+names(missing)
+vars_rm <- missing[missing > (nrow(res_bin)/2)]
+length(vars_rm) # 0 variables removed due to lack of people
+
+res3 <- cbind(res3, res_bin)
+dim(res3)
+# ------------------------------------------------------------------------------------
+# Finishing tidying data + saving it all
+# ------------------------------------------------------------------------------------
+
 
 str(res[,1:10])
 
