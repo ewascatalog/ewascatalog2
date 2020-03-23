@@ -9,8 +9,16 @@
 # 3. access to alspac data (duhhh)
 
 args <- commandArgs(trailingOnly = TRUE)
-path <- args[1]
-setwd(path)
+wd <- args[1]
+alspac_data_dir <- args[2]
+output_path <- args[3]
+message("working directory is: ", wd)
+message("alspac data directory is: ", alspac_data_dir)
+message("the ouput path is: ", output_path)
+setwd(wd)
+stopifnot(file.exists(output_path))
+stopifnot(file.exists(alspac_data_dir))
+
 # library(devtools)
 # document()
 # build()
@@ -21,9 +29,10 @@ setwd(path)
 
 pkgs <- c("alspac", "tidyverse", "haven", "readxl")
 lapply(pkgs, require, character.only = T)
-setDataDir("")
+setDataDir(alspac_data_dir)
+stopifnot(file.exists(alspac_data_dir))
 
-devtools::load_all("")
+# devtools::load_all("")
 # devtools::load_all("") # not sure if works!!!
 
 data(current)
