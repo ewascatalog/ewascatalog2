@@ -132,6 +132,8 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 
 ### To do
 
+* Move repo over to the shark server and get it running as the main website.
+
 * Not known how published EWAS summary statistics get from
   'published-ewas/study-files/' to the tables in
   'files/published-ewas/'.  
@@ -146,13 +148,25 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
   from GEO and ARIES as well as published studies (not sure there is
   a reason to have separate procedures and database tables for these).
 
+* Make sure GEO and ARIES data are being queried.
+
 * Should have a command in the Makefile for creating a backup of the
   container. Building is pretty quick except for installing R packages ...
+
+* Update the acknowledgements section on the about page http://www.ewascatalog.org/about. Just need to add names to the template file.
+
+* Contact PACE members for full summary statistics of already published articles. Try Gemma first and test out the upload page (see New features below)
     
 ### Errors
     
 * 'Acetoacetate' is an ARIES EWAS trait but searching for it produces 
   no results.
+
+* Searching for gene names only works if the name is in all caps.
+
+* When ZOOMA is down you can't search for traits in the database at all.
+
+* No P-values for ARIES analysis on website. They're present on the original website.
 
 ### New features
 
@@ -160,3 +174,6 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
   user to refine their query (e.g. related trait, particular study).
 
 * Enrichment test for a set of CpG sites
+
+* Create an upload page for full summary statistics. This should cotain: Clear details on how to access the full dataset (data will be put on Zenoto and have a DOI), some boxes to fill in for the study details, an upload button (with details on format data needs to be in).
+
