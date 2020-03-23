@@ -13,34 +13,26 @@ wd <- args[1]
 alspac_data_dir <- args[2]
 output_path <- args[3]
 aries_ids <- args[4]
+timepoints <- args[5]
 message("working directory is: ", wd)
 message("alspac data directory is: ", alspac_data_dir)
 message("the ouput path is: ", output_path)
 message("the ARIES ID file is: ", aries_ids)
+message("timepoints are: ", timepoints)
 setwd(wd)
 stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
 stopifnot(file.exists(aries_ids))
 
-# library(devtools)
-# document()
-# build()
-# install()
-#install.packages("devtools")
-#library(devtools)
-#install_github("thomasbattram/alspac")
-
 pkgs <- c("alspac", "tidyverse", "haven", "readxl")
 lapply(pkgs, require, character.only = T)
 setDataDir(alspac_data_dir)
-stopifnot(file.exists(alspac_data_dir))
 
 # devtools::load_all("")
 # devtools::load_all("") # not sure if works!!!
 
 data(current)
 data(useful)
-timepoints <- c("FOM")
 
 # -------------------------------------------------------
 # RUN THIS TO UPDATE THE DICTIONARIES
