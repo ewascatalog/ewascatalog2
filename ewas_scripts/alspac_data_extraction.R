@@ -12,12 +12,15 @@ args <- commandArgs(trailingOnly = TRUE)
 wd <- args[1]
 alspac_data_dir <- args[2]
 output_path <- args[3]
+aries_ids <- args[4]
 message("working directory is: ", wd)
 message("alspac data directory is: ", alspac_data_dir)
 message("the ouput path is: ", output_path)
+message("the ARIES ID file is: ", aries_ids)
 setwd(wd)
 stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
+stopifnot(file.exists(aries_ids))
 
 # library(devtools)
 # document()
