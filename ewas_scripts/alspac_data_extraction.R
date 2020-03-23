@@ -50,17 +50,17 @@ IDs <- read_tsv(aries_ids)
 IDs <- dplyr::filter(IDs, time_point == timepoints)
 str(IDs)
 
-# -------------------------------------------------------
-# extraction setup
-# -------------------------------------------------------
+# ------------------------------------------------------------------------------------
+# Extract data 
+# ------------------------------------------------------------------------------------
 
 if ("FOM" %in% timepoints) {
 	tim_dat <- "FOM1"
-	file <- "FOM1_3a.dta"
+	vars_of_interest <- grep(tim_dat, current$lab, value = T)
 }
 
 new_current <- current %>%
-	dplyr::filter(obj %in% file)
+	dplyr::filter(lab %in% vars_of_interest)
 
 # paths of interest
 # PoI <- c()
@@ -71,51 +71,53 @@ labs_to_na <- function(x) {
 	return(x)
 }
 
-# ------------------------------------------------------------------------------------
-# Extract data 
-# ------------------------------------------------------------------------------------
-# Questionairre data
+# extraction
 result <- extractVars(new_current)
 
+# ------------------------------------------------------------------------------------
+# Initial look at data 
+# ------------------------------------------------------------------------------------
 ## finding the age of participants at each questionnaire
 
 mult_cols <- grep("mult", colnames(result), value = T)
 
-res <- result[, !(colnames(result) %in% mult_cols)]
-dim(new_current)
-dup_names <- new_current[duplicated(new_current$name), "name"]
-# just aln is duplicated! 
-new_current <- dplyr::filter(new_current, name %in% colnames(res)) %>%
-	filter(!duplicated(name))
+attributes(res[[mult_cols]])
+# looks like 1 = duplicated so remove them!
+res <- result %>%
+	dplyr::filter(aln %in% IDs$ALN) %>%
+	dplyr::filter(!! mult_cols != 1)
 
-head(new_current)
-head(colnames(res))
-grep("aln|qlet", colnames(res))
+# check for aln and qlet columns.
+grep("aln|qlet", colnames(res), value = T)
+# Change if more than just aln, alnqlet, qlet
 dim(res)
 dim(new_current)
-test_res <- res[,colnames(res)[!colnames(res) %in% new_current$name]]
 # delete extra columns minus the aln, qlet and alnqlet columns
 col_rm <- colnames(res)[!colnames(res) %in% new_current$name]
 col_rm <- col_rm[!col_rm %in% c("qlet", "alnqlet")]
 res <- res[,!colnames(res) %in% col_rm]
 qlet_cols <- grep("qlet", colnames(res), value = T)
-str(test_res)
-# Change the column names to phenotypes
-index <- match(colnames(res)[!colnames(res) %in% qlet_cols], new_current$name)
-new_current2 <- new_current[index, ]
-# res <- res[, c(1, index)]
-# res[1:10, 1:10]
-# Sanity check
 
-stopifnot(all(new_current2$name == colnames(res[, !colnames(res) %in% qlet_cols])))
-sum(new_current2$name == colnames(res[, !colnames(res) %in% qlet_cols]))
+# function to get all the descriptive names of the alspac variables
+get_full_names <- function(input) {
+	out <- map_chr(seq_along(input), function(x) {
+		if (is.null(attributes(input[[x]]))) return(colnames(input[x]))
+		return(attr(input[[x]], "label"))
+	})
+	return(out)
+}
 
-dim(new_current2)
-new_labs <- gsub(" ", "_", new_current2$lab)
-colnames(res)[!colnames(res) %in% qlet_cols] <- new_labs
-colnames(res)[1] <- "aln"
-res[1:10, 1:10]
-colnames(res)[colnames(res) == ""] <- "UNNAMED_VAR"
+nams <- get_full_names(res)
+
+all_labels <- map_df(seq_along(res), function(x) {
+	if (is.null(attributes(res[[x]]))) return(NULL)
+	labels <- attr(res[[x]], "labels")
+	out <- data.frame(lab = names(labels), value = labels)
+	return(out)
+})
+
+grep("age", nams, value = T, ignore.case = T)
+
 # ------------------------------------------------------------------------------------
 # extracting age of participant for each questionnaire
 # ------------------------------------------------------------------------------------
