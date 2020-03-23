@@ -247,6 +247,59 @@ dim(res3)
 # Finishing tidying data + saving it all
 # ------------------------------------------------------------------------------------
 
+# Swap the labels and the alspac names
+res3_nam <- get_full_names(res3)
+res4 <- map_dfc(seq_along(res3), function(x) {
+	var <- res3[[x]]
+	attributes(var)$alspac_name <- colnames(res3[x])
+	return(var)
+})
+colnames(res4) <- res3_nam
+
+# Rename the headings to remove all the unusable characters for GCTA
+colnames(res4) <- gsub("\\%", "percent", colnames(res4))
+colnames(res4) <- gsub("[[:punct:]]", "_", colnames(res4))
+colnames(res4) <- gsub(" ", "_", trimws(colnames(res4)))
+
+# Extract all the meta data! 
+phen_list <- map_df(seq_along(res4), function(x) {
+	if (colnames(res4[x]) %in% c(qlet_cols, "aln")) return(NULL)
+	out <- data.frame(
+		phen = colnames(res4[x]),
+		binary = is.binary(res4[[x]]),
+		n = sum(!is.na(res4[[x]])),
+		alspac_name = attributes(res4[[x]])$alspac_name,
+		unedited_label = attributes(res4[[x]])$label
+		) %>%
+		mutate(obj = new_current[new_current$name == alspac_name, "obj"])
+	return(out)
+})
+
+file_nam <- paste0("ALSPAC_data/phenotype_metadata_", timepoints, ".txt")
+write.table(phen_list, file = file_nam, quote = F, col.names = T, row.names = F, sep = "\t")
+# write out this data and decide on what to keep then save it!
+phen_file_nam <- paste0(output_path, "phenotype_metadata_", timepoints, ".txt")
+# here write out the table, put it into an excel spreadsheet
+# and manually choose which traits to keep after discussion
+write.table(phen_list, phen_file_nam, 
+			row.names = F, col.names = F, quote = F, sep = "\t")
+new_phen_file_nam <- gsub(".txt", ".xlsx", phen_file_nam)
+if (!file.exists(new_phen_file_nam)) {
+	stop("Write out and discuss which traits to keep!")
+} else if (file.exists(new_phen_file_nam)) {
+	new_phen_list <- read_xlsx(new_phen_file_nam) %>%
+		dplyr::filter() ### START HERE!!!!
+	phens_removed <- phen_list %>%
+		dplyr::filter(!phen %in% new_phen_list$phen) %>%
+		pull(phen)
+	if (length(phens_removed) == 0) warning("You'd expect to throw out some phenotypes!")
+	write.table(phens_removed, file = paste0(output_path, "removed_phens.txt"), 
+				row.names = F, col.names = F, quote = F, sep = "\t")
+}
+
+# overwrite old phen list file
+write.table(new_phen_list, file = phen_file_nam, 
+			row.names = F, col.names = F, quote = F, sep = "\t")
 
 str(res[,1:10])
 
