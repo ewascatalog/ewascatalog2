@@ -56,7 +56,7 @@ def format_e(n):
     return a.split('E')[0].rstrip('0').rstrip('.') + 'E' + a.split('E')[1]
 
 def format_pval(p):
-    str(format_e(round_sig(float(p))))
+    return str(format_e(round_sig(float(p))))
 
 def format_beta(b):
     try:
