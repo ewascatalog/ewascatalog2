@@ -2,6 +2,12 @@
 # Extracting ALSPAC data
 # -------------------------------------------------------
 
+# requirements for this script to work:
+# 1. need IDs for people in ARIES
+# 2. need Tom's version of alspac package: github.com/thomasbattram/alspac
+#    (made pull request with main package, but not accepted...)
+# 3. access to alspac data (duhhh)
+
 args <- commandArgs(trailingOnly = TRUE)
 path <- args[1]
 setwd(path)
