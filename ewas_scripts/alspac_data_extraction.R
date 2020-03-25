@@ -8,30 +8,29 @@
 #    (made pull request with main package, but not accepted...)
 # 3. access to alspac data (duhhh)
 
-args <- commandArgs(trailingOnly = TRUE)
-wd <- args[1]
-alspac_data_dir <- args[2]
-output_path <- args[3]
-aries_ids <- args[4]
-timepoints <- args[5]
-password <- args[6]
-message("working directory is: ", wd)
+pkgs <- c("alspac", "tidyverse", "haven", "readxl", "varhandle")
+lapply(pkgs, require, character.only = T)
+
+# need to go to the correct directory first!
+source("read_filepaths.R")
+
+read_filepaths("filepaths.sh")
+output_path <- paste0(local_rdsf_dir, "data/alspac/")
+
 message("alspac data directory is: ", alspac_data_dir)
 message("the ouput path is: ", output_path)
-message("the ARIES ID file is: ", aries_ids)
+message("the ARIES ID file is: ", aries_ids_file)
 message("timepoints are: ", timepoints)
-setwd(wd)
+# setwd(wd)
 stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
-stopifnot(file.exists(aries_ids))
+stopifnot(file.exists(aries_ids_file))
 
 # add on a slash to the end of the output path if it's not there!
 if (str_sub(output_path, start = nchar(output_path)) != "/") {
 	output_path <- paste0(output_path, "/")
 }
 
-pkgs <- c("alspac", "tidyverse", "haven", "readxl", "varhandle")
-lapply(pkgs, require, character.only = T)
 setDataDir(alspac_data_dir)
 
 # devtools::load_all("")
@@ -51,7 +50,7 @@ data(useful)
 # -------------------------------------------------------
 
 # Read in the ARIES IDs and extract ones from timepoint of interest
-IDs <- read_tsv(aries_ids)
+IDs <- read_tsv(aries_ids_file)
 IDs <- dplyr::filter(IDs, time_point == timepoints)
 str(IDs)
 
