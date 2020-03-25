@@ -34,7 +34,7 @@ include $(SETTINGS)
 ## make docker-rm
 ##   delete the docker container
 
-.PHONY: website docker-build docker-start r database docker-stop docker-rm
+.PHONY: website docker-build docker-start r database docker-stop docker-rm update-website update-webserver
 
 all:
 	make website
