@@ -25,6 +25,11 @@ stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
 stopifnot(file.exists(aries_ids))
 
+# add on a slash to the end of the output path if it's not there!
+if (str_sub(output_path, start = nchar(output_path)) != "/") {
+	output_path <- paste0(output_path, "/")
+}
+
 pkgs <- c("alspac", "tidyverse", "haven", "readxl", "varhandle")
 lapply(pkgs, require, character.only = T)
 setDataDir(alspac_data_dir)
@@ -64,12 +69,6 @@ new_current <- current %>%
 
 # paths of interest
 # PoI <- c()
-
-labs_to_na <- function(x) {
-	labs <- attr(x, "labels")
-	x[x %in% labs] <- NA
-	return(x)
-}
 
 # extraction
 result <- extractVars(new_current)
@@ -173,7 +172,6 @@ res2 <- fact_res %>%
 	dplyr::select(-one_of(to_rm))
 
 # select only variables left
-x <- seq_along(res2)[1]
 res2[] <- lapply(seq_along(res2), function(x) {
 	print(x)
 	col_nam <- colnames(res2)[x]
@@ -206,7 +204,7 @@ res2[] <- lapply(seq_along(res2), function(x) {
 	print(x)
 	if (col_nam %in% c("aln", qlet_cols)) return(var)
 	label <- attributes(var)$label
-	out <- as.numeric(var)
+	out <- as.numeric(var) # makes any non-numeric values NAs
 	attributes(out)$label <- label
 	return(out)
 })
@@ -274,14 +272,6 @@ phen_list <- map_df(seq_along(res4), function(x) {
 		mutate(obj = new_current[new_current$name == alspac_name, "obj"])
 	return(out)
 })
-
-### remove this!
-df_temp <- read_xlsx("/Volumes/MRC-IEU-research/projects/ieu1/wp2/004/working/data/alspac/alspac_ewas_characteristics.xlsx")
-new_df <- df_temp[-grep("reight|left", df_temp$Phenotype, ignore.case = T), ]
-
-new_df %>%
-	dplyr::filter(!Dataset %in% phen_list$phen) %>%
-	pull(Dataset)
 
 # 2 differences: cm_2 and cm2 + lipids and lipds
 
