@@ -301,7 +301,7 @@ if (!file.exists(new_phen_file_nam)) {
 write.table(new_phen_list, file = phen_file_nam, 
 			row.names = F, col.names = F, quote = F, sep = "\t")
 
-# remove phenotypes from actual results
+# remove bad phenotypes from actual results
 res4 <- res4 %>%
 	dplyr::select(aln, qlet, alnqlet, one_of(new_phen_list$phen))
 
