@@ -22,7 +22,7 @@ dad_gendir=
 dad_gendata=
 
 # for ewas
-samplesheet=
+samplesheet_file=
 cell_counts=
 aries_meth_dat=
 aries_detection_p=
