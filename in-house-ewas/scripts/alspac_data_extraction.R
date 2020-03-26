@@ -12,7 +12,7 @@ pkgs <- c("alspac", "tidyverse", "haven", "readxl", "varhandle")
 lapply(pkgs, require, character.only = T)
 
 # need to go to the correct directory first!
-source("read_filepaths.R")
+source("scripts/read_filepaths.R")
 
 read_filepaths("filepaths.sh")
 output_path <- paste0(local_rdsf_dir, "data/alspac/")
@@ -24,7 +24,7 @@ message("timepoints are: ", timepoints)
 # setwd(wd)
 stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
-stopifnot(file.exists(aries_ids_file))
+stopifnot(file.exists(paste0(output_path, aries_ids_file))
 
 # add on a slash to the end of the output path if it's not there!
 if (str_sub(output_path, start = nchar(output_path)) != "/") {
