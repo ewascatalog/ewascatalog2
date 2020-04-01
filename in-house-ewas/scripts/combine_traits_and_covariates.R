@@ -6,9 +6,11 @@ pkgs <- c("tidyverse")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
+source("scripts/make_svs.R")
 
 read_filepaths("filepaths.sh")
 # 
+setwd(bc_home_dir)
 
 # ---------------------------------------------
 # load in data! 
@@ -31,6 +33,10 @@ head(samplesheet)
 # phenotype file
 phen_dat <- read_tsv(paste0("data/alspac/phenotype_data_", timepoints, ".txt"))
 phen_cols <- colnames(phen_dat)
+
+# meta-data file
+phen_meta <- read_tsv(paste0("data/alspac/phenotype_metadata_", timepoints, ".txt"))
+
 # ---------------------------------------------
 # combine data! 
 # ---------------------------------------------
@@ -51,8 +57,14 @@ all_dat <- samplesheet %>%
 # make SVs here or separate script??
 # ---------------------------------------------
 
+# impute data
+
+# make svs
+sv_res <- generate_svs()
 
 # ---------------------------------------------
 # save it all
 # ---------------------------------------------
+
+# bind sv_res and rest of data
 
