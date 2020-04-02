@@ -8,8 +8,8 @@ To use these scripts a text file or shell script must be created in this directo
 
 * ALSPAC data are extracted using __alspac_data_extraction.R__, which saves the data in the RDSF in an encrypted file.
 * PCs are generated using __aries_pca.sh__
+* The aries DNA methylation data is cleaned in __clean_aries_meth.R__
 * Outliers are removed from phenotypes and covariates are combined with phenotype data in __combine_traits_and_covariates.R__
-* The aries DNA methylation data is cleaned in __filter_aries_cpgs.R__
 * 
 
 ## GEO
