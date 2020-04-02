@@ -16,8 +16,6 @@ impute_matrix <- function(x, FUN = function(x) rowMedians(x, na.rm = T)) {
 # function to add quotes for weird trait names
 addq <- function(x) paste0("`", x, "`")
 
-sv_list <- vector(mode = "list", length = length(phen_nam))
-failed <- c()
 out_failed <- function(x) {
 	sink(file = paste0(out_path, "sv_fails.txt"), append = TRUE, split = TRUE)
 	print(x)
