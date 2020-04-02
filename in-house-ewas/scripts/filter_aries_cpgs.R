@@ -7,10 +7,8 @@
 # Setup
 # -------------------------------------------------------
 
-pkgs <- c("tidyverse", "meffil", "lme4", "GenABEL")
-sapply(pkgs, require, character.only = T)
-
-devtools::load_all("~/repos/usefunc/")
+pkgs <- c("tidyverse", "meffil", "GenABEL")
+lapply(pkgs, require, character.only = T)
 
 source("scripts/read_filepaths.R")
 
@@ -35,6 +33,8 @@ pc_cols <- colnames(pcs)[colnames(pcs) != "ALN"]
 # samplesheet
 load(samplesheet_file)
 head(samplesheet)
+samplesheet <- samplesheet %>%
+	dplyr::filter(ALN %in% aries_ids$ALN & time_point == timepoints)
 
 # methylation data 
 load(aries_meth_dat)
@@ -43,7 +43,7 @@ rm(beta)
 
 # detection p values
 load(aries_detection_p)
-pvals <- detection.p[,samplesheet$Sample_Name]
+pvals <- detection.p[, samplesheet$Sample_Name]
 rm(detection.p)
 
 # list from zhou et al.
