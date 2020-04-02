@@ -37,6 +37,11 @@ phen_cols <- colnames(phen_dat)
 # meta-data file
 phen_meta <- read_tsv(paste0("data/alspac/phenotype_metadata_", timepoints, ".txt"))
 
+# methylation file
+meth_file <- paste0("data/alspac/cleaned_", timepoints, "_data.RData")
+if (!file.exists(meth_file)) stop("CLEAN YOUR METHYLATION DATA AND PUT IT IN THE RIGHT PLACE!")
+load(meth_file)
+
 # ---------------------------------------------
 # combine data! 
 # ---------------------------------------------
