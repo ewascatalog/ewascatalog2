@@ -298,7 +298,7 @@ if (!file.exists(new_phen_file_nam)) {
 
 # overwrite old phen list file
 write.table(new_phen_list, file = phen_file_nam, 
-			row.names = F, col.names = F, quote = F, sep = "\t")
+			row.names = F, col.names = T, quote = F, sep = "\t")
 
 # remove bad phenotypes from actual results
 res4 <- res4 %>%
