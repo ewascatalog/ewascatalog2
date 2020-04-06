@@ -12,10 +12,9 @@ read_filepaths("filepaths.sh")
 args <- commandArgs(trailingOnly = TRUE)
 cohort <- args[1]
 
-# make sure the cohort has a slash in it! 
-if (!grepl("\\/", cohort)) cohort <- paste0(cohort, "/")
+cohort_path <- paste0(cohort, "/")
 
-meth_file <- paste0("data/", cohort, "cleaned_FOM_data.RData")
+meth_file <- paste0("data/", cohort_path, "cleaned_FOM_data.RData")
 load(meth_file)
 ###
 ### These files should be renamed and the FOM data should now be put in
@@ -24,9 +23,12 @@ load(meth_file)
 ### The GEO files need to be re-organised so that each of the 
 ### cohorts from GEO is written out in their own directories
 ###
-pheno_file <- paste0("data/", cohort, "cleaned_phenotype_data_FOM.txt")
+pheno_file <- paste0("data/", cohort_path, "cleaned_phenotype_data_FOM.txt")
 pheno_dat <- read_tsv(pheno_file)
 
+pheno_meta_file <- paste0("data/", cohort_path, "phenotype_metadata_FOM.txt")
+pheno_meta <- read_tsv(pheno_meta_file)
+traits <- pheno_meta$phen
 # devtools::load_all("~/repos/usefunc")
 
 # altering the names to prevent an error in the EWAS 
@@ -35,12 +37,17 @@ pheno_dat <- read_tsv(pheno_file)
 ## CHANGE THIS --> ONLY WORKS FOR THIS ANALYSIS!
 pc_covs <- grep("pc[0-9]*", colnames(pheno_dat), 
                 value = TRUE, ignore.case = TRUE)
-other_covs <- grep("age", colnames(pheno_dat), 
+pc_nam <- paste(length(pc_covs), "genetic principal components")
+other_covs <- grep("^age$", colnames(pheno_dat), 
                    value = TRUE, ignore.case = TRUE)
-no_cov <- length(covs)
+other_nam <- stringr::str_to_title(other_covs)
+covs <- c(pc_covs, other_covs)
+cov_nam <- paste(other_nam, pc_nam, sep = ", ")
+n_cov <- length(covs)
 
 # for ewas catalog output
-get_characteristics <- function(exposure, outcome, trait, pheno_dat, age) {
+get_characteristics <- function(exposure, outcome, trait, pheno_dat, age, 
+                                covs) {
   if (is.binary(pheno_dat[[trait]])) {
     x <- pheno_dat[[trait]]
     uniq_val1 <- unique(x)[1]
@@ -50,8 +57,15 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age) {
   } else {
     cats <- NA
   }    
-  if (outcome == "methylation") outcome <- "DNA methylation"
-  if (exposure == "methylation") exposure <- "DNA methylation"
+  if (outcome == "methylation") {
+    outcome <- "DNA methylation"
+    outcome_u <- "Beta values"
+    exposure_u <- NA
+  } else if (exposure == "methylation") {
+    exposure <- "DNA methylation"
+    exposure_u <- "Beta values"
+    outcome_u <- NA
+  } 
   out_dat <- data.frame(Author = "Battram T", 
                     Consortium = toupper(cohort), 
                     PMID = NA, 
@@ -62,9 +76,9 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age) {
                     Source = NA, 
                     Outcome = outcome, 
                     Exposure = exposure, 
-                    Covariates = "Age, ten genetic prinicipal components, 20 surrogate variables", 
-                    Outcome_Units = "Beta values", 
-                    Exposure_Units = NA, 
+                    Covariates = covs, 
+                    Outcome_Units = outcome_u, 
+                    Exposure_Units = exposure_u, 
                     Methylation_Array = "Illumina HumanMethylation450", 
                     Tissue = "Whole blood", 
                     Details = NA, 
@@ -84,36 +98,47 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age) {
   return(out_dat)
 }
 
-do_ewas <- function(exposure, outcome, out_path, model_family) {
+run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
+                    pheno_dat) {
   # get phenotype of interest
   phen <- c(exposure, outcome)[!c(exposure, outcome) == "methylation"]
   res_file <- paste0(out_path, phen, ".txt")
   if (file.exists(res_file)) return(NULL)
   print(phen)
   
-  # if (grepl("^X\\d|^X_", phen)) {
-  #     sva_phen <- gsub("^X", "", phen)    
-  # } else {
-  #     sva_phen <- phen
-  # }
-	# read in the SVs for the phenotype
-	# svs <- read_delim(paste0("data/", sva_phen, ".txt"), delim = "\t")
-  svs <- read_tsv(paste0("data/", cohort, "svs/", phen, ".txt"))
+  # read in svs  
+  svs <- read_tsv(paste0("data/", cohort_path, "svs/", phen, ".txt"))
   sv_nam <- grep("sv[0-9]", colnames(svs), value = T)
 
+  all_covs <- c(covs, sv_nam)
+  sv_out_nam <- paste(length(sv_nam), "surrogate variables")
+  all_covs_nam <- paste(cov_nam, sv_out_nam, sep = ", ")
+
   # Prepare phenotype data
-  temp_phen <- pheno %>%
+  temp_phen <- pheno_dat %>%
   	dplyr::select(Sample_Name, one_of(phen), one_of(covs)) %>%
   	left_join(svs) %>%
   	na.omit(.)
 
   # Match meth to Pheno
-  temp_meth <- meth[, na.omit(match(temp_phen$Sample_Name, colnames(meth)))]
+  temp_meth <- meth_dat[, na.omit(match(temp_phen$Sample_Name, colnames(meth_dat)))]
   temp_phen <- temp_phen[match(colnames(temp_meth), temp_phen$Sample_Name), ]
 
-  if (!all(temp_phen$Sample_Name == colnames(temp_meth)) stop("phenotype and DNAm data not matched.")
+  if (!all(temp_phen$Sample_Name == colnames(temp_meth))) stop("phenotype and DNAm data not matched.")
 
-  model <- as.formula(paste0(outcome, " ~ ", paste(c(exposure, covs), collapse = " + "), " + ", paste(sv_nam, collapse = " + ")))
+  model <- as.formula(paste0(outcome, " ~ ", paste(c(exposure, all_covs), collapse = " + ")))
+
+  # get characteristics for the catalog
+  
+  age_var <- grep("age", all_covs, value = TRUE, ignore.case = FALSE)
+  age_vals <- ifelse(length(age_var) == 1, pheno_dat[[age_var]], NA)
+  # output the data needed for EWAS catalog
+  out_dat <- get_characteristics(exposure, 
+                                 outcome, 
+                                 phen,
+                                 pheno_dat,
+                                 mean(age_vals), 
+                                 all_covs_nam)
 
   # Run EWAS using ewaff
   tryCatch({
@@ -130,59 +155,24 @@ do_ewas <- function(exposure, outcome, out_path, model_family) {
   }, error = function(e) {
       print(paste0("Error in EWAS of ", phen, ". Variance of ", phen, " = ", var(temp_phen[[phen]])))
   })
-
-  # output the data needed for EWAS catalog
-  cats <- get_categories(temp_phen[[phen]])
-  out_dat <- data.frame(Author = "Battram T", 
-                    Consortium = NA, 
-                    PMID = NA, 
-                    Date = Sys.Date(),
-                    Trait = phen, 
-                    EFO = NA, 
-                    Analysis = NA, 
-                    Source = NA, 
-                    Outcome = "DNA methylation", 
-                    Exposure = phen, 
-                    Covariates = "Age, ten genetic prinicipal components, 20 surrogate variables", 
-                    Outcome_Units = "Beta values", 
-                    Exposure_Units = NA, 
-                    Methylation_Array = "Illumina HumanMethylation450", 
-                    Tissue = "Whole blood", 
-                    Details = NA, 
-                    N = nrow(temp_phen), 
-                    N_Cohorts = 1, 
-                    Categories = cats, 
-                    Age = comma(mean(temp_phen$age)), 
-                    N_Males = 0, 
-                    N_Females = nrow(temp_phen), 
-                    N_EUR = nrow(temp_phen), 
-                    N_EAS = 0, 
-                    N_SAS = 0, 
-                    N_AFR = 0, 
-                    N_AMR = 0, 
-                    N_OTH = 0
-                    )
+  # return the ewas characteristics
   return(out_dat)
 }
 
-# Make a loop to run the EWAS
-dat_list <- vector(mode = "list", length = length(phen_list))
-for (i in seq_along(phen_list)) {
-    p <- phen_list[i]
-    dat_list[[i]] <- do_ewas(p, "results/")
-}
-# for the EWAS catalog! 
-fin_dat <- do.call(rbind, dat_list)
-fin_dat <- fin_dat %>%
-  mutate(Trait = gsub("_*FOM1", "", Trait)) %>%
-  mutate(Trait = gsub("_+g", "", Trait)) %>%
-  mutate(Trait = gsub("DV_+", "", Trait)) %>%
-  mutate(Trait = gsub("_+cm[0-9]?", "", Trait)) %>%
-  mutate(Trait = gsub("_+mm[0-9]?", "", Trait)) %>%
-  mutate(Trait = gsub("_+mmol_l", "", Trait)) %>%
-  mutate(Trait = gsub("_+percent", "", Trait)) %>%
-  mutate(Exposure_Units = gsub(".*__", "", Exposure)) %>%
-  mutate(Exposure = Trait)
+out_dir <- paste0("results/", cohort_path, "full_stats/")
+char_out <- map_dfr(seq_along(traits), function(x) {
+  trait <- traits[x]
+  print(x)
+  out <- run_ewas(exposure = trait, 
+           outcome = "methylation", 
+           out_path = out_dir, 
+           model_family = "gaussian", 
+           meth_dat = meth, 
+           pheno_dat = pheno_dat)
+  return(out)
+})
 
-write.table(fin_dat, file = "alspac_ewas_characteristics.txt", quote = F, row.names = F, col.names = T, sep = "\t")
+char_out_nam <- paste0("results/", cohort_path, "catalog_meta_data.txt")
+write.table(char_out, file = char_out_nam,
+            quote = F, row.names = F, col.names = T, sep = "\t")
 
