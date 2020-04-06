@@ -29,7 +29,7 @@ pheno_dat <- read_tsv(pheno_file)
 pheno_meta_file <- paste0("data/", cohort_path, "phenotype_metadata_FOM.txt")
 pheno_meta <- read_tsv(pheno_meta_file)
 traits <- pheno_meta$phen
-# devtools::load_all("~/repos/usefunc")
+devtools::load_all("~/repos/usefunc")
 
 # altering the names to prevent an error in the EWAS 
 # colnames(dat)[grep("^\\d|^_", colnames(dat))] <- paste0("X", colnames(dat)[grep("^\\d|^_", colnames(dat))])
