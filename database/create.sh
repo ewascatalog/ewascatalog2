@@ -50,9 +50,7 @@ TABLE_EXISTS=`echo $?`
 if [ ${TABLE_EXISTS} -eq 1 ]; then
     echo "Creating results and studies tables"
     ${ROOT_CMD} ${DB} < create-ewas-table.sql
-    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/published-ewas/studies.txt' INTO TABLE studies LINES TERMINATED BY '\n' IGNORE 1 LINES"
-    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/published-ewas/results.txt' INTO TABLE results LINES TERMINATED BY '\n' IGNORE 1 LINES"
-    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/aries-ewas/studies.txt' INTO TABLE studies LINES TERMINATED BY '\n' IGNORE 1 LINES"
-    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/aries-ewas/results.txt' INTO TABLE results LINES TERMINATED BY '\n' IGNORE 1 LINES"
+    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/ewas-sum-stats/combined_data/studies.txt' INTO TABLE studies LINES TERMINATED BY '\n' IGNORE 1 LINES"
+    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/ewas-sum-stats/combined_data/results.txt' INTO TABLE results LINES TERMINATED BY '\n' IGNORE 1 LINES"
 fi
 
