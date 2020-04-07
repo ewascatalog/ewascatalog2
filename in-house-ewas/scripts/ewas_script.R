@@ -81,7 +81,7 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age,
                     Exposure_Units = exposure_u, 
                     Methylation_Array = "Illumina HumanMethylation450", 
                     Tissue = "Whole blood", 
-                    Details = NA, 
+                    Further_Details = NA, 
                     N = nrow(pheno_dat), 
                     N_Cohorts = 1, 
                     Categories = cats, 
@@ -96,6 +96,14 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age,
                     N_OTH = NA
                     )
   return(out_dat)
+}
+
+generate_study_id <- function(char_dat) {
+  df <- char_dat
+  auth_nam <- gsub(" ", "-", df$Author)
+  trait_nam <- gsub(" ", "_", tolower(df$Trait))
+  StudyID <- paste(auth_nam, trait_nam, N, sep = "_")
+  return(StudyID)
 }
 
 run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
@@ -139,7 +147,8 @@ run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
                                  pheno_dat,
                                  mean(age_vals), 
                                  all_covs_nam)
-
+  # generate study ID
+  out_dat$StudyID <- generate_study_id(out_dat)
   # Run EWAS using ewaff
   tryCatch({
       obj <- ewaff.sites(model, variable.of.interest = phen,
@@ -148,7 +157,8 @@ run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
 
       res <- obj$table %>%
       	rownames_to_column(var = "probeID") %>%
-      	dplyr::select(probeID, estimate, se, p.value)
+      	dplyr::select(probeID, estimate, se, p.value) %>%
+        mutate(Details = NA, StudyID = out_dat$StudyID)
 
       write.table(res, file = res_file, sep = "\t", col.names = T, row.names = F, quote = F)
       print(paste0("Results for ", phen, " saved."))
