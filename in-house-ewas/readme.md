@@ -2,7 +2,7 @@
 
 These scripts are for extracting and cleaning phenotype data, cleaning DNA methylation data and then running EWAS in ARIES and for some phenotype data in GEO. The phenotype data for GEO was already extracted by Dr. Paul Yousefi using [geograbi](https://github.com/yousefi138/geograbi).
 
-To use these scripts a text file or shell script must be created in this directory with all the filepaths and files needed. An template can be found at filepaths_template.sh
+To use these scripts a text file or shell script must be created in this directory called "filepaths.sh" with all the filepaths and files needed. A template can be found at filepaths_template.sh
 
 ## ALSPAC
 
@@ -16,4 +16,13 @@ To use these scripts a text file or shell script must be created in this directo
 
 * 
 
-All the ewas are conducted on bluecrystal. For alspac data that will need to be extracted using __alspac_data_extraction.R__ where it will be put into the RDSF. From there it can be accessed and moved on bluecrystal ready for the EWAS. Move the data using __rdsf_move.sh__. 
+## Other
+
+* The ewas for either cohort can be run using __ewas_script.R__, which uses the package [ewaff](https://github.com/perishky/ewaff) for the analyses.
+* Finally the data are formatted for the catalog using __format_for_catalog.R__
+
+## Issues
+
+* Directories will need to be updated or code changed when more ARIES timepoints are added (essentially each timepoint will have to be treated as a different cohort with the current code!)
+* There are still some outdated things in the ewas script that only work for ARIES data --> Simple fix
+* The scripts for GEO haven't been tested yet! 
