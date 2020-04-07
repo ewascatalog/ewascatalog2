@@ -14,6 +14,53 @@ in `views.py` that define the behavior of each page.
 The the `views.py` functions link to the appropriate
 html templates files in the `templates` directory.
 
+## How to debug database queries in python
+
+The following example show the first 10 p-values in the
+results table of the EWAS catalog database.
+
+First step is to start a bash session in the
+running docker container. 
+```
+docker exec -it dev.ewascatalog bash
+```
+
+Start python.
+```
+python
+```
+
+Finally, import the necessary libraries, connect to the database,
+execute the query, obtain the query table column names,
+extract the query table as a list of table rows,
+and print out the p-values.
+```
+>>> import MySQLdb
+>>> import MySQLdb.cursors
+>>> db = MySQLdb.connect(host=${DATABASE_HOST}, user=${DATABASE_USER}, password=${DATABASE_PASSWORD},db=${DATBASE_NAME})
+>>> cur = db.cursor()
+>>> cur.execute("select * from results limit 10")
+10
+>>> cols = [x[0] for x in cur.description]
+>>> cols
+['cpg', 'chrpos', 'chr', 'pos', 'gene', 'type', 'beta', 'se', 'p', 'details', 'study_id', 'p_rank']
+>>> data = list(cur.fetchall())
+>>> px = cols.index("p")
+>>> for x in data:
+...     print(x[px])
+...
+2.06e-06
+4.6e-07
+1.41e-11
+0.000111
+0.000129
+2.3e-05
+4.72e-13
+1.37e-06
+3.42e-06
+5.7e-48
+```
+
 ## Origins of the website files
 
 The basic template for the website was created using Django:
