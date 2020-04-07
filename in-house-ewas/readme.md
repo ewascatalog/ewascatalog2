@@ -10,7 +10,6 @@ To use these scripts a text file or shell script must be created in this directo
 * PCs are generated using __aries_pca.sh__
 * The aries DNA methylation data is cleaned in __clean_aries_meth.R__
 * Outliers are removed from phenotypes and covariates are combined with phenotype data in __combine_traits_and_covariates.R__
-* 
 
 ## GEO
 
@@ -26,3 +25,4 @@ To use these scripts a text file or shell script must be created in this directo
 * Directories will need to be updated or code changed when more ARIES timepoints are added (essentially each timepoint will have to be treated as a different cohort with the current code!)
 * There are still some outdated things in the ewas script that only work for ARIES data --> Simple fix
 * The scripts for GEO haven't been tested yet! 
+* Either make "usefunc" an actually package that can be loaded into R properly OR make the scripts so that it isn't required! 
