@@ -2,40 +2,69 @@
 # Sorting geo phenotypes for EWAS
 # -------------------------------------------------
 
-rm(list = ls())
-
-wd <- "~/ewas_catalog/"
-setwd(wd)
-
-pkgs <- c("tidyverse", "haven", "readxl", "gridExtra")
+pkgs <- c("tidyverse", "readxl")
 lapply(pkgs, require, character.only = TRUE)
 
+source("scripts/read_filepaths.R")
+
+read_filepaths("filepaths.sh")
+
 devtools::load_all("~/repos/usefunc")
-devtools::load_all("~/repos/ewaff")
 
-phenofile <- "~/ewas_catalog/geo_data/ewas-cat-cr02.rdata"
+phenofile <- "data/geo/ewas-cat-cr02.rdata"
 load(phenofile)
+# phenofile contains
+# all.gses:
+#   a d.f, looks like all GSEs and some meta data
+# my.gses:
+#   a d.f, similar to all.gses but it's filtered and has
+#   filenames and pubmed_id 
+# ecat.gses:
+#   a d.f, similar to all.gses, but with a filtered list of GSEs +
+#   lots of columns containing potential phenotype info
+# ecats:
+#   a d.f, similar to ecat.gses, but with fewer GSEs, unsure why
+# ecats.for.print:
+#   a d.f, similar to ecats, but with slightly different column names
+#   unsure of reason for each
+# chrs: 
+#   a list of d.fs, each element of the list contains phenotype info
+#   for a GSE, looks to be same GSEs as in ecat.gses --> USEFUL
+# geo:
+#   a list of d.fs, each element of the list contains meta data info
+#   for a GSE, looks to be same GSEs as in ecat.gses --> USEFUL
 
-# GSEs reviewed
-reviewed_data <- read_excel("ewas_cat_gses_for_review.xlsx")
+
+# Manually reviewed to see if analysis could be done
+# for the catalog
+reviewed_data <- read_excel("data/geo/ewas_cat_gses_for_review.xlsx")
 str(reviewed_data)
+colnames(reviewed_data)
+include_col <- grep("include", colnames(reviewed_data), value = TRUE)
+renam_var <- c(include = include_col)
 
 dat <- reviewed_data %>%
-    mutate(include = .[[grep("include", colnames(.))]]) %>%
+    rename(!!renam_var) %>%
     dplyr::filter(include == 2) %>%
     # removal of variables that haven't got anything in
     dplyr::select(which(!map_lgl(., function(x) {all(x == "NA")}))) %>%
     dplyr::select(geo.accession, main.effect, samples, include, comment, 
                   one_of(grep("chr.fld", colnames(reviewed_data), value = T)))
 
+# traits for EWAS
 dat$main.effect
+
+nrow(dat) # 50 datasets selected
 
 # extract the phenotypes and sample_names
 geo_asc <- dat$geo.accession
 phen_list <- lapply(geo_asc, function(ga) {
-	all_info <- geo[[ga]]
+    all_info <- geo[[ga]]
 	pheno <- chrs[[ga]]
+    # some files have values as a row rather than a column
+    # so this if statement sorts them out
 	if (nrow(pheno) == 1) {
+        print(ga)
 		values <- as.character(pheno[1,])
 		phe <- data.frame(values)
 		colnames(phe) <- colnames(pheno)[1]
@@ -47,11 +76,14 @@ phen_list <- lapply(geo_asc, function(ga) {
 names(phen_list) <- geo_asc
 
 # extract phenotype names
-phens <- lapply(geo_asc, function(ga) {
-	colnames(phen_list[[ga]])	
-})
-names(phens) <- geo_asc
-voi_file <- "current_voi_list.RData"
+phens <- lapply(phen_list, colnames)
+
+# use dat$main.effect to pick from phens what to extract!
+# first extract main effects 
+### START HERE!
+voi <- 
+
+voi_file <- "data/current_voi_list.RData"
 if (file.exists(voi_file)) {
     load(voi_file)
     old_VoI_list <- VoI_list
@@ -61,9 +93,9 @@ if (file.exists(voi_file)) {
 
 new_phens <- phens[!names(phens) %in% names(old_VoI_list)]
 dat %>%
-    dplyr::filter(geo.accession %in% names(new_phens)) %>%
+    dplyr::filter(geo.accession %in% names(phens)) %>%
     .[["main.effect"]]
-# extract rest of variables
+
 new_VoI_list <- list()
 
 names(new_VoI_list) <- names(new_phens)
@@ -81,11 +113,9 @@ if (length(new_VoI_list) != 0) save(VoI_list, file = "current_voi_list.RData")
 # removed 
 
 ga <- "GSE36054"
+ga <- "GSE100197"
 fin_dat <- lapply(geo_asc, function(ga) {
     print(ga)
-    VoI <- VoI_list[[ga]]
-    print(VoI)
-    if (is.na(VoI)) return(NULL)
     d <- phen_list[[ga]]
     empty_cols <- which(colnames(d) == "")
     for (i in empty_cols) {
