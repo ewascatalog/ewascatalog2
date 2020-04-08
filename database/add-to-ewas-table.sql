@@ -49,7 +49,7 @@ CREATE TABLE `new_results` (
 `p` varchar(50),
 `details` varchar(200),
 `study_id` varchar(200),
-FOREIGN KEY (`study_id`) REFERENCES `studies` (`study_id`),
+FOREIGN KEY (`study_id`) REFERENCES `new_studies` (`study_id`),
 KEY `cpg` (`cpg`),
 KEY `chrpos` (`chrpos`),
 KEY `chr` (`chr`),
