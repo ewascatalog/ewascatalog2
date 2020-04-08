@@ -11,10 +11,11 @@ read_filepaths("filepaths.sh")
 
 args <- commandArgs(trailingOnly = TRUE)
 cohort <- args[1]
+extra_cohort_info <- args[2]
 
-cohort_path <- paste0(cohort, "/")
+cohort_data_path <- file.path(cohort, extra_cohort_info)
 
-meth_file <- paste0("data/", cohort_path, "cleaned_FOM_data.RData")
+meth_file <- file.path("data", cohort_data_path, "cleaned_meth_data.RData")
 load(meth_file)
 ###
 ### These files should be renamed and the FOM data should now be put in
@@ -23,10 +24,10 @@ load(meth_file)
 ### The GEO files need to be re-organised so that each of the 
 ### cohorts from GEO is written out in their own directories
 ###
-pheno_file <- paste0("data/", cohort_path, "cleaned_phenotype_data_FOM.txt")
+pheno_file <- file.path("data", cohort_data_path, "cleaned_phenotype_data.txt")
 pheno_dat <- read_tsv(pheno_file)
 
-pheno_meta_file <- paste0("data/", cohort_path, "phenotype_metadata_FOM.txt")
+pheno_meta_file <- file.path("data", cohort_data_path, "phenotype_metadata.txt")
 pheno_meta <- read_tsv(pheno_meta_file)
 traits <- pheno_meta$phen
 devtools::load_all("~/repos/usefunc")
