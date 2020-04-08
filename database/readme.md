@@ -18,6 +18,19 @@ create and populate the database.
 tables and files from `${FILES_DIR}/published-ewas` to create
 the 'results' and 'studies' tables.
 
+## Updating with new data
+The new data to be added should be stored in a directory in `${FILE_DIR}`. Then add this directory to `${FILE_DIR}/ewas-sum-stats/ewas-to-add.sh` where indicated. 
+
+When the container is running `make update-database` can be used to update the database with new data using the `add-to-ewas.sh` script. This script creates the 'new_results' and 'new_studies' tables before adding these tables to the 'results' and 'studies' tables. 
+
+Other things that should be done when adding in new data:
+
+* Add the data to ${FILE_DIR}/ewas-sum-stats/combined_data/
+* Copy the files into the original directory, e.g. `/projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2`
+* 
+
+
+
 **Note**: These scripts are written so that each creation
 command (create file/database/table) will be skipped if
 the file/database/table has already been created.
