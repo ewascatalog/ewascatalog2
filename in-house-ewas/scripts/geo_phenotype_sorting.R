@@ -43,21 +43,28 @@ colnames(reviewed_data)
 include_col <- grep("include", colnames(reviewed_data), value = TRUE)
 renam_var <- c(include = include_col)
 
-dat <- reviewed_data %>%
+effect_cols <- grep("effect.col.name", colnames(reviewed_data), value = T)
+
+pub_dat <- reviewed_data %>%
     rename(!!renam_var) %>%
     dplyr::filter(include == 2) %>%
     # removal of variables that haven't got anything in
     dplyr::select(which(!map_lgl(., function(x) {all(x == "NA")}))) %>%
-    dplyr::select(geo.accession, main.effect, samples, include, comment, 
+    dplyr::select(geo.accession, pubmed_id, main.effect, samples, include, comment,
+                  one_of(effect_cols), 
                   one_of(grep("chr.fld", colnames(reviewed_data), value = T)))
 
-# traits for EWAS
-dat$main.effect
+# -------------------------------------------------
+# Extract trait for the analysis
+# -------------------------------------------------
 
-nrow(dat) # 50 datasets selected
+# traits for EWAS
+pub_dat$main.effect
+
+nrow(pub_dat) # 50 datasets selected
 
 # extract the phenotypes and sample_names
-geo_asc <- dat$geo.accession
+geo_asc <- pub_dat$geo.accession
 phen_list <- lapply(geo_asc, function(ga) {
     all_info <- geo[[ga]]
 	pheno <- chrs[[ga]]
@@ -78,45 +85,18 @@ names(phen_list) <- geo_asc
 # extract phenotype names
 phens <- lapply(phen_list, colnames)
 
-# use dat$main.effect to pick from phens what to extract!
-# first extract main effects 
-### START HERE!
-voi <- 
 
-voi_file <- "data/current_voi_list.RData"
-if (file.exists(voi_file)) {
-    load(voi_file)
-    old_VoI_list <- VoI_list
-} else {
-    VoI_list <- list()
-}
-
-new_phens <- phens[!names(phens) %in% names(old_VoI_list)]
-dat %>%
-    dplyr::filter(geo.accession %in% names(phens)) %>%
-    .[["main.effect"]]
-
-new_VoI_list <- list()
-
-names(new_VoI_list) <- names(new_phens)
-VoI_list <- c(new_VoI_list, old_VoI_list)
-
-VoI_list <- VoI_list[match(dat$geo.accession, names(VoI_list))]
-
-if (length(new_VoI_list) != 0) save(VoI_list, file = "current_voi_list.RData") 
-
-# need to find out wtf matt is talking about 
-# re: recurrence and recurrence time
-
-# want to have a finished list with the variables of interest
-# and sample_name in a column each and with any values that are useless
-# removed 
 
 ga <- "GSE36054"
 ga <- "GSE100197"
-fin_dat <- lapply(geo_asc, function(ga) {
+ga <- geo_asc[18]
+effect_phen_dat <- lapply(geo_asc, function(ga) {
     print(ga)
     d <- phen_list[[ga]]
+    VoI <- pub_dat %>%
+        dplyr::filter(geo.accession == ga) %>%
+        dplyr::select(one_of(effect_cols)) %>%
+        as.character()
     empty_cols <- which(colnames(d) == "")
     for (i in empty_cols) {
         colnames(d)[i] <- paste0("no_name", i)
@@ -125,13 +105,17 @@ fin_dat <- lapply(geo_asc, function(ga) {
         dplyr::select(sample_name, one_of(VoI))
     return(d)
 })
-names(fin_dat) <- geo_asc
+names(effect_phen_dat) <- geo_asc
+
+
+# ---------------------------------------
+# Check values for each variable
+# ---------------------------------------
+
 # check each VoI. Want to check that:
-#   1. if continuous, distribution is normal
-#   2. that the values are as expected
-#   3. it needs to be split into different variables
-#   4. sample size is above 100
-#   5. duplication of samples
+#   1. that the values are as expected
+#   2. it needs to be split into different variables
+#   3. duplication of samples
 
 # to ask about:
 # 1. 
@@ -153,36 +137,42 @@ names(fin_dat) <- geo_asc
 
 # checking the phenotypes!
 ga <- geo_asc[1]
-dat[dat$geo.accession == ga, "comment", drop = T]
-fin_dat[ga]
-str(fin_dat[ga])
-table(fin_dat[[ga]][[2]])
+pub_dat[pub_dat$geo.accession == ga, "comment", drop = T]
+effect_phen_dat[ga]
+str(effect_phen_dat[ga])
+table(effect_phen_dat[[ga]][[2]])
 
 omit_for_now <- c(1,3,12,13,17,22,23,26,28,30,32,36,42,46,48)
+effect_phen_dat <- effect_phen_dat[-omit_for_now]
 
+geo_asc <- names(effect_phen_dat)
 # check there are no duplicated samples
 map_lgl(geo_asc, function(ga) {
-    some_dat <- fin_dat[[ga]]
+    some_dat <- effect_phen_dat[[ga]]
     any(duplicated(some_dat[["sample_name"]]))
 })
 # all goooooood boi! 
 
+# ---------------------------------------
+# manual changes to the datasets to revalue the variables
+# ---------------------------------------
+
 # changes to make
-fin_dat[["GSE107080"]] <- fin_dat[["GSE107080"]] %>%
+effect_phen_dat[["GSE107080"]] <- effect_phen_dat[["GSE107080"]] %>%
     mutate(idu_and_hcv_dx = case_when(idu == 1 & hcv_dx == 1 ~ "pos", 
                                       idu == 0 & hcv_dx == 0 ~ "neg")) %>%
     dplyr::filter(!is.na(idu_and_hcv_dx)) %>%
     dplyr::select(sample_name, idu_and_hcv_dx)
 
-fin_dat[["GSE112596"]] <- fin_dat[["GSE112596"]] %>%
+effect_phen_dat[["GSE112596"]] <- effect_phen_dat[["GSE112596"]] %>%
     dplyr::filter(therapy != "GA")
 
-fin_dat[["GSE113725"]] <- fin_dat[["GSE113725"]] %>%
+effect_phen_dat[["GSE113725"]] <- effect_phen_dat[["GSE113725"]] %>%
     mutate(depression_status = case_when(groupid == 1 | groupid == 2 ~ "control", 
                                          groupid == 3 | groupid == 4 ~ "case")) %>%
     dplyr::select(sample_name, depression_status)
 
-fin_dat[["GSE50660"]] <- fin_dat[["GSE50660"]] %>% 
+effect_phen_dat[["GSE50660"]] <- effect_phen_dat[["GSE50660"]] %>% 
     mutate(smoking_status_nf = 
         case_when(`smoking (0, 1 and 2, which represent never, former and current smokers)` == 0 ~ "never", 
                   `smoking (0, 1 and 2, which represent never, former and current smokers)` == 1 ~ "former")) %>%
@@ -194,33 +184,33 @@ fin_dat[["GSE50660"]] <- fin_dat[["GSE50660"]] %>%
                   `smoking (0, 1 and 2, which represent never, former and current smokers)` == 2 ~ "current")) %>%
     dplyr::select(-`smoking (0, 1 and 2, which represent never, former and current smokers)`)
 
-fin_dat[["GSE53740"]] <- fin_dat[["GSE53740"]] %>%
+effect_phen_dat[["GSE53740"]] <- effect_phen_dat[["GSE53740"]] %>%
     mutate(FTD_status = case_when(diagnosis == "FTD" ~ "FTD", 
                                   diagnosis == "Control" ~ "Control")) %>%
     mutate(PSP_status = case_when(diagnosis == "PSP" ~ "PSP", 
                                   diagnosis == "Control" ~ "Control")) %>%
     dplyr::select(-diagnosis)
 
-fin_dat[["GSE59592"]] <- fin_dat[["GSE59592"]] %>%
+effect_phen_dat[["GSE59592"]] <- effect_phen_dat[["GSE59592"]] %>%
     dplyr::filter(!(`afb1 exposure` %in% c("dry", "rainy")))
 
-fin_dat[["GSE60275"]] <- fin_dat[["GSE60275"]] %>%
+effect_phen_dat[["GSE60275"]] <- effect_phen_dat[["GSE60275"]] %>%
     dplyr::filter(healthy_vs_disease != "healthy")
 
-fin_dat[["GSE67530"]] <- fin_dat[["GSE67530"]] %>%
+effect_phen_dat[["GSE67530"]] <- effect_phen_dat[["GSE67530"]] %>%
     dplyr::filter(ards != "NA")
 
-fin_dat[["GSE69502"]] <- fin_dat[["GSE69502"]] %>% 
+effect_phen_dat[["GSE69502"]] <- effect_phen_dat[["GSE69502"]] %>% 
     mutate(anencephaly_status = case_when(`ntd status` == "anencephaly" ~ "anencephaly", 
                                           `ntd status` == "control" ~ "control")) %>% 
     mutate(spina_bifida_status = case_when(`ntd status` == "spina bifida" ~ "spina_bifida", 
                                            `ntd status` == "control" ~ "control")) %>%
     dplyr::select(-`ntd status`)
 
-fin_dat[["GSE71678"]] <- fin_dat[["GSE71678"]] %>%
+effect_phen_dat[["GSE71678"]] <- effect_phen_dat[["GSE71678"]] %>%
     dplyr::filter(`placental as levels` != "NA")
 
-fin_dat[["GSE87640"]] <- fin_dat[["GSE87640"]] %>% 
+effect_phen_dat[["GSE87640"]] <- effect_phen_dat[["GSE87640"]] %>% 
     mutate(UC_diagnosis = case_when(full_diagnosis == "UC" ~ "UC",
                                     full_diagnosis %in% c("HC", "HL", "IB", "OT") ~ "healthy")) %>%
     mutate(CD_diagnosis = case_when(full_diagnosis == "CD" ~ "CD", 
@@ -229,75 +219,136 @@ fin_dat[["GSE87640"]] <- fin_dat[["GSE87640"]] %>%
                                      full_diagnosis %in% c("HC", "HL", "IB", "OT") ~ "healthy")) %>%
     dplyr::select(-full_diagnosis)
 
-# check distribution of continuous variables
-dist_check <- list(
-    GSE101961 = fin_dat[["GSE101961"]][[2]], 
-    GSE40279 = fin_dat[["GSE40279"]][[2]], 
-    GSE51057 = fin_dat[["GSE51057"]][[2]], 
-    GSE58885 = fin_dat[["GSE58885"]][[2]], 
-    GSE59592 = fin_dat[["GSE59592"]][[2]], 
-    GSE71678 = fin_dat[["GSE71678"]][[2]], 
-    GSE90124 = fin_dat[["GSE90124"]][[2]]
-    )
+# ---------------------------------------
+# extract some useful meta data from datasets
+# ---------------------------------------
 
-plots <- lapply(dist_check, function(v) {
-    df <- data.frame(var = as.numeric(v))
-    p <- ggplot(df, aes(x = var)) + 
-        geom_histogram()
-})
-
-pdf("geo_continuous_var_distributions.pdf")
-p <- marrangeGrob(plots, ncol=1, nrow=1)
-dev.off()
-ggsave("geo_continuous_var_distributions.pdf", plot = p)
-
-# right-skew with:
-# GSE59592
-# GSE71678
-# GSE90124
-rs <- c("GSE59592", "GSE71678", "GSE90124")
-
-# GSE90124 looks like count data so can use a poisson distribution to model it
-pois_mod <- "GSE90124"
-# log and try again:
-log_plots <- lapply(dist_check[rs], function(v) {
-    df <- data.frame(var = log(as.numeric(v)))
-    p <- ggplot(df, aes(x = var)) +
-        geom_histogram()
-})
-pdf("geo_continuous_var_distributions_logged.pdf")
-p <- marrangeGrob(log_plots, ncol=1, nrow=1)
-dev.off()
-ggsave("geo_continuous_var_distributions_logged.pdf", plot = p)
-
-# all normal now! --> Transform those bad bois
-to_log <- rs[-3]
-fin_dat[rs[-3]] <- lapply(to_log, function(x) {
-    dat <- fin_dat[[x]]
-    dat[[2]] <- log(as.numeric(dat[[2]]))
-    return(dat)
-})
-
-# sort the names of all the phenotypes! 
+# sort out names + add meta data then write out the results! 
 nam="GSE40279"
-fin_dat <- lapply(names(fin_dat), function(nam) {
+met_dat <- lapply(names(effect_phen_dat), function(nam) {
     print(nam)
-    df <- fin_dat[[nam]]
-    if (class(df) != "data.frame") return(df)
-    colnames(df) <- tolower(gsub("[[:space:]]", "_", colnames(df)))
-    colnames(df) <- gsub('[[:punct:]]', '_' , colnames(df))
-
-    return(df)
+    df <- effect_phen_dat[[nam]]
+    pubmid <- pub_dat %>%
+        dplyr::filter(geo.accession == nam) %>%
+        pull(pubmed_id)
+    old_effect_nam <- colnames(df)[colnames(df) != "sample_name"]
+    out_dat <- map_dfr(old_effect_nam, function(oen) {
+        new_effect_nam <- tolower(gsub("[[:space:]]", "_", oen)) 
+        new_effect_nam <- gsub('[[:punct:]]', '_' , new_effect_nam)
+        bin <- is.binary(df[[oen]])
+        out <- tibble(geo_asc = nam, 
+                     pmid = pubmid, 
+                     phen = new_effect_nam, 
+                     binary = bin, 
+                     unedited_label = oen, 
+                     n = nrow(df))
+        return(out)
+    })
+    return(out_dat)
 })
-names(fin_dat) <- geo_asc
+names(met_dat) <- geo_asc
 
-inclusion_df <- tibble(geo_asc = names(fin_dat),
-                       include = ifelse(geo_asc %in% geo_asc[omit_for_now], "no", "yes"), 
-                       model = ifelse(geo_asc %in% pois_mod, "poisson", "as_expect"), 
-                       transformed = ifelse(geo_asc %in% to_log, "log", "no"))
+# for meta-data, the actual name of the trait will
+# need to be mannually edited using the review file
 
-to_save <- list(pheno_data = fin_dat, inclusion_data = inclusion_df)
-save(to_save, file = "geo_data/derived/sorted_geo_phenotype_data.RData")
+# ------------------------------------------------------
+# clean data
+# ------------------------------------------------------
+
+# set outliers to missing
+set_outliers_to_na <- function(x) {
+    q <- quantile(x, probs = c(0.25, 0.75), na.rm = T)
+    iqr <- q[2] - q[1]
+    too_hi <- which(x > q[2] + 3 * iqr)
+    too_lo <- which(x < q[1] - 3 * iqr)
+    if (length(c(too_lo,too_hi)) > 0) x[c(too_lo, too_hi)] <- NA
+    return(x)
+}
+
+no_out_phen <- lapply(geo_asc, function(ga) {
+    print(ga)
+    df <- effect_phen_dat[[ga]]
+    # if binary then give it a miss
+    met_df <- met_dat[[ga]]
+    cols <- colnames(df)
+    out_dat <- map_dfc(cols, function(trait) {
+        var <- df[[trait]]
+        # return variable if sample_name or binary
+        if (trait %in% "sample_name") return(var)
+        bin_val <- met_df[met_df$unedited_label == trait, "binary"]
+        if (bin_val == TRUE) return(var)
+
+        var <- as.numeric(var)
+        out <- set_outliers_to_na(var)
+        total_vals <- sum(!is.na(out))
+        new_na <- sum(is.na(out)) - sum(is.na(var))
+        message(new_na, " values set to missing for ", trait)
+        message(total_vals, " non missing values remain for ", trait)
+        return(out)
+    })
+    colnames(out_dat) <- cols
+    return(out_dat)
+})
+names(no_out_phen) <- geo_asc
+# doesn't seem to be removal of many values!
+
+# check zero values
+count_zero <- lapply(geo_asc, function(ga) {
+    print(ga)
+    df <- no_out_phen[[ga]]
+    # if binary then give it a miss
+    met_df <- met_dat[[ga]]
+    count_zero <- map_dbl(1:nrow(met_df), function(x) {
+        bin <- met_df[x, "binary", drop = TRUE]
+        if (bin) return(NA)
+        col <- met_df[x, "unedited_label", drop = TRUE]
+        sum(df[[col]] == 0, na.rm = T)
+    })
+    names(count_zero) <- met_df$unedited_label
+    return(count_zero)
+})
+# only phenotype with any zeros is total body naevus count,
+# which makes total sense! 
+
+fin_dat <- no_out_phen
+
+# ------------------------------------------------------
+# write out the data!
+# ------------------------------------------------------
+
+make_dir <- function(path) {
+    system(paste("mkdir", path))
+}
+
+# write out cleaned phenotype data and meta data
+lapply(geo_asc, function(ga) {
+    meta_dat <- met_dat[[ga]]
+    
+    # rename variables as appropriate
+    pheno_dat <- fin_dat[[ga]] %>%
+        rename_at(vars(meta_dat$unedited_label), ~ meta_dat$phen)
+
+    out_path <- file.path("data/geo", ga)
+
+    if (!file.exists(out_path)) make_dir(out_path)
+
+    meta_nam <- file.path(out_path, "phenotype_metadata.txt")
+    write.table(meta_dat, file = meta_nam,
+                col.names = T, row.names = F, quote = F, sep = "\t")
+    
+    pheno_nam <- file.path(out_path, "cleaned_phenotype_data.txt")
+    write.table(pheno_dat, file = pheno_nam,
+                col.names = T, row.names = F, quote = F, sep = "\t")
+    return(NULL)
+})
+
+# inclusion_df <- tibble(geo_asc = names(fin_dat),
+#                        include = ifelse(geo_asc %in% geo_asc[omit_for_now], "no", "yes"), 
+#                        model = ifelse(geo_asc %in% pois_mod, "poisson", "as_expect"), 
+#                        transformed = ifelse(geo_asc %in% to_log, "log", "no"))
+
+# to_save <- list(pheno_data = fin_dat, inclusion_data = inclusion_df)
+# save(to_save, file = "geo_data/derived/sorted_geo_phenotype_data.RData")
 
 # ---------------------------------------------------------------
 # Post attempted analysis phenotype sorting
