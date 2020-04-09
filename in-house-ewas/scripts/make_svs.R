@@ -22,7 +22,8 @@ out_failed <- function(x, out_path) {
 	sink()
 }
 
-generate_svs <- function(trait, phen_data, meth_data, covariates, nsv, out_path) {
+generate_svs <- function(trait, phen_data, meth_data, covariates, nsv, out_path, 
+						 samples = "Sample_Name") {
 	print(trait)
 	out_nam <- paste0(out_path, trait, ".txt")
 	if (file.exists(out_nam)) {
@@ -30,12 +31,12 @@ generate_svs <- function(trait, phen_data, meth_data, covariates, nsv, out_path)
 		return(NULL)
 	}
 	phen <- phen_data %>%
-		dplyr::select(Sample_Name, one_of(trait, covariates)) %>%
+		dplyr::select(one_of(samples), one_of(trait, covariates)) %>%
 		.[complete.cases(.), ]
 	
-	mdat <- meth_data[, colnames(meth_data) %in% phen$Sample_Name]
+	mdat <- meth_data[, colnames(meth_data) %in% phen[[samples]]]
 	phen <- phen %>%
-		dplyr::filter(Sample_Name %in% colnames(mdat))
+		dplyr::filter(!!as.symbol(samples) %in% colnames(mdat))
 	# full model - with variables of interest 
 	fom <- as.formula(paste0("~", addq(trait), " + ",paste(covariates, collapse = " + ")))
 	mod <- model.matrix(fom, data = phen)
@@ -47,7 +48,7 @@ generate_svs <- function(trait, phen_data, meth_data, covariates, nsv, out_path)
 	tryCatch({
 		svobj <- smartsva.cpp(mdat, mod, mod0, n.sv = nsv)
 		svs <- as.data.frame(svobj$sv, stringsAsFactors = F)
-		svs$Sample_Name <- phen$Sample_Name
+		svs[[samples]] <- phen[[samples]]
 		# head(svs)
 		colnames(svs)[1:nsv] <- paste0("sv", 1:nsv)
 
