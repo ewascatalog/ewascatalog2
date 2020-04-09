@@ -344,7 +344,7 @@ lapply(geo_asc, function(ga) {
 
 # write out geo accession numbers being used
 write.table(geo_asc, file = "data/geo/geo_accession.txt", 
-            col.names = T, row.names = F, quote = F, sep = "\t")
+            col.names = F, row.names = F, quote = F, sep = "\t")
 
 # inclusion_df <- tibble(geo_asc = names(fin_dat),
 #                        include = ifelse(geo_asc %in% geo_asc[omit_for_now], "no", "yes"), 
