@@ -71,8 +71,8 @@ lapply(x, function(i) {
 })
 check_betas(new_meth, n=nrow(new_meth))
 
+sites <- c("cg|ch\\.")
 ga=geo_accessions[1] # SHOULD WORK!
-ga="GSE67530"
 # check colnames and rownames
 lapply(geo_accessions, function(ga) {
 	## load in data
@@ -81,6 +81,7 @@ lapply(geo_accessions, function(ga) {
 	# methylation data
 	meth_file_nam <- paste0(tolower(ga), ".rda")
 	meth_file <- file.path(ga_path, meth_file_nam)
+	old_meth_file <- meth_file
 	if (!file.exists(meth_file)) {
 		meth_file <- file.path(ga_path, "cleaned_meth_data.RData")	
 	} 
@@ -103,6 +104,8 @@ lapply(geo_accessions, function(ga) {
 	if (row_test == "bad" | col_test == "bad") {
 		stop("sort out columns and rows and re-run!")
 	}
+	# extract just meth sites
+	meth <- meth[grep(sites, rownames(meth)), ]
 	# check methylation betas 
 	betas_test <- check_betas(meth, n = 10)
 	message("betas are ", betas_test)
@@ -113,7 +116,8 @@ lapply(geo_accessions, function(ga) {
 	}
 	meth <- as.matrix(meth)
 	mdata <- impute_matrix(meth)
-	
+	save(meth, file = file.path(ga_path, "cleaned_meth_data.RData"))
+
 	sv_out_dir <- paste0(ga_path, "/svs/")
 	if (!file.exists(sv_out_dir)) make_dir(sv_out_dir)
 	# make SVs
@@ -127,8 +131,8 @@ lapply(geo_accessions, function(ga) {
 					 out_path = sv_out_dir, 
 					 samples = "sample_name")
 	})
-	# change name of methylation data! 
-	cmd <- paste("mv", meth_file, file.path(ga_path, "cleaned_meth_data.RData"))
+	# remove old methylation data! 
+	cmd <- paste("rm", old_meth_file)
 	system(cmd)
 })
 
@@ -138,7 +142,7 @@ lapply(geo_accessions, function(ga) {
 	if (file.exists(paste0(sv_out_dir, "sv_fails.txt"))) {
 		message("making SVs failed in the ", ga, "dataset")
 	}
-}
+})
 
 # ---------------------------------------------------
 # cleaning the epic array datasets! 
