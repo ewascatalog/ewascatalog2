@@ -48,7 +48,7 @@ n_cov <- length(covs)
 
 # for ewas catalog output
 get_characteristics <- function(exposure, outcome, trait, pheno_dat, age, 
-                                covs) {
+                                covs, array) {
   if (is.binary(pheno_dat[[trait]])) {
     x <- pheno_dat[[trait]]
     uniq_val1 <- unique(x)[1]
@@ -80,7 +80,7 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age,
                     Covariates = covs, 
                     Outcome_Units = outcome_u, 
                     Exposure_Units = exposure_u, 
-                    Methylation_Array = "Illumina HumanMethylation450", 
+                    Methylation_Array = array, 
                     Tissue = "Whole blood", 
                     Further_Details = NA, 
                     N = nrow(pheno_dat), 
@@ -141,13 +141,15 @@ run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
   
   age_var <- grep("age", all_covs, value = TRUE, ignore.case = FALSE)
   age_vals <- ifelse(length(age_var) == 1, pheno_dat[[age_var]], NA)
+  array <- ifelse(nrow(temp_meth) > 5e5, "Illumina MethylationEPIC", "Illumina HumanMethylation450")
   # output the data needed for EWAS catalog
   out_dat <- get_characteristics(exposure, 
                                  outcome, 
                                  phen,
                                  pheno_dat,
                                  mean(age_vals), 
-                                 all_covs_nam)
+                                 all_covs_nam, 
+                                 array)
   # generate study ID
   out_dat$StudyID <- generate_study_id(out_dat)
   # Run EWAS using ewaff
