@@ -6,7 +6,7 @@ pkgs <- c("tidyverse", "sva", "SmartSVA", "matrixStats")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
-source("scripts/make_svs.R")
+source("scripts/gen_svs_functions.R")
 
 read_filepaths("filepaths.sh")
 

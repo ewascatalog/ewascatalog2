@@ -5,7 +5,7 @@
 pkgs <- c("tidyverse", "sva", "SmartSVA", "matrixStats")
 lapply(pkgs, require, character.only = TRUE)
 
-source("scripts/make_svs.R")
+source("scripts/gen_svs_functions.R")
 
 # ---------------------------------------------
 # load in data! 
@@ -97,7 +97,7 @@ lapply(geo_accessions, function(ga) {
 	} else {
 		message("All goood! Going ahead with generating SVs now!")
 	}
-
+	meth <- as.matrix(meth)
 	mdata <- impute_matrix(meth)
 	
 	sv_out_dir <- paste0(ga_path, "/svs/")
