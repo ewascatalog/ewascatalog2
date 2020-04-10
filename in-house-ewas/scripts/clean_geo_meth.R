@@ -39,7 +39,7 @@ make_dir <- function(path) {
 
 check_cols <- function(meth_dat, phen_dat) {
 	cols <- colnames(meth_dat)
-	out <- ifelse(all(cols %in% phen_dat$sample_name), "good", "bad")
+	out <- ifelse(any(cols %in% phen_dat$sample_name), "good", "bad")
 	return(out)
 }
 
@@ -61,9 +61,18 @@ check_betas <- function(meth_dat, n) {
 	out <- ifelse(any(test), "bad", "good")
 	return(out)
 }
-
+rows <- rownames(meth)
+x <- rows[!grepl("cg", rows)]
+new_meth <- meth[rows %in% x, ]
+i=x[1]
+lapply(x, function(i) {
+	new_meth <- meth[rows %in% i, ]
+	check_betas(new_meth, n=nrow(new_meth))
+})
+check_betas(new_meth, n=nrow(new_meth))
 
 ga=geo_accessions[1] # SHOULD WORK!
+ga="GSE67530"
 # check colnames and rownames
 lapply(geo_accessions, function(ga) {
 	## load in data
@@ -72,7 +81,12 @@ lapply(geo_accessions, function(ga) {
 	# methylation data
 	meth_file_nam <- paste0(tolower(ga), ".rda")
 	meth_file <- file.path(ga_path, meth_file_nam)
-	if (!file.exists(meth_file)) stop("meth file doesn't exist")
+	if (!file.exists(meth_file)) {
+		meth_file <- file.path(ga_path, "cleaned_meth_data.RData")	
+	} 
+	if (!file.exists(meth_file)) {
+		stop("meth file doesn't exist")
+	}
 	meth <- new_load(meth_file)	
 	# pheno data
 	pheno_file <- file.path(ga_path, "cleaned_phenotype_data.txt")
@@ -113,6 +127,9 @@ lapply(geo_accessions, function(ga) {
 					 out_path = sv_out_dir, 
 					 samples = "sample_name")
 	})
+	# change name of methylation data! 
+	cmd <- paste("mv", meth_file, file.path(ga_path, "cleaned_meth_data.RData"))
+	system(cmd)
 })
 
 # check which ones failed
