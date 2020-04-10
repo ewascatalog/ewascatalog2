@@ -16,7 +16,15 @@ extra_cohort_info <- args[2]
 cohort_data_path <- file.path(cohort, extra_cohort_info)
 
 meth_file <- file.path("data", cohort_data_path, "cleaned_meth_data.RData")
-load(meth_file)
+new_load <- function(file) {
+  temp_space <- new.env()
+  var <- load(file, temp_space)
+  out <- get(var, temp_space)
+  rm(temp_space)
+  return(out)
+}
+
+meth <- new_load(meth_file)
 ###
 ### These files should be renamed and the FOM data should now be put in
 ### a directory called "FOM"
@@ -30,6 +38,9 @@ pheno_dat <- read_tsv(pheno_file)
 pheno_meta_file <- file.path("data", cohort_data_path, "phenotype_metadata.txt")
 pheno_meta <- read_tsv(pheno_meta_file)
 traits <- pheno_meta$phen
+pmid <- ifelse(any(grepl("pmid", colnames(pheno_meta))), pheno_meta$pmid, NA)
+pmid <- unique(pmid)
+samples <- grep("sample_name", colnames(pheno_dat), value = T, ignore.case = T)
 devtools::load_all("~/repos/usefunc")
 
 # altering the names to prevent an error in the EWAS 
@@ -38,9 +49,16 @@ devtools::load_all("~/repos/usefunc")
 ## CHANGE THIS --> ONLY WORKS FOR THIS ANALYSIS!
 pc_covs <- grep("pc[0-9]*", colnames(pheno_dat), 
                 value = TRUE, ignore.case = TRUE)
-pc_nam <- paste(length(pc_covs), "genetic principal components")
+if (length(pc_covs) != 0) {
+  pc_nam <- paste(length(pc_covs), "genetic principal components")
+} else {
+  pc_nam <- NULL
+}
 other_covs <- grep("^age$", colnames(pheno_dat), 
                    value = TRUE, ignore.case = TRUE)
+if (tolower(traits) %in% tolower(other_covs)) {
+  other_covs <- other_covs[!tolower(other_covs) %in% tolower(traits)]
+}
 other_nam <- stringr::str_to_title(other_covs)
 covs <- c(pc_covs, other_covs)
 cov_nam <- paste(other_nam, pc_nam, sep = ", ")
@@ -48,7 +66,7 @@ n_cov <- length(covs)
 
 # for ewas catalog output
 get_characteristics <- function(exposure, outcome, trait, pheno_dat, age, 
-                                covs, array) {
+                                covs, array, pmid) {
   if (is.binary(pheno_dat[[trait]])) {
     x <- pheno_dat[[trait]]
     uniq_val1 <- unique(x)[1]
@@ -69,7 +87,7 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age,
   } 
   out_dat <- data.frame(Author = "Battram T", 
                     Consortium = toupper(cohort), 
-                    PMID = NA, 
+                    PMID = pmid, 
                     Date = Sys.Date(),
                     Trait = trait, 
                     EFO = NA, 
@@ -103,12 +121,17 @@ generate_study_id <- function(char_dat) {
   df <- char_dat
   auth_nam <- gsub(" ", "-", df$Author)
   trait_nam <- gsub(" ", "_", tolower(df$Trait))
-  StudyID <- paste(auth_nam, trait_nam, N, sep = "_")
+  if (is.na(df$PMID)) {
+    pmid <- NULL
+  } else {
+    pmid <- df$PMID
+  }
+  StudyID <- paste(c(pmid, auth_nam, trait_nam), collapse = "_")
   return(StudyID)
 }
 
-run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
-                    pheno_dat) {
+run_ewas <- function(exposure, outcome, data_path, out_path, model_family, meth_dat,
+                    pheno_dat, pmid, samples) {
   # get phenotype of interest
   phen <- c(exposure, outcome)[!c(exposure, outcome) == "methylation"]
   res_file <- paste0(out_path, phen, ".txt")
@@ -116,24 +139,24 @@ run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
   print(phen)
   
   # read in svs  
-  svs <- read_tsv(paste0("data/", cohort_path, "svs/", phen, ".txt"))
+  svs <- read_tsv(file.path("data", data_path, "svs", paste0(phen, ".txt")))
   sv_nam <- grep("sv[0-9]", colnames(svs), value = T)
 
   all_covs <- c(covs, sv_nam)
   sv_out_nam <- paste(length(sv_nam), "surrogate variables")
-  all_covs_nam <- paste(cov_nam, sv_out_nam, sep = ", ")
+  all_covs_nam <- paste(c(cov_nam, sv_out_nam), collapse = ", ")
 
   # Prepare phenotype data
   temp_phen <- pheno_dat %>%
-  	dplyr::select(Sample_Name, one_of(phen), one_of(covs)) %>%
+  	dplyr::select(one_of(samples), one_of(phen), one_of(covs)) %>%
   	left_join(svs) %>%
   	na.omit(.)
 
   # Match meth to Pheno
-  temp_meth <- meth_dat[, na.omit(match(temp_phen$Sample_Name, colnames(meth_dat)))]
-  temp_phen <- temp_phen[match(colnames(temp_meth), temp_phen$Sample_Name), ]
+  temp_meth <- meth_dat[, na.omit(match(temp_phen[[samples]], colnames(meth_dat)))]
+  temp_phen <- temp_phen[match(colnames(temp_meth), temp_phen[[samples]]), ]
 
-  if (!all(temp_phen$Sample_Name == colnames(temp_meth))) stop("phenotype and DNAm data not matched.")
+  if (!all(temp_phen[[samples]] == colnames(temp_meth))) stop("phenotype and DNAm data not matched.")
 
   model <- as.formula(paste0(outcome, " ~ ", paste(c(exposure, all_covs), collapse = " + ")))
 
@@ -149,7 +172,8 @@ run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
                                  pheno_dat,
                                  mean(age_vals), 
                                  all_covs_nam, 
-                                 array)
+                                 array, 
+                                 pmid)
   # generate study ID
   out_dat$StudyID <- generate_study_id(out_dat)
   # Run EWAS using ewaff
@@ -172,20 +196,27 @@ run_ewas <- function(exposure, outcome, out_path, model_family, meth_dat,
   return(out_dat)
 }
 
-out_dir <- paste0("results/", cohort_path, "full_stats/")
+out_dir <- file.path("results", cohort_data_path, "full_stats/")
+make_dir <- function(path) {
+    system(paste("mkdir", path))
+}
+if (!file.exists(out_dir)) make_dir(out_dir)
 char_out <- map_dfr(seq_along(traits), function(x) {
   trait <- traits[x]
   print(x)
   out <- run_ewas(exposure = trait, 
            outcome = "methylation", 
+           data_path = cohort_data_path,
            out_path = out_dir, 
            model_family = "gaussian", 
            meth_dat = meth, 
-           pheno_dat = pheno_dat)
+           pheno_dat = pheno_dat, 
+           pmid = pmid, 
+           samples = samples)
   return(out)
 })
 
-char_out_nam <- paste0("results/", cohort_path, "catalog_meta_data.txt")
+char_out_nam <- file.path("results", cohort_data_path, "catalog_meta_data.txt")
 write.table(char_out, file = char_out_nam,
             quote = F, row.names = F, col.names = T, sep = "\t")
 
