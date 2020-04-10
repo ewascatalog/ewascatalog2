@@ -22,7 +22,7 @@ out_failed <- function(x, out_path) {
 	sink()
 }
 
-generate_svs <- function(trait, phen_data, meth_data, covariates, nsv, out_path, 
+generate_svs <- function(trait, phen_data, meth_data, covariates = "", nsv, out_path, 
 						 samples = "Sample_Name") {
 	print(trait)
 	out_nam <- paste0(out_path, trait, ".txt")
@@ -37,16 +37,27 @@ generate_svs <- function(trait, phen_data, meth_data, covariates, nsv, out_path,
 	mdat <- meth_data[, colnames(meth_data) %in% phen[[samples]]]
 	phen <- phen %>%
 		dplyr::filter(!!as.symbol(samples) %in% colnames(mdat))
+	
+	# models 
+	trait_mod <- paste0("~ ", addq(trait))
+	cov_mod <- paste(covariates, collapse = " + ")
+	if (covariates != "") {
+		full_mod <- paste(trait_mod, cov_mod, sep = " + ")
+		fom <- as.formula(full_mod)
+		# null model
+		fom0 <- as.formula(paste0("~ ", cov_mod))
+		mod0 <- model.matrix(fom0, data = phen)
+	} else {
+		fom <- as.formula(trait_mod)
+		mod0 <- NULL
+	}
+
 	# full model - with variables of interest 
-	fom <- as.formula(paste0("~", addq(trait), " + ",paste(covariates, collapse = " + ")))
 	mod <- model.matrix(fom, data = phen)
-	# null model
-	fom0 <- as.formula(paste0("~", paste(covariates, collapse = "+")))
-	mod0 <- model.matrix(fom0, data = phen)
 
 	# Estimate the surrogate variables
 	tryCatch({
-		svobj <- smartsva.cpp(mdat, mod, mod0, n.sv = nsv)
+		svobj <- smartsva.cpp(mdat, mod, mod0, n.sv = nsv, VERBOSE = T)
 		svs <- as.data.frame(svobj$sv, stringsAsFactors = F)
 		svs[[samples]] <- phen[[samples]]
 		# head(svs)
