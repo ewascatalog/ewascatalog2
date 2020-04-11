@@ -47,7 +47,10 @@ sub_res <- map_dfr(extra_cohort_dirs, function(dir) {
 
 		# now just take values of p<1x10-4
 		sub_df <- df %>%
-			dplyr::filter(P < 1e-4)
+			dplyr::filter(P < 1e-4) %>%
+			mutate(Beta = round(Beta, 6), 
+				   SE = round(SE, 6), 
+				   P = signif(P, 3))
 		return(sub_df)
 	})
 	return(dir_sub_res)
