@@ -71,8 +71,8 @@ get_characteristics <- function(exposure, outcome, trait, pheno_dat, age,
     x <- pheno_dat[[trait]]
     uniq_val1 <- unique(x)[1]
     uniq_val2 <- unique(x)[2]
-    cats <- paste0("Number of ", uniq_val1, " values = ", table(x)[1], 
-                   ", number of ", uniq_val2, " values = ", table(x)[2])
+    cats <- paste0("Number of ", uniq_val1, " values = ", sum(x == uniq_val1), 
+                   ", number of ", uniq_val2, " values = ", sum(x == uniq_val2))
   } else {
     cats <- NA
   }    
@@ -163,13 +163,13 @@ run_ewas <- function(exposure, outcome, data_path, out_path, model_family, meth_
   # get characteristics for the catalog
   
   age_var <- grep("age", all_covs, value = TRUE, ignore.case = FALSE)
-  age_vals <- ifelse(length(age_var) == 1, pheno_dat[[age_var]], NA)
+  age_vals <- ifelse(length(age_var) == 1, temp_phen[[age_var]], NA)
   array <- ifelse(nrow(temp_meth) > 5e5, "Illumina MethylationEPIC", "Illumina HumanMethylation450")
   # output the data needed for EWAS catalog
   out_dat <- get_characteristics(exposure, 
                                  outcome, 
                                  phen,
-                                 pheno_dat,
+                                 temp_phen,
                                  mean(age_vals), 
                                  all_covs_nam, 
                                  array, 
@@ -196,7 +196,7 @@ run_ewas <- function(exposure, outcome, data_path, out_path, model_family, meth_
   return(out_dat)
 }
 
-out_dir <- file.path("results", cohort_data_path, "full_stats/")
+out_dir <- file.path("results", cohort_data_path, "raw", "full_stats/")
 make_dir <- function(path) {
     system(paste("mkdir", path))
 }
