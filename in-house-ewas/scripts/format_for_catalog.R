@@ -10,94 +10,125 @@ read_filepaths("filepaths.sh")
 
 args <- commandArgs(trailingOnly = TRUE)
 cohort <- args[1]
-extra_cohort_info <- args[2]
 # cohort <- "alspac"
 # cohort <- "geo"
-# extra_cohort_info <- "FOM"
-# extra_cohort_info <- "GSE101961"
-
-# ADJUSTMENT TO MAKE
-# -- At end of script in data/cohort/results there will be 
-#    a single results.txt and studies.txt file! as well as 
-#	 the full summary stats of the extra bits (which will be in e.g. GSE1234)
-# -- Script now looks through all directories of res_dir for "extra_cohort_info"
-# -- The script will loop over new directories
-# -- Should be a way of checking which files have been added to results.txt
-# 	 and studies.txt anyway... --> If it has the full sum stats present
-#	 it will have been saved to results.txt and studies.txt!!!
-# -- 
 
 res_dir <- paste0(local_rdsf_dir, "data/", cohort, "/results/")
 
 if (!file.exists(res_dir)) stop("File path not found!")
 
-# cpg annotations
-cpg_anno_file <- "../files/cpg_annotation.txt"
-cpg_anno <- read_tsv(cpg_anno_file)
-
 # file paths 
-raw_path <- paste0(res_dir, "raw/", extra_cohort_info, "/")
-raw_res_path <- paste0(raw_path, "full_stats/")
-derived_path <- paste0(res_dir, "derived/", extra_cohort_info, "/")
+raw_path <- paste0(res_dir, "raw/")
+derived_path <- paste0(res_dir, "derived/")
+
+extra_cohort_dirs <- list.files(raw_path) # This should just be directories!
+
+# making temp directory for excel files to be moved over to the 
+# rdsf because it is so bloody slow to write and edit in rdsf
+make_dir <- function(path) {
+    system(paste("mkdir", path))
+}
+temp_dir <- "temp"
+make_dir(temp_dir)
+
+dir=extra_cohort_dirs[1]
+raw_met_file <- "catalog_meta_data.txt"
+derived_met_file <- "catalog_meta_data.xlsx"
+
+# Data from GEO dataset: 
 
 # -------------------------------------------------
 # Edit characteristics files
 # -------------------------------------------------
-raw_files <- list.files(raw_path)
-derived_files <- list.files(derived_path)
-char_files <- grep("catalog_meta_data", raw_files, value = T)
-edited_char_files <- grep("catalog_meta_data", derived_files, value = T)
-if (length(edited_char_files) == 0) {
-	lapply(char_files, function(file) {
-		file_path <- paste0(raw_path, file)
-		df <- read_tsv(file_path)
-		new_file_nam <- gsub(".txt", ".xlsx", file)
-		new_file_path <- paste0(derived_path, new_file_nam)
-		write.xlsx(df, new_file_path)
-	})
-	stop("Edit the spreadsheets and come back!")
-}
 
-# now extract the char
+# manually edit meta data
+# 1. add in efo terms
+# 2. re-write further_details
+# 3. Change trait names if needs be
+# 4. Change categories if needs be
+# 5. Change tissue if needs be
+dir="GSE106648"
+char <- map_lgl(extra_cohort_dirs, function(dir) {
+	print(dir)
+	dd_path <- paste0(derived_path, dir)
+	dd_files <- list.files(dd_path)
+	if (derived_met_file %in% dd_files) {
+		return(TRUE)
+	} else {
+		temp_file_path <- file.path(temp_dir, derived_met_file)
+		new_file_path <- file.path(derived_path, dir, derived_met_file)
+		if (file.exists(temp_file_path)) {
+			mv_cmd <- paste("mv", temp_file_path, new_file_path)
+			system(mv_cmd)
+			print("Moved!")
+		} else {
+			raw_dat <- file.path(raw_path, dir, raw_met_file)
+			if (!file.exists(raw_dat)) return(FALSE)
+			df <- read_tsv(file.path(raw_path, dir, raw_met_file))
+			df$Further_Details <- dir # To make it easier for GEO further details
+			write.xlsx(df, temp_file_path)
+			open_cmd <- paste("open", temp_file_path)
+			system(open_cmd)
+			stop("Edit the spreadsheet and come back!")
+		}
+		return(TRUE)
+	}
+	
+})
+# should capture those that the EWAS worked!
+extra_cohort_dirs <- extra_cohort_dirs[char]
+# extra_cohort_dirs <- extra_cohort_dirs[extra_cohort_dirs != "GSE59592"]
+temp <- file.path(derived_path, "GSE50660", derived_met_file)
+system(paste("open", temp))
 
-# -------------------------------------------------
-# Edit results files
-# -------------------------------------------------
-raw_res_files <- list.files(raw_res_path)
-
-# loop over res files
-sub_res <- map_dfr(raw_res_files, function(x) {
-	print(x)
-	full_out_nam <- gsub(".txt", "_full_stats.txt", x)
-	df <- read_tsv(paste0(raw_res_path, x)) %>%
-		rename(CpG = probeID, Beta = estimate, SE = se, P = p.value) %>%
-		left_join(cpg_anno) %>%
-		dplyr::select(CpG, Location, Chr, Pos, Gene, Type, Beta, SE, P, Details, StudyID)
-
-	# write it out to the rdsf
-	write.table(df, file = paste0(derived_path, full_out_nam), 
-				col.names = T, row.names = F, quote = F, sep = "\t")
-
-	# now just take values of p<1x10-4
-	sub_df <- df %>%
-		dplyr::filter(P < 1e-4)
-	return(sub_df)
+# bind meta-data together
+studies <- map_dfr(extra_cohort_dirs, function(dir) {
+	print(dir)
+	dd_file <- file.path(derived_path, dir, derived_met_file)
+	meta_dat <- read_xlsx(dd_file)
+	return(meta_dat)
 })
 
-sub_char_dat <- char_dat %>%
+studies_nam <- paste0(derived_path, "full_studies.txt")
+write.table(studies, file = studies_nam, 
+			col.names = T, row.names = F, quote = F, sep = "\t")
+
+# remove temporary directory
+rm_cmd <- paste("rm -r", temp_dir)
+system(rm_cmd)
+
+# -------------------------------------------------
+# Save sub files in catalog
+# -------------------------------------------------
+
+results_nam <- paste0(derived_path, "results.txt")
+sub_res <- read_tsv(results_nam)
+
+studies_nam <- paste0(derived_path, "full_studies.txt")
+studies <- read_tsv(studies_nam)
+
+sub_studies <- studies %>%
 	dplyr::filter(StudyID %in% sub_res$StudyID)
 
-sub_out_dir <- paste0("files/ewas-sum-stats/sub/", cohort, "/") 
+sub_out_dir <- paste0("../files/ewas-sum-stats/sub/", cohort) 
 
-# write out sub res
-write.table(sub_res, file = paste0(sub_out_dir, "results.txt"), 
-			col.names = T, row.names = F, quote = F, sep = "\t")
-
-# AND sub studie data
-write.table(sub_char_dat, file = paste0(sub_out_dir, "studies.txt"), 
-			col.names = T, row.names = F, quote = F, sep = "\t")
-
-### will have to manually move full summary stats over! 
+sub_res_nam <- file.path(sub_out_dir, "results.txt")
+sub_studies_nam <- file.path(sub_out_dir, "studies.txt")
+nams <- c(sub_res = sub_res_nam, sub_studies = sub_studies_nam)
+nam <- nams[2]
+# This didn't work for some reason but worked when done manually...
+lapply(nams, function(nam) {
+	if (file.exists(nam)) {
+		cols = FALSE
+		append = TRUE
+	} else {
+		cols = TRUE
+		append = FALSE
+	}
+	out <- get(names(nam))
+	write.table(out, file = nam, col.names = cols, 
+				row.names = F, quote = F, sep = "\t", append = append)
+})
 
 
 
