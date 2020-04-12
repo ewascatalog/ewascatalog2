@@ -15,6 +15,7 @@ Files are divided into the following directories:
 - `webserver`: configuration files for the webserver
 - `r-package`: R package for accessing the database
 - `logo`: logo graphics files
+- `in-house-ewas`: Scripts and instructions for EWAS performed by us
 
 ## Environment
 
