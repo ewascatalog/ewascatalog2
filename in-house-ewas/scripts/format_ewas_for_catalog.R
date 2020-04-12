@@ -1,3 +1,7 @@
+# --------------------------------------------------------
+# Script for formatting EWAS results for the catalog
+# --------------------------------------------------------
+
 pkgs <- c("tidyverse", "readxl", "openxlsx")
 lapply(pkgs, require, character.only = TRUE)
 
