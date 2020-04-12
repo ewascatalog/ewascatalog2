@@ -6,7 +6,7 @@ To use these scripts a text file or shell script must be created in this directo
 
 The scripts are performed locally or on bluecrystal, a (__L__) or (__BC__) will be used to indicate this.
 
-rdsf space used: projects/ieu1/wp2/004/working/data/
+rdsf space used for the results and alspac data: /projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/
 
 Functions used across scripts sourced at the start of each R script found in __useful_functions.R__
 
@@ -22,8 +22,10 @@ Functions used across scripts sourced at the start of each R script found in __u
 
 __NOTE__ There are 2 steps before using the scripts:
 
-1. GEO data need to be extracted. This was done using [geograbi](https://github.com/yousefi138/geograbi) and can be found here: 
-2. The data need to be manually asssessed to see whether they are suitable for the catalog and saved. The review spreadsheet can be found here: 
+1. GEO data need to be extracted. This was done using [geograbi](https://github.com/yousefi138/geograbi).
+2. The data need to be manually asssessed to see whether they are suitable for the catalog and saved.
+
+These data can be found in the geo rdsf space: /projects/MRC-IEU/research/projects/ieu2/p5/020/working
 
 * GEO data are assessed using __geo_phenotype_sorting.R__ (__BC__)
 * The methylation data that will be used will need to be moved over from the RDSF to the bluecrystal space
