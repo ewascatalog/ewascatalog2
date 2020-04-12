@@ -24,7 +24,7 @@ setwd(bc_home_dir)
 # aries ids file
 aries_ids <- read_tsv(paste0("data/alspac/", aries_ids_file))
 # pcs
-pcs <- read.table(paste0("data/alspac/", timepoints, "_pcs.eigenvec"), sep = " ", header = F, stringsAsFactors = F) 
+pcs <- read.table(paste0("data/alspac/", timepoints, "/", timepoints, "_pcs.eigenvec"), sep = " ", header = F, stringsAsFactors = F) 
 head(pcs)
 colnames(pcs) <- c("FID", "IID", paste0(rep("PC", times = 20), 1:20))
 pcs$ALN <- gsub("[A-Z]", "", pcs[["FID"]])
@@ -47,7 +47,7 @@ load(aries_detection_p)
 pvals <- detection.p[, samplesheet$Sample_Name]
 rm(detection.p)
 
-# list from zhou et al.
+# list from zhou et al. --> copy from rdsf directory
 zhou_list <- read.delim("data/retain_from_zhou.txt", header = F)
 zhou_list <- as.character(zhou_list[[1]])
 
@@ -101,7 +101,7 @@ dim(meth)
 
 print(paste0("Number of samples removed = ", length(rem_samp)))
 
-out_nam <- paste0("data/alspac/cleaned_", timepoints, "_data.RData")
+out_nam <- file.path("data/alspac", timepoints, "cleaned_meth_data.RData")
 save(meth, file = out_nam)
 
 print("Saved filtered methylation data")

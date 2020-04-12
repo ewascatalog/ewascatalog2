@@ -5,10 +5,10 @@
 source filepaths.sh
 
 # Set directory
-cd $bc_home_dir/data/alspac/
+cd $bc_home_dir/data/alspac/$timepoints/
 
 # Extract all the ALNs from the timepoint
-grep ${timepoints} ${aries_ids_file} | awk ' { print $1$3" "$1$3 }' > ${timepoints}.txt
+grep ${timepoints} ../${aries_ids_file} | awk ' { print $1$3" "$1$3 }' > ${timepoints}.txt
 
 if [[ ${timepoints} != "FOF" ]]; then
 	gendir=$mum_gendir

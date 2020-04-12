@@ -17,7 +17,7 @@ read_filepaths("filepaths.sh")
 # aries ids file
 aries_ids <- read_tsv(paste0("data/alspac/", aries_ids_file))
 # pcs
-pcs <- read.table(paste0("data/alspac/", timepoints, "_pcs.eigenvec"), sep = " ", header = F, stringsAsFactors = F) 
+pcs <- read.table(paste0("data/alspac/", timepoints, "/", timepoints, "_pcs.eigenvec"), sep = " ", header = F, stringsAsFactors = F) 
 head(pcs)
 colnames(pcs) <- c("FID", "IID", paste0(rep("PC", times = 20), 1:20))
 pcs$ALN <- gsub("[A-Z]", "", pcs[["FID"]])
@@ -30,16 +30,16 @@ load(samplesheet_file)
 head(samplesheet)
 
 # phenotype file
-phen_dat <- read_tsv(paste0("data/alspac/phenotype_data_", timepoints, ".txt"))
+phen_dat <- read_tsv(file.path("data/alspac", timepoints, "phenotype_data.txt"))
 phen_cols <- colnames(phen_dat)
 
 # meta-data file
-phen_meta <- read_tsv(paste0("data/alspac/phenotype_metadata_", timepoints, ".txt"))
+phen_meta <- read_tsv(file.path("data/alspac", timepoints, "phenotype_metadata.txt"))
 
 # methylation file
-meth_file <- paste0("data/alspac/cleaned_", timepoints, "_data.RData")
+meth_file <- file.path("data/alspac", timepoints, "cleaned_meth_data.RData")
 if (!file.exists(meth_file)) stop("CLEAN YOUR METHYLATION DATA AND PUT IT IN THE RIGHT PLACE!")
-load(meth_file)
+meth <- new_load(meth_file)
 
 # ---------------------------------------------
 # check phenotype data 
@@ -146,7 +146,7 @@ lapply(traits, function(trait) {
 # ---------------------------------------------
 # SVs already written out so just writing out other data
 
-nam <- paste0("data/alspac/cleaned_phenotype_data_", timepoints, ".txt")
+nam <- file.path("data/alspac", timepoints, "cleaned_phenotype_data.txt")
 write.table(all_dat, file = nam, 
 			col.names = T, row.names = F, quote = F, sep = "\t")
 

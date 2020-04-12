@@ -16,7 +16,7 @@ source("scripts/read_filepaths.R")
 source("scripts/useful_functions.R")
 
 read_filepaths("filepaths.sh")
-output_path <- paste0(local_rdsf_dir, "data/alspac/")
+output_path <- paste0(local_rdsf_dir, "data/alspac/", timepoints)
 
 message("alspac data directory is: ", alspac_data_dir)
 message("the ouput path is: ", output_path)
@@ -26,11 +26,6 @@ message("timepoints are: ", timepoints)
 stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
 stopifnot(file.exists(paste0(output_path, aries_ids_file))
-
-# add on a slash to the end of the output path if it's not there!
-if (str_sub(output_path, start = nchar(output_path)) != "/") {
-	output_path <- paste0(output_path, "/")
-}
 
 setDataDir(alspac_data_dir)
 
@@ -273,7 +268,7 @@ phen_list <- map_df(seq_along(res4), function(x) {
 
 phen_list$include <- NA
 # write out this data and decide on what to keep then save it!
-phen_file_nam <- paste0(output_path, "phenotype_metadata_", timepoints, ".txt")
+phen_file_nam <- file.path(output_path, "phenotype_metadata.txt")
 # here write out the table, put it into an excel spreadsheet
 # and manually choose which traits to keep after discussion
 # make the decision by changing the include column to "Y" or "N"
@@ -289,7 +284,7 @@ if (!file.exists(new_phen_file_nam)) {
 		dplyr::filter(!phen %in% new_phen_list$phen) %>%
 		pull(phen)
 	if (length(phens_removed) == 0) warning("You'd expect to throw out some phenotypes!")
-	write.table(phens_removed, file = paste0(output_path, "removed_phens.txt"), 
+	write.table(phens_removed, file = file.path(output_path, "removed_phens.txt"), 
 				row.names = F, col.names = F, quote = F, sep = "\t")
 }
 
@@ -301,7 +296,7 @@ write.table(new_phen_list, file = phen_file_nam,
 res4 <- res4 %>%
 	dplyr::select(aln, qlet, alnqlet, one_of(new_phen_list$phen))
 
-res_file_nam <- paste0(output_path, "phenotype_data_", timepoints, ".txt")
+res_file_nam <- file.path(output_path, "phenotype_data.txt")
 write.table(res4, file = res_file_nam, quote = F, col.names = T, row.names = F, sep = "\t")
 
 # Set new password each time
