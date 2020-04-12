@@ -84,6 +84,10 @@ database:
 		bash -c "cd /code/database; bash create.sh ../settings.env /files"
 ## could save time by saving contents of /var/db/mysql/
 
+update-database:
+	cd $(WEBSITE_DIR); docker-compose exec db \
+		bash -c "cd /code/database; bash add-to-ewas.sh ../settings.env /files"
+
 update-website: website
 	cd $(WEBSITE_DIR); docker-compose restart web
 
@@ -100,7 +104,6 @@ docker-rm:
 	cd $(WEBSITE_DIR); docker-compose rm
 
 
-## to do: command to update database
 
 
 
