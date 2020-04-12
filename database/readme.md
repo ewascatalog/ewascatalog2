@@ -25,7 +25,7 @@ When the container is running `make update-database` can be used to update the d
 
 Other things that should be done when adding in new data:
 
-* Add the data to ${FILE_DIR}/ewas-sum-stats/combined_data/
+* Add the data to ${FILE_DIR}/ewas-sum-stats/combined_data/ using `bind-results.r`
 * Copy the files into the original directory, e.g. `/projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2`
 * 
 

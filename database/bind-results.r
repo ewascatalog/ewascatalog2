@@ -41,6 +41,11 @@ res_dat <- lapply(all_dirs, function(dir) {
 })
 res_dat <- do.call(rbind, res_dat)
 
+res_dat <- res_dat %>%
+	mutate(Beta = round(as.numeric(Beta), 6), 
+		   SE = round(as.numeric(SE), 6), 
+		   P = signif(P, 3))
+
 write.table(res_dat, file = file.path(out_dir, "results.txt"), 
 			col.names = T, row.names = F, quote = F, sep = "\t")
 
