@@ -190,7 +190,7 @@ run_ewas <- function(exposure, outcome, data_path, out_path, model_family, meth_
   return(out_dat)
 }
 
-out_dir <- file.path("results", cohort_data_path, "raw", "full_stats/")
+out_dir <- file.path("results", cohort, "raw", extra_cohort_info, "full_stats/")
 
 if (!file.exists(out_dir)) make_dir(out_dir)
 char_out <- map_dfr(seq_along(traits), function(x) {
@@ -208,7 +208,7 @@ char_out <- map_dfr(seq_along(traits), function(x) {
   return(out)
 })
 
-char_out_nam <- file.path("results", cohort_data_path, "catalog_meta_data.txt")
+char_out_nam <- file.path("results", cohort, "raw", extra_cohort_info, "catalog_meta_data.txt")
 write.table(char_out, file = char_out_nam,
             quote = F, row.names = F, col.names = T, sep = "\t")
 
