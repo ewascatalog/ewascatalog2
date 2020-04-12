@@ -8,6 +8,8 @@ The scripts are performed locally or on bluecrystal, a (__L__) or (__BC__) will 
 
 rdsf space used: projects/ieu1/wp2/004/working/data/
 
+Functions used across scripts sourced at the start of each R script found in __useful_functions.R__
+
 ## ALSPAC
 
 * ALSPAC data are extracted using __alspac_data_extraction.R__, which saves the data in the RDSF in an encrypted file. (__L__)

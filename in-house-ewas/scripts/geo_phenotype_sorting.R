@@ -6,6 +6,7 @@ pkgs <- c("tidyverse", "readxl")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
+source("scripts/useful_functions.R")
 
 read_filepaths("filepaths.sh")
 
@@ -256,15 +257,6 @@ names(met_dat) <- geo_asc
 # ------------------------------------------------------
 
 # set outliers to missing
-set_outliers_to_na <- function(x) {
-    q <- quantile(x, probs = c(0.25, 0.75), na.rm = T)
-    iqr <- q[2] - q[1]
-    too_hi <- which(x > q[2] + 3 * iqr)
-    too_lo <- which(x < q[1] - 3 * iqr)
-    if (length(c(too_lo,too_hi)) > 0) x[c(too_lo, too_hi)] <- NA
-    return(x)
-}
-
 no_out_phen <- lapply(geo_asc, function(ga) {
     print(ga)
     df <- effect_phen_dat[[ga]]
@@ -315,10 +307,6 @@ fin_dat <- no_out_phen
 # ------------------------------------------------------
 # write out the data!
 # ------------------------------------------------------
-
-make_dir <- function(path) {
-    system(paste("mkdir", path))
-}
 
 # write out cleaned phenotype data and meta data
 lapply(geo_asc, function(ga) {

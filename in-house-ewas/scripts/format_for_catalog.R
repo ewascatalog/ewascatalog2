@@ -6,6 +6,7 @@ pkgs <- c("tidyverse", "readxl", "openxlsx")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
+source("scripts/useful_functions.R")
 read_filepaths("filepaths.sh")
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -25,9 +26,6 @@ extra_cohort_dirs <- list.files(raw_path) # This should just be directories!
 
 # making temp directory for excel files to be moved over to the 
 # rdsf because it is so bloody slow to write and edit in rdsf
-make_dir <- function(path) {
-    system(paste("mkdir", path))
-}
 temp_dir <- "temp"
 make_dir(temp_dir)
 

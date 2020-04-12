@@ -6,6 +6,7 @@ pkgs <- c("tidyverse", "ewaff")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
+source("scripts/useful_functions.R")
 
 read_filepaths("filepaths.sh")
 
@@ -16,13 +17,6 @@ extra_cohort_info <- args[2]
 cohort_data_path <- file.path(cohort, extra_cohort_info)
 
 meth_file <- file.path("data", cohort_data_path, "cleaned_meth_data.RData")
-new_load <- function(file) {
-  temp_space <- new.env()
-  var <- load(file, temp_space)
-  out <- get(var, temp_space)
-  rm(temp_space)
-  return(out)
-}
 
 meth <- new_load(meth_file)
 ###
@@ -197,9 +191,7 @@ run_ewas <- function(exposure, outcome, data_path, out_path, model_family, meth_
 }
 
 out_dir <- file.path("results", cohort_data_path, "raw", "full_stats/")
-make_dir <- function(path) {
-    system(paste("mkdir", path))
-}
+
 if (!file.exists(out_dir)) make_dir(out_dir)
 char_out <- map_dfr(seq_along(traits), function(x) {
   trait <- traits[x]

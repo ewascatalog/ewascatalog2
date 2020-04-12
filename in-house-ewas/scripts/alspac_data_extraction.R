@@ -13,6 +13,7 @@ lapply(pkgs, require, character.only = T)
 
 # need to go to the correct directory first!
 source("scripts/read_filepaths.R")
+source("scripts/useful_functions.R")
 
 read_filepaths("filepaths.sh")
 output_path <- paste0(local_rdsf_dir, "data/alspac/")
@@ -186,10 +187,6 @@ dim(res2)
 # ------------------------------------------------------------------------------------
 # Sorting binary vals
 # ------------------------------------------------------------------------------------
-is.binary <- function(v) {
-  x <- unique(v)
-  length(x) - sum(is.na(x)) == 2L
-}
 
 bin_vars <- map_lgl(res2, is.binary)
 

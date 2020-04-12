@@ -2,6 +2,7 @@ pkgs <- c("tidyverse", "readxl", "openxlsx")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
+source("scripts/useful_functions.R")
 read_filepaths("filepaths.sh")
 
 args <- commandArgs(trailingOnly = TRUE)

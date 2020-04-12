@@ -6,7 +6,7 @@ pkgs <- c("tidyverse", "sva", "SmartSVA", "matrixStats")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
-source("scripts/gen_svs_functions.R")
+source("scripts/useful_functions.R")
 
 read_filepaths("filepaths.sh")
 
@@ -47,16 +47,6 @@ load(meth_file)
 
 traits <- phen_meta$phen
 alnqlet_cols <- grep("aln|qlet", phen_cols, value = T, ignore.case = T)
-
-# set outliers to missing
-set_outliers_to_na <- function(x) {
-	q <- quantile(x, probs = c(0.25, 0.75), na.rm = T)
-	iqr <- q[2] - q[1]
-	too_hi <- which(x > q[2] + 3 * iqr)
-	too_lo <- which(x < q[1] - 3 * iqr)
-	if (length(c(too_lo,too_hi)) > 0) x[c(too_lo, too_hi)] <- NA
-	return(x)
-}
 
 no_out_phen <- map_dfc(phen_cols, function(trait) {
 	var <- phen_dat[[trait]]
@@ -135,7 +125,7 @@ mdata <- impute_matrix(mdata)
 # make svs
 ### loop over all traits and save out results -- need diff results for each trait! 
 out_dir <- "data/alspac/svs/"
-if (!file.exists(out_dir)) stop("MAKE DIRECTORY!")
+if (!file.exists(out_dir)) make_dir(out_dir)
 lapply(traits, function(trait) {
 	start_time <- proc.time()
 	generate_svs(

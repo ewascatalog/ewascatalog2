@@ -5,7 +5,7 @@
 pkgs <- c("tidyverse", "sva", "SmartSVA", "matrixStats")
 lapply(pkgs, require, character.only = TRUE)
 
-source("scripts/gen_svs_functions.R")
+source("scripts/useful_functions.R")
 
 # ---------------------------------------------
 # load in data! 
@@ -23,19 +23,6 @@ geo_accessions <- read_tsv(file.path(geo_path, "geo_accession.txt"),
 # to check
 # 1. column names match the sample_name column in the pheno data
 # 2. data is there
-
-# loading function that allows you to name the thing being loaded into R
-new_load <- function(file) {
-	temp_space <- new.env()
-	var <- load(file, temp_space)
-	out <- get(var, temp_space)
-	rm(temp_space)
-	return(out)
-}
-
-make_dir <- function(path) {
-    system(paste("mkdir", path))
-}
 
 check_cols <- function(meth_dat, phen_dat) {
 	cols <- colnames(meth_dat)

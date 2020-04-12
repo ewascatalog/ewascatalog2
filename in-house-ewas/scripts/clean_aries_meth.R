@@ -11,6 +11,7 @@ pkgs <- c("tidyverse", "meffil", "GenABEL")
 lapply(pkgs, require, character.only = T)
 
 source("scripts/read_filepaths.R")
+source("scripts/useful_functions.R")
 
 read_filepaths("filepaths.sh")
 

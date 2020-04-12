@@ -1,5 +1,9 @@
 # -------------------------------------------------------
-# SVA
+# Useful functions for EWAS
+# -------------------------------------------------------
+
+# -------------------------------------------------------
+# SVA functions
 # -------------------------------------------------------
 
 # impute function from Matt
@@ -68,3 +72,40 @@ generate_svs <- function(trait, phen_data, meth_data, covariates = "", nsv, out_
 
 	}, error = function(e) {out_failed(trait, out_path)})
 }
+
+# -------------------------------------------------------
+# Checking data functions
+# -------------------------------------------------------
+
+is.binary <- function(v) {
+  x <- unique(v)
+  length(x) - sum(is.na(x)) == 2L
+}
+
+# set outliers to missing
+set_outliers_to_na <- function(x) {
+	q <- quantile(x, probs = c(0.25, 0.75), na.rm = T)
+	iqr <- q[2] - q[1]
+	too_hi <- which(x > q[2] + 3 * iqr)
+	too_lo <- which(x < q[1] - 3 * iqr)
+	if (length(c(too_lo,too_hi)) > 0) x[c(too_lo, too_hi)] <- NA
+	return(x)
+}
+
+# -------------------------------------------------------
+# Reading and writing data functions
+# -------------------------------------------------------
+
+# loading function that allows you to name the thing being loaded into R
+new_load <- function(file) {
+	temp_space <- new.env()
+	var <- load(file, temp_space)
+	out <- get(var, temp_space)
+	rm(temp_space)
+	return(out)
+}
+
+make_dir <- function(path) {
+    system(paste("mkdir", path))
+}
+
