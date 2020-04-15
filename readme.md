@@ -137,19 +137,7 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 
 * Not known how published EWAS summary statistics get from
   'published-ewas/study-files/' to the tables in
-  'files/published-ewas/'.  
-
-* Not known where the ARIES and GEO EWAS summary statistics come from.
-  For ARIES, they just magically appear in a table in
-  'files/aries-ewas/'. In fact, we may want a single procedure for all 
-  EWAS with full summary data.  
-
-* Need a single method for
-  adding summary data to the database, this includes full statistics
-  from GEO and ARIES as well as published studies (not sure there is
-  a reason to have separate procedures and database tables for these).
-
-* Make sure GEO and ARIES data are being queried.
+  'files/ewas-sub-stats/published/'.  
 
 * Should have a command in the Makefile for creating a backup of the
   container. Building is pretty quick except for installing R packages ...
@@ -157,6 +145,8 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 * Update the acknowledgements section on the about page http://www.ewascatalog.org/about. Just need to add names to the template file.
 
 * Contact PACE members for full summary statistics of already published articles. Try Gemma first and test out the upload page (see New features below)
+
+* Add a feature to the EWAS Catalog R package that allows browsing of just the studies (e.g. the 'studies.txt' file in 'files/ewas-sub-stats/combined_data/'). 
     
 ### Errors
     
@@ -166,8 +156,6 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 * Searching for gene names only works if the name is in all caps.
 
 * When ZOOMA is down you can't search for traits in the database at all.
-
-* No P-values for ARIES analysis on website. They're present on the original website.
 
 ### New features
 
