@@ -1,0 +1,23 @@
+{% extends "catalog/base.html" %}
+{% block content %}
+{% load static %}
+
+{% if query_list %}
+ <h1> Search results for <i>{{query_label}}</i> </h1>
+ <p class="small">&nbsp;</p>
+ <ul>
+   {% for query in query_list %}
+     <li>
+       <a href="{{ query.url() }}"><b>{{ query.title() }}</b></a>
+       {% for key, value in query.details().items %}
+       <br><b>{{key}}: value</b>
+       <% endfor %}
+     </li>
+   {% endfor %}
+ </ul>
+{% else %}
+ <div class="information">
+ <h1> No results for <i>{{query_label}}</i> </h1>
+ </div>
+{% endif %}       
+{% endblock %}
