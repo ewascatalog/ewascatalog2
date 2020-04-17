@@ -15,7 +15,10 @@ for download.
 
 import re
 from math import log10, floor
-from query import response
+from catalog import query
+import time
+from django.http import JsonResponse
+
 
 HTML_FIELDS = ["author","pmid","outcome","exposure","analysis","n",
                "cpg","chrpos","gene","beta","p"]
@@ -28,27 +31,33 @@ TSV_FIELDS = ["author","consortium","pmid","date","trait","efo",
               "n_afr","n_amr","n_oth",
               "cpg","chrpos","chr","pos","gene","type",
               "beta","se","p","details","study_id"]
+PVALUE_THRESHOLD=1e-4
 
-def execute(db, category, value):
+
+def execute(db, category, value, max_associations):
     """ Structured query entry point. 
 
     This function is called in views.py to 
     execute a structured query of the EWAS catalog.
     """
     if category=="cpg":
-        return response(db, value, cpg_sql(value))
+        ret = response(db, value, cpg_sql(value))
     elif category=="loc":
-        return response(db, value, loc_sql(value))
+        ret = response(db, value, loc_sql(value))
     elif category=="region":
-        return response(db, value, region_sql(value))
+        ret = response(db, value, region_sql(value))
     elif category=="gene":
-        return response(db, value, gene_sql(value))
-    elif category=="trait":
-        return response(db, value, trait_sql(value))
+        ret = response(db, value, gene_sql(value))
+    elif category=="efo":
+        ret = response(db, value, efo_sql(value))
     elif category=="study":
-        return response(db, value, study_sql(value))
+        ret = response(db, value, study_sql(value))
     else:
-        return ""
+        ret = ""
+    if isinstance(ret, response) and ret.nrow() > max_associations:
+        ret.subset(rows=range(max_associations))
+    return ret
+    
 
 def response_sql(where):
     """ The basic SQL query syntax. 
@@ -56,10 +65,11 @@ def response_sql(where):
     The query category/value pair determines 
     how the resulting table is restricted. 
     """
+    where = where.replace("study_id", "results.study_id")
     return ("SELECT studies.*,results.* "
             "FROM results JOIN studies "
             "ON results.study_id=studies.study_id "
-            "WHERE ("+where+") AND p < 1e-4")
+            "WHERE ( "+where+" ) AND p <"+str(PVALUE_THRESHOLD))
 
 def cpg_sql(cpg):
     return response_sql("cpg='"+cpg+"'")
@@ -67,11 +77,11 @@ def cpg_sql(cpg):
 def loc_sql(loc):
     return response_sql("chrpos='"+loc+"'")
 
-def gene_sql(cpg):
+def gene_sql(gene):
     return response_sql("gene='"+gene+"'")
 
 def region_sql(region):
-    region = re.split(':|-',query)
+    region = re.split(':|-',region)
     chr = region[0]
     start = region[1]
     end = region[2]
@@ -79,11 +89,11 @@ def region_sql(region):
                      "AND pos>="+start+" "
                      "AND pos<="+end)
 
-def trait_sql(terms): 
-    return response_sql("efo LIKE '%"+"%' or efo LIKE '%".join(terms)+"%'")
+def efo_sql(terms): 
+    return response_sql("efo LIKE '%"+"%' OR efo LIKE '%".join(terms)+"%'")
 
-def study_sql(pmid):
-    return response_sql("pmid='"+pmid+"'")
+def study_sql(query):
+    return response_sql("pmid='"+query+"' OR study_id='"+query+"'")
            
 class response(query.response):
     """ Query response object. 
@@ -92,7 +102,7 @@ class response(query.response):
     and manipulating the resulting table. 
     """
     def __init__(self, db, value, sql):
-        query.__init__(self, db, sql)
+        super().__init__(db, sql)
         self.value = value
         self.sort() ## sort ascending by author, PMID and then p-value.
     def sort(self):
@@ -103,22 +113,24 @@ class response(query.response):
     def table(self):
         """ Returns the query table as a tuple of rows with formatted values. """
         cols = HTML_FIELDS
-        subset = self.subset(None, cols)
-        formatted_p = [format_pval(pval) for pval in subset.col("p")]
-        subset.set_col("p", formatted_p)
-        formatted_beta = [format_beta(beta) for beta in subset.col("beta")]
-        subset.set_col("beta", formatted_beta)
-        return tuple(subset.data)
+        html_copy = self.copy()
+        html_copy.subset(cols=cols)
+        formatted_p = [format_pval(pval) for pval in html_copy.col("p")]
+        html_copy.set_col("p", formatted_p)
+        formatted_beta = [format_beta(beta) for beta in html_copy.col("beta")]
+        html_copy.set_col("beta", formatted_beta)
+        return tuple(html_copy.data)
     def save(self, path):
         """ Saves the query table to a TSV file and returns the filename. """
         cols = TSV_FIELDS
-        subset = self.subset(None, cols)
+        tsv_copy = self.copy()
+        tsv_copy.subset(cols=cols)
         ts = str(time.time()).replace(".","")
         filename = self.value.replace(" ", "_")+'_'+ts+'.tsv'
         f = open(path+'/'+filename, 'w')
-        f.write('\t'.join(subset.colnames())+'\n')
-        for idx in range(subset.nrow()):
-            f.write('\t'.join(str(x) for x in subset.row(idx))+'\n')
+        f.write('\t'.join(tsv_copy.colnames())+'\n')
+        for idx in range(tsv_copy.nrow()):
+            f.write('\t'.join(str(x) for x in tsv_copy.row(idx))+'\n')
         return filename
     def json(self):
         """ Returns the query table as a JSON response object. """

@@ -34,8 +34,13 @@ class response:
         else:
             self.cols = cols
             self.data = data
+        if self.cols is None or self.data is None:
+            self.cols = []
+            self.data = []
         self.db = db
         self.sql = sql
+    def copy(self):
+        return response(self.db, self.sql, cols=self.cols, data=self.data)
     def nrow(self):
         """ Number of rows in the table. """
         return len(self.data)
@@ -53,32 +58,26 @@ class response:
         idx = self.cols.index(colname)
         return [row[idx] for row in self.data]
     def subset(self, rows=None, cols=None):
-        """ Create a copy of the table with a subset of rows and/or columns. 
+        """ Revise table to be a subset of rows and/or columns. 
 
         Args:
         rows (list): List of integers between 0 and nrow()-1.
         cols (list): List of column names from colnames().
-
-        Returns:
-        A new 'response' object corresponding to the specified subtable.
         """
         if not rows is None:
-            data = [self.row(i) for i in rows]
-        else:
-            data = self.data
+            self.data = [self.row(i) for i in rows]
+
         if not cols is None:
             indices = [self.cols.index(colname) for colname in cols]
-            data = [[row[idx] for idx in indices] for row in data]
-        else:
-            cols = self.cols
-        return response(self.db, self.sql, cols, data)
-    def del_col(colname):
+            self.data = [[row[idx] for idx in indices] for row in self.data]
+            self.cols = cols
+    def del_col(self, colname):
         """ Delete specified column from the table. """
         cidx = self.colnames().index(colname)
         for ridx in range(len(self.data)):
             del self.data[ridx][cidx]
         del self.cols[cidx]
-    def set_col(colname, values):
+    def set_col(self, colname, values):
         """ Specify values for new or existing column. """
         if not colname in self.colnames():
             self.cols.append(colname)
@@ -96,10 +95,10 @@ class singleton_response(response):
     Special case of 'response' for a query that returns a single value.
     """
     def __init__(self, db, sql):
-        response.__init__(db, sql)
+        super().__init__(db, sql)
         if len(self.data) > 0:
-            self.data = data[0][0]
-            self.cols = cols[0]
+            self.data = self.data[0][0]
+            self.cols = self.cols[0]
     def value(self):
         """ Returns the single value query response. """
         return self.data

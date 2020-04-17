@@ -5,19 +5,50 @@
 {% if query_list %}
  <h1> Search results for <i>{{query_label}}</i> </h1>
  <p class="small">&nbsp;</p>
- <ul>
-   {% for query in query_list %}
-     <li>
-       <a href="{{ query.url() }}"><b>{{ query.title() }}</b></a>
-       {% for key, value in query.details().items %}
-       <br><b>{{key}}: value</b>
-       <% endfor %}
-     </li>
-   {% endfor %}
- </ul>
-{% else %}
+ {% for query in query_list %}
+   <div class="catalog-object-border">
+     <span class="catalog-object-marker {{ query.category }}-marker">{{ query.category }}</span>
+     <a href="{{ query.structured_query_url }}"><b>{{ query.title }}</b></a></br>
+     <span style="font-size: 66%">
+     {% for key,value in query.details.items %}
+       &nbsp;<b>{{key}}</b>: {{value}}
+     {% endfor %}
+     </span>
+   </div>
+ {% endfor %}
+ {% else %}
  <div class="information">
  <h1> No results for <i>{{query_label}}</i> </h1>
  </div>
 {% endif %}       
 {% endblock %}
+
+
+ <table class="border-search-box" style="display: table; margin-bottom: 20px;" id="publication">
+   <tbody>
+     <tr>
+       <td rowspan="2" style="width: 3%"></td>
+       <td style="width: 94%">
+	 <h3 id="titleCell">
+	   <span class="letter-circle letter-circle-publication">&nbsp;P&nbsp;</span>
+	   <a href="/gwas/publications/25849990">Genetic variation at MECOM, TERT, JAK2 ...</a>
+	 </h3>
+       </td>
+       <td style="width: 10%">
+	 <h3 class="pull-right" id="iconCell"></h3>
+       </td>
+       <td rowspan="2" style="width: 3%"></td>
+     </tr>
+     <tr>      
+       <td style="width: 88%" id="descriptionCell">
+	 <p class="descriptionSearch">Tapper W et al. 2015 Nat Commun PMID:25849990</p>
+	 <p id="statsParagraph">Associations
+	   <span class="badge background-color-primary-bold ">3</span>
+	   &nbsp;&nbsp;&nbsp;Studies
+	   <span class="badge background-color-primary-bold ">1</span>
+	 </p>
+       </td>
+     </tr>
+   </tbody>
+ </table>
+ 

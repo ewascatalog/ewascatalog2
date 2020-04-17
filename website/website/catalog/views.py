@@ -9,6 +9,8 @@ from . import textquery, structuredquery, database
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
 
+MAX_SUGGESTIONS=20
+MAX_ASSOCIATIONS=1000
 
 def clear_directory(directory):
     for file in os.listdir(directory):
@@ -20,37 +22,37 @@ def clear_directory(directory):
 @never_cache
 def catalog_home(request):
     clear_directory(TMP_DIR)
-    query = request.GET.get("query", None)
-    if query:
-        query = query.strip()
+    keys = list(request.GET.keys())
+    if len(keys) > 0:
         db = database.default_connection()
-        ret = textquery.execute(db, query)
-        if len(ret) > 0:
-            return render(request, 'catalog/catalog_queries.html',
-                          {'query':query.replace(" ", "_"),
-                           'query_label':query,
-                           'query_list':ret})
+        key = keys[0]
+        query = list(request.GET.values())[0]
+        query = query.strip()
+        if key == "query":
+            ret = textquery.execute(db, query, MAX_SUGGESTIONS)
+            if len(ret) > 0:
+                return render(request, 'catalog/catalog_queries.html',
+                              {'query':query.replace(" ", "_"),
+                               'query_label':query,
+                               'query_list':ret})
+            else:
+                return render(request, 'catalog/catalog_no_results.html',
+                              {'query':query})
         else:
-            return render(request, 'catalog/catalog_no_results.html')
+            ret = structuredquery.execute(db, key, query, MAX_ASSOCIATIONS)            
+            if isinstance(ret, structuredquery.response):
+                filename = ret.save(TMP_DIR)
+                return render(request, 'catalog/catalog_results.html',
+                              {'result':ret.table(),
+                               'query':query.replace(" ", "_"),
+                               'query_label':query,
+                               'filename':filename})
+            else:
+                return render(request, 'catalog/catalog_no_results.html',
+                              {'query':query})
     else:
         return render(request, 'catalog/catalog_home.html', {})
 
-
-@never_cache
-def catalog_queries(request):
-    db = database.default_connection()
-    category = request.GET.keys()[0]
-    query = request.GET.values()[0]
-    ret = structuredquery.execute(db, category, query)
-    if isinstance(ret, structuredquery.response):
-        filename = ret.save(TMP_DIR)
-        return render(request, 'catalog/catalog_results.html',
-                      {'result':ret.table(),
-                       'query':query.replace(" ", "_"),
-                       'query_label':query,
-                       'filename':filename})
-    else:
-        return render(request, ret, {'query': query})        
 
 @never_cache
 def catalog_info(request):
