@@ -9,8 +9,9 @@ from . import textquery, structuredquery, database
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
 
-MAX_SUGGESTIONS=20
+MAX_SUGGESTIONS=10
 MAX_ASSOCIATIONS=1000
+
 
 def clear_directory(directory):
     for file in os.listdir(directory):
@@ -29,12 +30,12 @@ def catalog_home(request):
         query = list(request.GET.values())[0]
         query = query.strip()
         if key == "query":
-            ret = textquery.execute(db, query, MAX_SUGGESTIONS)
-            if len(ret) > 0:
+            query_list = textquery.execute(db, query, MAX_SUGGESTIONS)
+            if len(query_list) > 0:
                 return render(request, 'catalog/catalog_queries.html',
                               {'query':query.replace(" ", "_"),
                                'query_label':query,
-                               'query_list':ret})
+                               'query_list':query_list})
             else:
                 return render(request, 'catalog/catalog_no_results.html',
                               {'query':query})

@@ -89,8 +89,8 @@ def region_sql(region):
                      "AND pos>="+start+" "
                      "AND pos<="+end)
 
-def efo_sql(terms): 
-    return response_sql("efo LIKE '%"+"%' OR efo LIKE '%".join(terms)+"%'")
+def efo_sql(term):
+    return response_sql("efo LIKE '%"+term+"%'")
 
 def study_sql(query):
     return response_sql("pmid='"+query+"' OR study_id='"+query+"'")

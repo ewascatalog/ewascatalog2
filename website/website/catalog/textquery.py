@@ -40,14 +40,16 @@ def execute(db, query, max_suggestions):
     ## sort suggested queries by number of CpG site associations
     def byassocs(obj): return obj.assocs()
     suggestions = ret.suggestions()
-    for priority in suggestions.keys():
-        objects = [cached_catalog_object(obj) for obj in suggestions[priority]]
-        suggestions[priority] = sorted(objects, key=byassocs, reverse=True)
-        if len(suggestions[priority]) > max_suggestions:
-            suggestions[priority] = suggestions[priority][0:max_suggestions-1]
-            ## perhaps append a dummy object to indicate that there are more...
+    for group in suggestions.keys():
+        objects = [cached_catalog_object(obj) for obj in suggestions[group]]
+        suggestions[group] = sorted(objects, key=byassocs, reverse=True)
+        if len(suggestions[group]) > max_suggestions:
+            ellipsis = ("... " + str(max_suggestions)
+                        + " of " + str(len(suggestions[group]))
+                        + " " + group)
+            suggestions[group] = suggestions[group][0:max_suggestions-1] + [ellipsis]
         
-    suggestions = [suggestions[priority] for priority in suggestions.keys()]
+    suggestions = [suggestions[group] for group in suggestions.keys()]
     suggestions = sum(suggestions, [])
     return suggestions
     
@@ -109,8 +111,9 @@ def assocs_sql(variable, where):
 
 class cpg(catalog_object):
     def __init__(self, db, cpg):
-        super().__init__(db, "cpg", cpg)
+        super().__init__(db, "cpg", cpg.lower().replace(" ", ""))
     def matches(db, text):
+        text = text.replace(" ", "")
         return re.match("^cg[0-9]+$", text) or re.match("^ch[0-9]+$", text)
     def where_sql(self):
         return "cpg='"+self.title()+"'"
@@ -143,14 +146,15 @@ class cpg(catalog_object):
 
 class loc(catalog_object):
     def __init__(self, db, loc):
-        super().__init__(db, "loc", loc)
-        loc = re.split(":|-",loc)
+        super().__init__(db, "loc", loc.lower().replace("chr", "").replace(" ", ""))
+        loc = re.split(":|-",self.title())
         self.chr = loc[0]
         self.pos = loc[1]
     def matches(db, text):
-        return re.match("^chr[0-9]+:[0-9]+$", text)
+        text = text.replace(" ", "")
+        return re.match("^(chr|)[0-9]+:[0-9]+$", text) 
     def where_sql(self):
-        return "chrpos='"+self.title()+"'"
+        return "chrpos='chr"+self.title()+"'"
     def assocs(self):
         ret = query.singleton_response(self.db, assocs_sql("study_id", self.where_sql()))
         return int(ret.value())
@@ -174,10 +178,11 @@ class loc(catalog_object):
     
 class gene(catalog_object):
     def __init__(self, db, gene):
-        super().__init__(db, "gene", gene)
+        super().__init__(db, "gene", gene.replace(" ", "").upper())
     def matches(db, text):
         """ Return true if the text matches a gene name in the database. """
-        if not re.match(r'(\s|^|$)'+"[A-Z0-9-]+"+r'(\s|^|$)', text):
+        text = text.replace(" ", "").upper()
+        if not re.match("[A-Z0-9-]+", text):
             return False
         ret = query.response(db, "SELECT gene FROM genes WHERE gene='"+text+"'")
         return ret.nrow() > 0
@@ -196,7 +201,7 @@ class gene(catalog_object):
         ret = OrderedDict()
         ret['gene'] = [self]
         if len(cpgs) > 0:
-            ret['cpg'] = [cpg(self.db, name) for name in cpgs]
+            ret['CpG sites'] = [cpg(self.db, name) for name in cpgs]
         if len(studies) > 0:
             ret['studies'] = [study(self.db, study_id) for study_id in studies]
         return ret
@@ -213,15 +218,16 @@ class gene(catalog_object):
 
 class region(catalog_object):
     def __init__(self, db, region):
-        super().__init__(db, "region", region)
+        super().__init__(db, "region", region.replace(" ", "").replace("chr", "").lower())
         region = re.split(':|-',region)
-        self.chr = region[0]
+        self.chr = region[0].replace("chr","")
         self.start = region[1]
         self.end = region[2]
     def matches(db, text):
-        return re.match("^chr[0-9]+:[0-9]+-[0-9]+$", text) or re.match("^[0-9]+:[0-9]+-[0-9]+$", text)
+        text = text.replace(" ", "")
+        return re.match("^(chr|)[0-9]+:[0-9]+-[0-9]+$", text)
     def where_sql(self):
-        return ("chr='"+self.chr.replace("chr", "")+"' "
+        return ("chr='"+self.chr+"' "
                 "AND pos>="+self.start+" "
                 "AND pos<="+self.end)
     def assocs(self):
@@ -230,26 +236,31 @@ class region(catalog_object):
         return int(ret.value())        
     def suggestions(self):
         """ Suggest querying the region and genes linked to any CpG site in the region. """
-        ret = query.response(self.db, "SELECT DISTINCT gene from cpgs WHERE " + self.where_sql())
-        genes = ret.col("gene")
-        if "-" in genes:
-            genes.remove("-")
+        #ret = query.response(self.db, "SELECT DISTINCT gene from cpgs WHERE " + self.where_sql())
+        #genes = ret.col("gene")
+        #if "-" in genes:
+        #    genes.remove("-")
+        #genes = [names.split(";") for names in genes]
+        #genes = sum(genes, [])
+        #genes = list(set(genes))
         ret = OrderedDict()
         ret["region"] = [self]
-        ret["genes"] = [gene(self.db, name) for name in genes]
+        #ret["genes"] = [gene(self.db, name) for name in genes]
         return ret
     def details(self):
         """ Provide the number of CpG sites inside the region. """
         details = super().details()
+        ret = query.response(self.db, "SELECT DISTINCT gene FROM cpgs WHERE " + self.where_sql())
+        details['genes'] = str(ret.nrow())
         ret = query.singleton_response(self.db, "SELECT COUNT(DISTINCT cpg) FROM cpgs WHERE "+self.where_sql())
-        details['query'] = ret.sql
         details['CpG sites'] = ret.value()
         return details
 
 class efo_term(catalog_object):
     def __init__(self, db, efo):
-        super().__init__(db, "efo", efo)
+        super().__init__(db, "efo", efo.replace(" ", "").upper())
     def matches(db, text):
+        text = text.replace(" ", "").upper()
         return re.match("^EFO_[0-9]+$", text)
     def where_sql(self):
         return "efo LIKE '%"+self.title()+"%'"
@@ -270,7 +281,7 @@ class efo_term(catalog_object):
         studies = set(studies)
         ret = OrderedDict()
         ret['query'] = [self]
-        ret['efos'] = [efo_term(self.db, term) for term in efo_terms] 
+        ret['EFO terms'] = [efo_term(self.db, term) for term in efo_terms] 
         ret['studies'] = [study(self.db, study_id) for study_id in studies]
         return ret
     def details(self):
@@ -285,9 +296,10 @@ class efo_term(catalog_object):
 
 class study(catalog_object):
     def __init__(self, db, study):
-        super().__init__(db, "study", study)
+        super().__init__(db, "study", study.replace(" ", "").lower())
     def matches(db, text):
-        return re.match("^[0-9]+$", text) or re.match("^[0-9]+_.+",text)
+        text = text.replace(" ", "").lower()
+        return re.match("^[0-9]+(_.+|)$", text) 
     def where_sql(self):
         """ Match any EWAS whose PMID or study id matches the input text. """
         return "pmid='"+self.title()+"' OR study_id='"+self.title()+"'"
@@ -306,7 +318,7 @@ class study(catalog_object):
         studies = set(studies)
         ret = OrderedDict()
         ret["studies"] = [study(self.db, study_id) for study_id in studies]
-        ret["efos"] = [efo_term(self.db, term) for term in efo_terms]
+        ret["EFO terms"] = [efo_term(self.db, term) for term in efo_terms]
         return ret
     def details(self):
         """ Provide the PMID, authors and number of samples for this EWAS. """
@@ -331,7 +343,7 @@ class study(catalog_object):
 
 class trait(catalog_object):
     def __init__(self, db, trait):
-        super().__init__(db, "trait", trait)
+        super().__init__(db, "trait", re.sub("[ ]+", " ", trait.lower()))
         self.efo_terms = efo.lookup(self.title()) ## lookup EFO terms for this text
     def matches(db, text):
         return True
@@ -355,7 +367,7 @@ class trait(catalog_object):
             efo_terms.remove("-")
         studies = set(ret.col("study_id"))
         ret = OrderedDict()
-        ret["efos"] = [efo_term(self.db, term) for term in efo_terms]
+        ret["EFO terms"] = [efo_term(self.db, term) for term in efo_terms]
         ret["studies"] = [study(self.db, study_id) for study_id in studies]
         return ret
     def details(self):
