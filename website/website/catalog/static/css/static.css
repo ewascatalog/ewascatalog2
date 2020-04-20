@@ -360,3 +360,59 @@ select.minimal {
     width: 90%;
   }
 }
+
+
+
+.catalog-object-marker {
+    background-color: yellowgreen;
+    padding: 3px;
+    color: white;
+    border-radius: 7px;
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: middle;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.cpg-marker {
+    background-color: #0f2080;
+}
+
+.loc-marker {
+    background-color: #0f2080;
+}
+
+.gene-marker {
+    background-color: firebrick;
+}
+
+.region-marker {
+    background-color: #2aabd2;
+}
+
+.trait-marker {
+    background-color: #ffac1b;
+}
+
+.efo-marker {
+    background-color: #ffac1b;
+}
+
+.study-marker {
+    background-color: yellowgreen;
+}
+
+
+.catalog-object-border {
+    overflow: hidden;
+    width: 100%;
+    table-layout: fixed;
+    border:1px solid #cde2f5;
+    background:#fff;
+    margin: 10px auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 5px 5px #E0E0E0;
+    z-index: 90;
+}

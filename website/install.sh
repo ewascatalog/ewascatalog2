@@ -7,8 +7,9 @@ SETTINGS="$3"
 ## Prepare to copy
 mkdir -p ${WEBSITE_DIR}
 
-## delete old versions 
-rm -rf ${WEBSITE_DIR}/*
+## delete old version
+rm -rf ${WEBSITE_DIR}/catalog
+rm -rf ${WEBSITE_DIR}/website
 
 ## copy the website files
 cp -rv website/website/* ${WEBSITE_DIR}
@@ -25,7 +26,7 @@ cp ${FILE_DIR}/catalog-download/ewascatalog.txt.gz \
    ${WEBSITE_DIR}/catalog/static/docs
 
 
-chmod -R o-rwx ${WEBSITE_DIR}
-chgrp -R www-data ${WEBSITE_DIR}
-chmod -R g-w ${WEBSITE_DIR}
-chmod -R g+w ${WEBSITE_DIR}/catalog/static/tmp
+#chmod -R o-rwx ${WEBSITE_DIR}
+#chgrp -R www-data ${WEBSITE_DIR}
+#chmod -R g-w ${WEBSITE_DIR}
+#chmod -R g+w ${WEBSITE_DIR}/catalog/static/tmp
