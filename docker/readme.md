@@ -3,7 +3,7 @@
 This folder contains files needed to 'dockerize' the website:
 `docker-compose.yml`, `Dockerfile`, `python-requirements.txt`.
 These files are copied to the website base directory by the
-project [Makefile](../Makefile) before building the docker containers.
+project [catalog](../catalog) script before building the docker containers.
 
 The remainder of this document gives information
 for working with docker.
@@ -56,7 +56,13 @@ Below, we define three services, 'web', 'db' and 'nginx'.
 ```
 web:                                 ## name of service to reference in docker-compose commands
   restart: always                    ## restart the service if at all possible
-  build: .                           ## host directory containing Dockerfile
+  build:
+    context: .                       ## host directory containing Dockerfile
+    args:
+      - USER_ID=${USER_ID}           ## user/group id arguments 
+      - GROUP_ID=${GROUP_ID}         ##  assigned on command line
+	                                 ##  (see '../catalog' script)
+  user: ${USER_ID}:${GROUP_ID}       ## run as defined user 
   container_name: dev.ewascatalog    ## name of container to reference in docker commands
   volumes:                          
     - .:/code                        ## volume at /code/ in container linking to host directory '.' 
@@ -95,21 +101,8 @@ nginx:                               ## name of webserver service (we use NGINX)
 ```
 
 
-### Dockerfile for python requirements
+### Dockerfile for python and R requirements
 
 Commands for preparing the docker container.
-
-```
-FROM python:3                                ## use python3
-ENV PYTHONUNBUFFERED 1                       ## flush log messages immediately, no buffering
-RUN mkdir /code                              ## make the /code/ directory for the website
-WORKDIR /code                                ## set working directory to /code/
-ADD python-requirements.txt /code/           ## copy 'python-requirements.txt' to the container
-RUN pip install -r python-requirements.txt   ## install python libraries in the file
-ADD . /code/                                 ## copy the current directory (website) to /code/
-```
-
-
-
-
+See commented [Dockerfile](Dockerfile).
 

@@ -38,7 +38,7 @@ These data can be found in the geo rdsf space: /projects/MRC-IEU/research/projec
 * These results are moved to the RDSF space
 * The study meta data are formatted for the catalog with __format_for_catalog.R__ (__L__)
 
-* After running __format_for_catalog.R__ all the results should be in the correct format and in the correct files folder space so they can be added to the catalog by running `make update-website`
+* After running __format_for_catalog.R__ all the results should be in the correct format and in the correct files folder space so they can be added to the catalog by running `bash catalog update-website`
 
 ## Finished data
 

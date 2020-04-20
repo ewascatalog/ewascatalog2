@@ -3,7 +3,7 @@
 The scripts in this directory are for creating and populating the database.
 
 The scripts are all copied to the docker container by the
-[Makefile](../Makefile)
+[catalog](../catalog) script,
 and then, in the container,
 `create-annotations.sh` is executed to create
 CpG and gene annotation text files
@@ -11,8 +11,8 @@ and `create.sh` is executed to
 create and populate the database.
 
 `create-annotations.sh` generates files
-`cpg-annotation.txt` and `gene-anntoation.txt` using R scripts
-(in the `FILES_DIR` directory defined in [Makefile](../Makefile)).
+`cpg-annotation.txt` and `gene-annotation.txt` using R scripts
+(in the `FILES_DIR` directory defined in [catalog](../catalog)).
 
 `create.sh` uses these files to create the 'cpgs' and 'genes'
 tables and files from `${FILES_DIR}/published-ewas` to create
@@ -21,7 +21,7 @@ the 'results' and 'studies' tables.
 ## Updating with new data
 The new data to be added should be stored in a directory in `${FILE_DIR}`. Then add this directory to `${FILE_DIR}/ewas-sum-stats/ewas-to-add.sh` where indicated. 
 
-When the container is running `make update-database` can be used to update the database with new data using the `add-to-ewas.sh` script. This script creates the 'new_results' and 'new_studies' tables before adding these tables to the 'results' and 'studies' tables. 
+When the container is running `bash catalog update-database` can be used to update the database with new data using the `add-to-ewas.sh` script. This script creates the 'new_results' and 'new_studies' tables before adding these tables to the 'results' and 'studies' tables. 
 
 Other things that should be done when adding in new data:
 
@@ -47,7 +47,7 @@ ${ROOT_CMD} ${DB} -e "drop database ${DB}"
 ## or just delete the cpgs table
 ${ROOT_CMD} ${DB} -e "drop table cpgs"
 ## recreate anything that was deleted using updated code/data files
-make database
+bash catalog create-database
 ```
 
 It is possible to get direct access to the running database

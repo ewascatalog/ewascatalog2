@@ -4,7 +4,7 @@ Structured queries provide a query
 category (cpg, loc, region, gene, study, trait)
 and corresponding value
 (CpG identifier, genomic location, genomic region, 
-gene name, PMID, EFO identifier).
+gene name, PMID, EFO identifier, trait).
 
 The response to a query is a table listing 
 information for corresponding CpG site associations.
@@ -16,6 +16,7 @@ for download.
 import re
 from math import log10, floor
 from catalog import query
+from catalog import efo
 import time
 from django.http import JsonResponse
 
@@ -50,6 +51,8 @@ def execute(db, category, value, max_associations):
         ret = response(db, value, gene_sql(value))
     elif category=="efo":
         ret = response(db, value, efo_sql(value))
+    elif category=="trait": 
+        ret = response(db, value, trait_sql(value))       
     elif category=="study":
         ret = response(db, value, study_sql(value))
     else:
@@ -88,6 +91,13 @@ def region_sql(region):
     return response_sql("chr='"+chr+"' "
                      "AND pos>="+start+" "
                      "AND pos<="+end)
+
+def trait_sql(trait):
+    efo_terms = efo.lookup(trait) 
+    sql = "trait LIKE '%"+trait.replace("+"," ")+"%'"
+    if len(efo_terms) > 0:
+        sql = (sql + "OR (efo LIKE '%"+ "%' OR efo LIKE '%".join(efo_terms.keys()) + "%') ")
+    return response_sql(sql)
 
 def efo_sql(term):
     return response_sql("efo LIKE '%"+term+"%'")

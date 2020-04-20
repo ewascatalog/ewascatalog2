@@ -2,7 +2,7 @@
 #'
 #' ewascatalog queries the EWAS Catalog from R.
 #' @param query Query text.
-#' @param type Type of query, either 'cpg', 'region', 'gene' or 'trait' (Default: 'cpg').
+#' @param type Type of query, either 'cpg', 'region', 'gene', 'trait', 'efo', 'study' (Default: 'cpg').
 #' @return Data frame of EWAS Catalog results.
 #' @examples
 #' # CpG
@@ -16,9 +16,16 @@
 #' 
 #' # Trait
 #' res <- ewascatalog("body mass index","trait")
+#'
+#' # EFO
+#' res <- ewascatalog("EFO_0002950","efo")
+#'
+#' # Study
+#' res <- ewascatalog("27040690","study")
+#' 
 #' @author James R Staley <js16174@bristol.ac.uk>
 #' @export
-ewascatalog <- function(query,type=c("cpg","region","gene","trait"),
+ewascatalog <- function(query,type=c("cpg","loc","region","gene","trait","efo","study"),
                         url="http://www.ewascatalog.org") {
     type <- match.arg(type)
     if (type == "region") {

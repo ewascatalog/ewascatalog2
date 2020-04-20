@@ -3,8 +3,8 @@
 Instructions, code and data for installing the EWAS Catalog.
 
 This repository contains all code related to the EWAS Catalog.
-The catalog website and database is installed by [Makefile](Makefile) commands
-in a docker container. 
+The catalog website and database is installed and updated by [catalog](catalog)
+script commands in a docker container. 
 
 Files are divided into the following directories:
 
@@ -40,17 +40,15 @@ will need to logout and then login.
 
 ## Building the EWAS Catalog
 
-The entire pipeline is defined in [Makefile](Makefile)
-and the catalog can be built with the following command
-(when the current directory is the base directory
-of this repository):
+The entire pipeline is defined in the [catalog](catalog) script,
+and the catalog can be built with the following command:
 
 ```
-make all
+bash catalog all
 ```
 
 *Before* running it, however, you will need to assign values to
-variables `FILES_DIR`, `WEBSITE_DIR` and `SETTINGS` in [Makefile](Makefile).
+variables `FILES_DIR`, `WEBSITE_DIR` and `SETTINGS` in [catalog](catalog).
 
 `FILES_DIR` should provide the path to the directory
 containing catalog data files.
@@ -67,11 +65,9 @@ described earlier.
 
 That single step is actually composed of a sequence of several sub-steps:
 
-1. `make website`: copies the website to `WEBSITE_DIR`
-2. `make docker-build`: copy docker files to the website and build the docker container
-3. `make docker-start`: start the docker container running
-4. `make r`: install R in the running container
-5. `make database`: create and populate the database with EWAS summary statistics
+1. `bash catalog build`: copy docker files to the website and build the docker container
+2. `bash catalog start`: start the docker container running
+3. `bash catalog create-database`: create and populate the database with EWAS summary statistics
 
 ## Navigating to the website
 
@@ -82,12 +78,12 @@ or `[host IP address]:8080` or `[host name]:8080`.
 
 Changes to the repository can be reflected in the running EWAS catalog as follows:
 
-- `website/`: Run `make update-website` and reload the website in the browser.
+- `website/`: Run `bash catalog update-website` and reload the website in the browser.
   This will copy the files to the running website
   and restart the 'web' docker service (defined [docker/docker-compose.yml](docker/docker-compose.yml)).
 - `database/`: This is more complicated. Details can be found [database/readme.md](database/readme.md).
-- `docker/`: Probably need to stop and start the whole thing (i.e. `make docker-stop` and then `make docker-start`).
-- `webserver/`: Run `make update-webserver` and reload the website in the browser.
+- `docker/`: Probably need to stop and start the whole thing (i.e. `bash catalog stop` and then `bash catalog start`).
+- `webserver/`: Run `bash catalog update-webserver` and reload the website in the browser.
   This will copy the files to the running website
   and restart the 'nginx' docker service (defined [docker/docker-compose.yml](docker/docker-compose.yml)).
 
@@ -97,10 +93,10 @@ and `WEBSITE_DIR/catalog/template` directly and observe the effects.
 Query-generated TSV files will appear here: `WEBSITE_DIR/catalog/static/tmp`.
 
 To completely take the whole system down and rebuild,
-it will need to be stopped (`make docker-stop`),
-the docker containers deleted (`make docker-rm`),
+it will need to be stopped (`bash catalog stop`),
+the docker containers deleted (`bash catalog rm`),
 the files deleted (`sudo rm -r WEBSITE_DIR`),
-and rebuilt (`make all`).
+and rebuilt (`bash catalog all`).
 
 ## Command-line access to running docker containers
 
@@ -139,7 +135,7 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
   'published-ewas/study-files/' to the tables in
   'files/ewas-sub-stats/published/'.  
 
-* Should have a command in the Makefile for creating a backup of the
+* Should have a command in the 'catalog' script for creating a backup of the
   container. Building is pretty quick except for installing R packages ...
 
 * Update the acknowledgements section on the about page http://www.ewascatalog.org/about. Just need to add names to the template file.
@@ -150,17 +146,9 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
     
 ### Errors
     
-* 'Acetoacetate' is an ARIES EWAS trait but searching for it produces 
-  no results.
-
-* Searching for gene names only works if the name is in all caps.
-
 * When ZOOMA is down you can't search for traits in the database at all.
 
 ### New features
-
-* Create an intermediate page between search and results that allows the 
-  user to refine their query (e.g. related trait, particular study).
 
 * Enrichment test for a set of CpG sites
 

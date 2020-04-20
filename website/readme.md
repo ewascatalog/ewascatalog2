@@ -3,7 +3,7 @@ The website code can be found in the `website/` directory.
 All that is missing from there is the downloadable
 EWAS summary statistics file and `settings.env`.
 These files are copied into position when the website
-is setup in the project [Makefile](../Makefile).
+is setup in the project [catalog](../catalog) script.
 
 ## How to modify the website
 

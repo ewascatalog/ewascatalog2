@@ -11,7 +11,7 @@ ewascatalog - function to query the EWAS Catalog.
 4. library(ewascatalog)
 
 ## Examples
-\# CpG
+\# CpG site
 res <- ewascatalog("cg00029284","cpg")
 
 \# Region
@@ -22,4 +22,10 @@ res <- ewascatalog("FTO","gene")
 
 \# Trait
 res <- ewascatalog("body mass index","trait")
+
+\# EFO
+res <- ewascatalog("EFO_0002950","efo")
+
+\# Study
+res <- ewascatalog("27040690","study")
 
