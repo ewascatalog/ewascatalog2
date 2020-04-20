@@ -140,8 +140,8 @@ class cpg(catalog_object):
         ret = query.response(self.db, "SELECT chrpos as location, type as region, gene FROM cpgs WHERE " +self.where_sql())
         if ret.nrow() > 0:
             details['location'] = ret.row(0)[0]
-            details['gene'] = ret.row(0)[1]
-            details['region'] = ret.row(0)[2]
+            details['gene'] = ret.row(0)[2]
+            details['region'] = ret.row(0)[1]
         return details
 
 class loc(catalog_object):
@@ -323,12 +323,13 @@ class study(catalog_object):
     def details(self):
         """ Provide the PMID, authors and number of samples for this EWAS. """
         details = super().details()
-        ret = query.response(self.db, "SELECT n, pmid, author, trait, tissue FROM studies WHERE " + self.where_sql())
+        ret = query.response(self.db, "SELECT n, pmid, author, trait, tissue, array FROM studies WHERE " + self.where_sql())
         if ret.nrow() > 0:
             details['author'] = ret.col("author")[0]
             details['PMID'] = ret.col("pmid")[0]
             details['trait'] = ret.col("trait")[0]
             details['tissue'] = ret.col("tissue")[0]
+            details['array'] = ret.col("array")[0]
             n = ret.col("n")
             if ret.nrow() > 1:
                 n = [int(v) for v in n]

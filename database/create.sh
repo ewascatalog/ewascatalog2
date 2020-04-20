@@ -8,6 +8,9 @@ source ${SETTINGS}
 ROOT_CMD="mysql -uroot -p${MYSQL_ROOT_PASSWORD}"
 USER_CMD="mysql -u${DATABASE_USER} -p${DATABASE_PASSWORD}"
 
+mysqladmin ping -uroot --password=${MYSQL_ROOT_PASSWORD}
+sleep 1m
+
 ##########################################################
 ## Initialise database
 ${ROOT_CMD} -e "use ${DB}" > /dev/null 2>&1
