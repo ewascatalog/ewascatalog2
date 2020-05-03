@@ -1,10 +1,16 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from pandas import read_csv
 from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
 import os, datetime
 from ratelimit.decorators import ratelimit
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 
 from . import textquery, structuredquery, database
+from .models import Doc
+from .forms import DocumentForm
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
@@ -69,6 +75,22 @@ def catalog_documents(request):
 def catalog_download(request):
     clear_directory(TMP_DIR)
     return render(request, 'catalog/catalog_download.html', {})
+
+@never_cache
+def catalog_upload(request):
+    clear_directory(TMP_DIR)
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            f = request.FILES['document'].file
+            data = read_csv(f)
+            data.to_csv('temp/temp.csv')
+            return redirect('catalog_upload')
+    else:
+        form = DocumentForm()
+    return render(request, 'catalog/catalog_upload.html', {
+        'form': form
+    })
 
 @ratelimit(key='ip', rate='1000/h', block=True)
 def catalog_api(request):
