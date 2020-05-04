@@ -82,9 +82,12 @@ def catalog_upload(request):
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
-            f = request.FILES['document'].file
-            data = read_csv(f)
-            data.to_csv('temp/temp.csv')
+            f_studies = request.FILES['studies'].file
+            sdata = read_csv(f_studies)
+            sdata.to_csv('temp/temp_studies.csv')
+            f_results = request.FILES['results'].file
+            rdata = read_csv(f_results)
+            rdata.to_csv('temp/temp_results.csv')
             return redirect('catalog_upload')
     else:
         form = DocumentForm()

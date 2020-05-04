@@ -3,7 +3,9 @@ from django.db import models
 from django.utils import timezone
 
 class Doc(models.Model):
-    description = models.CharField(max_length=255, blank=True)
-    document = models.FileField(upload_to='temp/')
+    name = models.CharField(max_length=255, blank=True)
+    email = models.CharField(max_length=255, blank=True)
+    studies = models.FileField(upload_to='temp/')
+    results = models.FileField(upload_to='temp/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
         
