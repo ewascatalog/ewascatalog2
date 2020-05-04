@@ -88,7 +88,7 @@ def catalog_upload(request):
             f_results = request.FILES['results'].file
             rdata = read_csv(f_results)
             rdata.to_csv('temp/temp_results.csv')
-            return redirect('catalog_upload')
+            return render(request, 'catalog/catalog_upload_message.html')
     else:
         form = DocumentForm()
     return render(request, 'catalog/catalog_upload.html', {
