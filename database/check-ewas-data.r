@@ -49,20 +49,34 @@ studies_cols <- c("Author",
 				  "N_SAS", 
 				  "N_AFR", 
 				  "N_AMR", 
-				  "N_OTH", 
-				  "StudyID")
+				  "N_OTH")
+
+optional_studies_cols <- c("StudyID")
+
+char50 <- c("Author", "Consortium", "Source", "Outcome_Units", "Exposure_Units",
+			"Array")
+char20 <- c("PMID", "Date", "N", "N_Cohorts", "Age", "N_Males", "N_Females"
+			"N_EUR", "N_EAS", "N_SAS", "N_AFR", "N_OTH")
+char100 <- "Tissue"
+char300 <- "Covariates"
+char200 <- studies_cols[!studies_cols %in% c(char50, char20, char100, char300)]
 
 results_cols <- c("CpG", 
-				  "Location", 
-				  "Chr", 
-				  "Pos", 
-				  "Gene", 
-				  "Type", 
 				  "Beta", 
 				  "SE", 
 				  "P", 
-				  "Details", 
-				  "StudyID")
+				  "Details")
+
+char20 <- c("CpG", "Beta", "SE")
+char50 <- c("P")
+char200 <- c("Details")
+
+optional_results_cols <- c("Location", 
+						   "Chr", 
+						   "Pos", 
+						   "Gene", 
+						   "Type", 
+						   "StudyID")	
 
 if (!all(colnames(results) == results_cols)) {
 	stop("Results file column names do not match the template columns")

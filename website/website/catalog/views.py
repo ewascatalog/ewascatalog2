@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from pandas import read_csv
+import pandas as pd
 from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
-import os, datetime
+import os, datetime, subprocess
 from ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -10,7 +10,6 @@ from django.core.files.storage import FileSystemStorage
 from . import textquery, structuredquery, database
 from .models import Doc
 from .forms import DocumentForm
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
@@ -83,17 +82,54 @@ def catalog_upload(request):
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
             f_studies = request.FILES['studies'].file
-            sdata = read_csv(f_studies)
-            sdata.to_csv('temp/temp_studies.csv')
-            f_results = request.FILES['results'].file
-            rdata = read_csv(f_results)
-            rdata.to_csv('temp/temp_results.csv')
+            command = 'Rscript'
+            script = 'database/check-ewas-data-test.r'
+            sdata = pd.read_csv(f_studies)
+            spath = 'temp/temp_studies.csv'
+            sdata.to_csv(spath)
+            cmd = [command, script, spath]
+            x = subprocess.check_output(cmd, universal_newlines=True)
+            if x == 'Good':
+                return render(request, 'catalog/catalog_upload_message.html')
+            else:
+                return render(request, 'catalog/catalog_bad_upload_message.html')
+
+            # Rscript f_studies ## what this script should do:
+            # 1. Read in the data (test with end)
+            # 2. Output a message saying the data has been read (test first then put at end)
+            # 3. Check column names
+            # 4. Check data length
+            # 5. Check no missing "essential" values
+            # 6. Check data types
+            # 7. Check 
+            # f_results = request.FILES['results'].file
+            # rdata = pd.read_csv(f_results)
+            # rdata.to_csv('temp/temp_results.csv')
             return render(request, 'catalog/catalog_upload_message.html')
     else:
         form = DocumentForm()
     return render(request, 'catalog/catalog_upload.html', {
         'form': form
     })
+
+# @never_cache
+# def catalog_upload(request):
+#     clear_directory(TMP_DIR)
+#     if request.method == 'POST':
+#         form = DocumentForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             f_studies = request.FILES['studies'].file
+#             sdata = read_csv(f_studies)
+#             sdata.to_csv('temp/temp_studies.csv')
+#             f_results = request.FILES['results'].file
+#             rdata = read_csv(f_results)
+#             rdata.to_csv('temp/temp_results.csv')
+#             return render(request, 'catalog/catalog_upload_message.html')
+#     else:
+#         form = DocumentForm()
+#     return render(request, 'catalog/catalog_upload.html', {
+#         'form': form
+#     })
 
 @ratelimit(key='ip', rate='1000/h', block=True)
 def catalog_api(request):
