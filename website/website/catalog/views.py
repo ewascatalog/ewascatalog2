@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 import pandas as pd
 from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
-import os, datetime, subprocess
+import os, datetime, subprocess, re
 from ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -75,55 +75,70 @@ def catalog_download(request):
     clear_directory(TMP_DIR)
     return render(request, 'catalog/catalog_download.html', {})
 
+def check_email(email):
+    regex = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
+    if(re.search(regex, email)):
+        return 'valid'
+    else:
+        return 'invalid'
+
 @never_cache
 def catalog_upload(request):
     clear_directory(TMP_DIR)
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
-        s_form = request.FILES['studies']
-        r_form = request.FILES['results']
-        
-        s_name = s_form.name
-        s_size = s_form.size
-        s_limit = 10 * 1024 * 1024
+        if form.is_valid():
+            email = request.POST.get('email')
+            email_check = check_email(email)
+            if email_check == 'valid':
+                s_form = request.FILES['studies']
+                r_form = request.FILES['results']
+                
+                s_name = s_form.name
+                s_size = s_form.size
+                s_limit = 10 * 1024 * 1024
 
-        r_name = r_form.name
-        r_size = r_form.size
-        r_limit = 224425040 * 10
+                r_name = r_form.name
+                r_size = r_form.size
+                r_limit = 224425040 * 10
 
-        if r_size < r_limit and s_size < s_limit:
-            if r_name.endswith('.csv') and s_name.endswith('.csv'):
-                if form.is_valid():
-                    f_studies = s_form.file
-                    command = 'Rscript'
-                    script = 'database/check-ewas-data.r'
-                    sdata = pd.read_csv(f_studies)
-                    spath = TMP_DIR+'temp_studies.csv'
-                    sdata.to_csv(spath, index=False)
-                    f_results = r_form.file
-                    rdata = pd.read_csv(f_results)
-                    rpath = TMP_DIR+'temp_results.csv'
-                    rdata.to_csv(rpath, index=False)
+                if r_size < r_limit and s_size < s_limit:
+                    if r_name.endswith('.csv') and s_name.endswith('.csv'):
+                        f_studies = s_form.file
+                        command = 'Rscript'
+                        script = 'database/check-ewas-data.r'
+                        sdata = pd.read_csv(f_studies)
+                        spath = TMP_DIR+'temp_studies.csv'
+                        sdata.to_csv(spath, index=False)
+                        f_results = r_form.file
+                        rdata = pd.read_csv(f_results)
+                        rpath = TMP_DIR+'temp_results.csv'
+                        rdata.to_csv(rpath, index=False)
 
-                    cmd = [command, script, spath, rpath]
-                    x = subprocess.check_output(cmd, universal_newlines=True)
-                    if x == 'Good':
+                        cmd = [command, script, spath, rpath]
+                        x = subprocess.check_output(cmd, universal_newlines=True)
+                        if x == 'Good':
+                            return render(request, 'catalog/catalog_upload_message.html')
+                        else:
+                            return render(request, 'catalog/catalog_bad_upload_message.html', {
+                                'x': x
+                            })
                         return render(request, 'catalog/catalog_upload_message.html')
                     else:
+                        x = "Files aren't csv files"
                         return render(request, 'catalog/catalog_bad_upload_message.html', {
                             'x': x
                         })
-                    return render(request, 'catalog/catalog_upload_message.html')
+                else:
+                    x = "Files uploaded are too big"
+                    return render(request, 'catalog/catalog_bad_upload_message.html', {
+                        'x': x
+                    })
             else:
-                x = "Files aren't csv files"
+                x = "The email address "+email+" is a bad email address."
                 return render(request, 'catalog/catalog_bad_upload_message.html', {
                     'x': x
-                })
-        else:
-            x = "Files uploaded are too big"
-            return render(request, 'catalog/catalog_bad_upload_message.html', {
-                'x': x
-            })
+                })            
     else:
         form = DocumentForm()
     return render(request, 'catalog/catalog_upload.html', {
