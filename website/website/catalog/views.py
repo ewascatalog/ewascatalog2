@@ -83,16 +83,23 @@ def catalog_upload(request):
         if form.is_valid():
             f_studies = request.FILES['studies'].file
             command = 'Rscript'
-            script = 'database/check-ewas-data-test.r'
+            script = 'database/check-ewas-data.r'
             sdata = pd.read_csv(f_studies)
-            spath = 'temp/temp_studies.csv'
-            sdata.to_csv(spath)
-            cmd = [command, script, spath]
+            spath = TMP_DIR+'temp_studies.csv'
+            sdata.to_csv(spath, index=False)
+            f_results = request.FILES['results'].file
+            rdata = pd.read_csv(f_results)
+            rpath = TMP_DIR+'temp_results.csv'
+            rdata.to_csv(rpath, index=False)
+
+            cmd = [command, script, spath, rpath]
             x = subprocess.check_output(cmd, universal_newlines=True)
             if x == 'Good':
                 return render(request, 'catalog/catalog_upload_message.html')
             else:
-                return render(request, 'catalog/catalog_bad_upload_message.html')
+                return render(request, 'catalog/catalog_bad_upload_message.html', {
+                    'x': x
+                })
 
             # Rscript f_studies ## what this script should do:
             # 1. Read in the data (test with end)
@@ -101,10 +108,8 @@ def catalog_upload(request):
             # 4. Check data length
             # 5. Check no missing "essential" values
             # 6. Check data types
-            # 7. Check 
-            # f_results = request.FILES['results'].file
-            # rdata = pd.read_csv(f_results)
-            # rdata.to_csv('temp/temp_results.csv')
+            # 7. Check data matches (e.g. number of CpGs doesn't go over number of mentioned array)
+            # 8. 
             return render(request, 'catalog/catalog_upload_message.html')
     else:
         form = DocumentForm()
