@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 import pandas as pd
 from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
-import os, datetime, subprocess, re
+import os, datetime, subprocess, re, shutil
 from ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -14,7 +14,7 @@ from .forms import DocumentForm
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
-UPLOAD_DIR = BASE_DIR+'/catalog/static/upload/'
+UPLOAD_DIR = '/files/ewas-sum-stats/published/to-add/'
 
 MAX_SUGGESTIONS=10
 MAX_ASSOCIATIONS=1000
@@ -90,6 +90,7 @@ def catalog_upload(request):
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
             name = request.POST.get('name')
+            name = name.replace(" ", "_")
             email = request.POST.get('email')
             email_check = upload.check_email(email, request)
             if email_check is not 'valid':
@@ -123,14 +124,14 @@ def catalog_upload(request):
                     r_out = subprocess.check_output(cmd, universal_newlines=True)
                     if r_out == 'Good':
                         # move data into new non-temporary folder
-                        upload.create_dir(UPLOAD_DIR)
-                        new_spath = UPLOAD_DIR+name+'_'+s_name
-                        os.rename(spath, new_spath)
-                        new_rpath = UPLOAD_DIR+name+'_'+r_name
-                        os.rename(rpath, new_rpath)
+                        upload.create_dir(UPLOAD_DIR+name)
+                        new_spath = UPLOAD_DIR+name+'/'+s_name # change this as someone could upload multiple files of same name
+                        shutil.move(spath, new_spath)
+                        new_rpath = UPLOAD_DIR+name+'/'+r_name
+                        shutil.move(rpath, new_rpath)
                         # email
                         attachments=[new_spath] # ADD REPORT PATH HERE!
-                        upload.send_email(name, email, attachments)
+                        # upload.send_email(name, email, attachments)
                         return render(request, 'catalog/catalog_upload_message.html', {
                             'email': email
                         })
