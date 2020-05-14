@@ -1,13 +1,12 @@
 ---
-title: EWAS report
+title: Initial EWAS report
 output: html_document
 date: "`r Sys.Date()`"
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE}
-# pkgs <- c("knitr", "pander")
-# pkgs <- c("knitr", "pander")
-# lapply(pkgs, require, character.only = TRUE)
+pkgs <- c("knitr", "pander")
+lapply(pkgs, require, character.only = TRUE)
 
 knitr::opts_chunk$set(echo = FALSE, 
             warning = FALSE, 
@@ -20,8 +19,9 @@ knitr::opts_chunk$set(echo = FALSE,
 comma <- function(x) format(x, digits = 2, big.mark = ",")
 ```
 
-Studies file uploaded: `r sfile`
-Results file uploaded: `r rfile`
+Studies file uploaded: __`r sfile`__. The data contains `r nrow(studies)` rows and `r ncol(studies)` columns.
+
+Results file uploaded: __`r rfile`__. The data contains `r nrow(results)` rows and `r ncol(results)` columns.
 
 Checks passed:
 
@@ -31,18 +31,11 @@ Checks passed:
 * P-values are between 0 and 1
 * Values in CpG column of the results file (`r rfile`) look like CpGs
 
-Here is a look at the studies file:
-
-```{r studies-check, results="asis"}
-# pander(studies)
-head(studies)
-```
-
 Here is a look at the top 10 strongest associations in your results (ordered by p-value)
 
 ```{r results-check, results="asis"}
-top_hits <- results[, order(results$P)]
+top_hits <- results[order(results$P), ]
 top_hits <- head(results, n = 10)
-# pander(top_hits)
-head(top_hits)
+pander(top_hits)
+# head(top_hits)
 ```
