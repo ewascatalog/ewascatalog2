@@ -128,8 +128,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'catalog', 'static') ## path to the static 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.office365.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'ewascatalog@outlook.com'
-EMAIL_HOST_PASSWORD = 'Sufbw9fPAFncs1'
+EMAIL_HOST_USER = env.str('DJANGO_EMAIL')
+EMAIL_HOST_PASSWORD = env.str('DJANGO_EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
