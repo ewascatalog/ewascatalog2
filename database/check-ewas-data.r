@@ -7,8 +7,8 @@ args <- commandArgs(trailingOnly = TRUE)
 sfile <- args[1]
 rfile <- args[2]
 
-# sfile <- "studies_test.csv"
-# rfile <- "results_test.csv"
+# sfile <- "../../studies_test.csv"
+# rfile <- "../../results_test.csv"
 
 if (!file.exists(rfile)) stop(cat("The results file doesn't exist"))
 if (!file.exists(sfile)) stop(cat("The studies file doesn't exist"))
@@ -168,5 +168,22 @@ optional_results_cols <- c("Location",
 						   "Type", 
 						   "StudyID")	
 
+
+err_msg <- function(e, r_msg = TRUE, user_msg = NULL, to_return = NA) {
+  # if (r_msg) print(e)
+  # if (!is.null(user_msg)) print(user_msg)
+  # return(to_return)
+  cat(as.character(e))
+  quit("no")
+}
+
+# if (file.exists("/code/database/upload-report-one.rmd")) {
+# 	library(rmarkdown)
+# 	tryCatch(rmarkdown::render("/code/database/upload-report-one.rmd"),
+# 		error = function(e) {err_msg(e)})
+# 	# rmarkdown::render("/code/database/upload-report-one.rmd")
+# }
+
+# invisible(rmarkdown::render("/code/database/upload-report-one.rmd"))
 
 cat("Good")

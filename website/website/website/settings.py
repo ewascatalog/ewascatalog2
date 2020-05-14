@@ -123,3 +123,13 @@ USE_TZ = True
 
 STATIC_URL = '/static/' ## prefix of the url for static files
 STATIC_ROOT = os.path.join(BASE_DIR, 'catalog', 'static') ## path to the static files
+
+# for sending emails
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.office365.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'ewascatalog@outlook.com'
+EMAIL_HOST_PASSWORD = 'Sufbw9fPAFncs1'
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+

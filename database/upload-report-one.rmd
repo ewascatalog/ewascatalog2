@@ -1,0 +1,48 @@
+---
+title: EWAS report
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+# pkgs <- c("knitr", "pander")
+# pkgs <- c("knitr", "pander")
+# lapply(pkgs, require, character.only = TRUE)
+
+knitr::opts_chunk$set(echo = FALSE, 
+            warning = FALSE, 
+            message = TRUE, 
+            cache = FALSE, 
+            dpi = 300 
+            )
+
+# Function for numbers in rmarkdown
+comma <- function(x) format(x, digits = 2, big.mark = ",")
+```
+
+Studies file uploaded: `r sfile`
+Results file uploaded: `r rfile`
+
+Checks passed:
+
+* All column names matched template for both files
+* Values in the required columns were present
+* Character length of values in columns were not too large
+* P-values are between 0 and 1
+* Values in CpG column of the results file (`r rfile`) look like CpGs
+
+Here is a look at the studies file:
+
+```{r studies-check, results="asis"}
+# pander(studies)
+head(studies)
+```
+
+Here is a look at the top 10 strongest associations in your results (ordered by p-value)
+
+```{r results-check, results="asis"}
+top_hits <- results[, order(results$P)]
+top_hits <- head(results, n = 10)
+# pander(top_hits)
+head(top_hits)
+```

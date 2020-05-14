@@ -6,6 +6,7 @@ import os, datetime, subprocess, re
 from ratelimit.decorators import ratelimit
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+from django.core.mail import EmailMessage
 
 from . import textquery, structuredquery, database
 from .models import Doc
@@ -13,6 +14,7 @@ from .forms import DocumentForm
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
+UPLOAD_DIR = BASE_DIR+'/catalog/static/upload/'
 
 MAX_SUGGESTIONS=10
 MAX_ASSOCIATIONS=1000
@@ -82,12 +84,21 @@ def check_email(email):
     else:
         return 'invalid'
 
+# def move_to_upload_dir():
+#     if not os.path.exists(UPLOAD_DIR):
+#         os.mkdir(UPLOAD_DIR)
+#     new_spath = UPLOAD_DIR+name+s_name
+#     os.rename(spath, new_spath)
+#     new_rpath = UPLOAD_DIR+name+r_name
+#     os.rename(rpath, new_rpath)
+
 @never_cache
 def catalog_upload(request):
     clear_directory(TMP_DIR)
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
+            name = request.POST.get('name')
             email = request.POST.get('email')
             email_check = check_email(email)
             if email_check == 'valid':
@@ -118,7 +129,30 @@ def catalog_upload(request):
                         cmd = [command, script, spath, rpath]
                         x = subprocess.check_output(cmd, universal_newlines=True)
                         if x == 'Good':
-                            return render(request, 'catalog/catalog_upload_message.html')
+                            # move_to_upload_dir()
+                            if not os.path.exists(UPLOAD_DIR):
+                                os.mkdir(UPLOAD_DIR)
+                            new_spath = UPLOAD_DIR+name+s_name
+                            os.rename(spath, new_spath)
+                            new_rpath = UPLOAD_DIR+name+r_name
+                            os.rename(rpath, new_rpath)
+                            # email 
+                            email_start = 'Dear '+name+',\n\n'
+                            email_body = 'Thank you for uploading your results to the EWAS Catalog. Please find attached an initial report on the data you uploaded. We will conduct more checks and if the data looks good we will email you with a zenodo doi and to let you know the data is in the catalog.\n\n'
+                            email_end = 'Kind regards,\nThe EWAS Catalog team'
+                            email_full_body = email_start+email_body+email_end
+                            email_msg = EmailMessage(
+                                subject = ['Automated EWAS Catalog Upload message'],
+                                body = email_full_body,
+                                from_email = 'ewascatalog@outlook.com',
+                                to = [email],
+                                bcc = ['thomas.battram@bristol.ac.uk']
+                            )
+                            # add attachment here!
+                            email_msg.send()
+                            return render(request, 'catalog/catalog_upload_message.html', {
+                                'email': email
+                            })
                         else:
                             return render(request, 'catalog/catalog_bad_upload_message.html', {
                                 'x': x
