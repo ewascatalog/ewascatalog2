@@ -1,0 +1,80 @@
+---
+title: Detailed EWAS report
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+pkgs <- c("knitr", "pander")
+lapply(pkgs, require, character.only = TRUE)
+
+knitr::opts_chunk$set(echo = FALSE, 
+            warning = FALSE, 
+            message = TRUE, 
+            cache = FALSE, 
+            dpi = 300 
+            )
+
+# Function for numbers in rmarkdown
+comma <- function(x) format(x, digits = 2, big.mark = ",")
+
+# Function for printing if object exists
+print_if_exists <- function(object) {
+	obj_nam <- deparse(substitute(object))
+	if (exists(obj_nam)) {
+		print(object)
+	} else {
+		print(paste(obj_nam, "isn't present"))
+	}
+}
+```
+
+## If results below are ok then follow these steps
+
+1. If EFO term not present then go to `r out_dir` and add it to `r print("studies.txt")` 
+2. Run bash update-database
+
+## If results below are not ok then 
+
+1. Report back to the User
+2. Remove files not needed
+
+Here is a report for the files in: `r res_dir`.
+
+## Summary of results
+
+* P-value range: `r paste(comma(range(full_results$P)), collapse = ", ")`
+* N sites with P<1e-7: `r n_p7`
+* N sites with P<1e-4: `r n_p4`
+* SE is above 0: `r all(full_results$SE > 0)`
+* SE range is `r range(full_results$SE)`
+* EFO term is present: `r !is.na(studies$EFO)`
+
+## P-values
+
+Here is a look at the top 10 strongest associations in your results (ordered by p-value):
+
+```{r results-check, results="asis"}
+top_hits <- full_results[order(full_results$P), ]
+top_hits <- top_hits[1:10, ]
+pander(top_hits)
+# head(top_hits)
+```
+
+```{r man-plot, results="asis"}
+print_if_exists(manhattan.plot)
+```
+
+```{r qq-plot, results="asis"}
+print_if_exists(qq.plot)
+```
+
+## Beta + SE distributions
+
+```{r beta-histogram, results="asis"}
+print_if_exists(beta_hist)
+```
+
+```{r se-histogram, results="asis"}
+print_if_exists(se_hist)
+```

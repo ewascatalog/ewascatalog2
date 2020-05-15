@@ -35,7 +35,7 @@ Here is a look at the top 10 strongest associations in your results (ordered by 
 
 ```{r results-check, results="asis"}
 top_hits <- results[order(results$P), ]
-top_hits <- head(results, n = 10)
+top_hits <- head(top_hits, n = 10)
 pander(top_hits)
 # head(top_hits)
 ```
