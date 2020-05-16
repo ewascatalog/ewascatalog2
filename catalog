@@ -50,7 +50,10 @@ update_webserver() {
     cd ${WEBSITE_DIR}; eval "${DOCKER_COMPOSE} start nginx"
 }
 update_database() {
-    cd $(WEBSITE_DIR); eval "${DOCKER_COMPOSE} exec db bash -c 'cd /code/database; bash add-to-ewas.sh ../settings.env /files'"
+    cd ${WEBSITE_DIR}; eval "${DOCKER_COMPOSE} exec db bash -c 'cd /code/database; bash add-to-ewas.sh ../settings.env /files'"
+}
+check_new_upload() {
+    cd ${WEBSITE_DIR}; eval "${DOCKER_COMPOSE} exec db bash -c 'cd /code/database; bash prep-new-data.sh ../settings.env /files'"
 }
 stop_catalog() {
     cd ${WEBSITE_DIR}; eval "${DOCKER_COMPOSE} stop"
@@ -70,6 +73,10 @@ elif [ ${CMD} = "update-website" ]; then
     update_website
 elif [ ${CMD} = "update-webserver" ]; then
     update_webserver
+elif [ ${CMD} = "update-database" ]; then
+    update_database
+elif [ ${CMD} = "check-new-upload" ]; then
+    check_new_upload
 elif [ ${CMD} = "stop" ]; then
     stop_catalog
 elif [ ${CMD} = "rm" ]; then

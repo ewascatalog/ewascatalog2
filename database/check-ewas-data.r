@@ -7,8 +7,8 @@ args <- commandArgs(trailingOnly = TRUE)
 sfile <- args[1]
 rfile <- args[2]
 
-# sfile <- "../../studies_test.csv"
-# rfile <- "../../results_test.csv"
+# sfile <- "../../test_files/studies_450k_test.csv"
+# rfile <- "../../test_files/results_450k_test.csv"
 
 if (!file.exists(rfile)) stop(cat("The results file doesn't exist"))
 if (!file.exists(sfile)) stop(cat("The studies file doesn't exist"))
@@ -92,11 +92,6 @@ studies_cols <- c("Author",
 
 optional_studies_cols <- c("StudyID")
 
-# studies <- as.data.frame(matrix(nrow = 1, ncol = length(studies_cols)))
-# colnames(studies) <- studies_cols
-# write.csv(studies, "studies_test.csv", 
-# 		  row.names = F, quote = F)
-
 if (!all(colnames(studies) == studies_cols)) {
 	cat("Studies file column names do not match the template columns")
 	quit("no")
@@ -129,11 +124,6 @@ results_cols <- c("CpG",
 				  "P", 
 				  "Details")
 
-# results <- as.data.frame(matrix(nrow = 1, ncol = length(results_cols)))
-# colnames(results) <- results_cols
-# write.csv(results, "results_test.csv", 
-#  		  row.names = F, quote = F)
-
 if (!all(colnames(results) == results_cols)) {
 	cat("Results file column names do not match the template columns")
 	quit("no")
@@ -159,15 +149,11 @@ if (any(results$P > 1) | any(results$P < 0)) {
 	cat("Not all P values provided are between 0 and 1")
 	quit("no")
 }
-
-
-optional_results_cols <- c("Location", 
-						   "Chr", 
-						   "Pos", 
-						   "Gene", 
-						   "Type", 
-						   "StudyID")	
-
+se <- results$SE[!is.na(results$SE)]
+if (any(sign(se) == -1)) {
+	cat("Not all standard errors provided are positive")
+	quit("no")
+}
 
 err_msg <- function(e, r_msg = TRUE, user_msg = NULL, to_return = NA) {
   # if (r_msg) print(e)

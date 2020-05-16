@@ -18,7 +18,6 @@ PUB_PATH=/ewas-sum-stats/published/to-add
 for dir in ${FILE_DIR}${PUB_PATH}/*/     # list directories in the form "/tmp/dirname/"
 do
     dir=${dir%*/}
-    echo $dir
     NEW_DATA+=($dir)
     # NEW_DATA+=($PUB_PATH}/${dir##*/})      # remove the trailing "/"
     # echo ${dir##*/}    # print everything after the final "/"
@@ -26,11 +25,10 @@ done
 
 NEW_DATA+=() # add filepath of summary stats completed in-house here
 
-echo "${NEW_DATA[@]}"
+# echo "${NEW_DATA[@]}"
 
 for dir in "${NEW_DATA[@]}"
 do
-	echo ${dir}
-
+	echo "preparing data in ${dir##*/}"
 	Rscript prep-new-data.r "${dir}" "${FILE_DIR}"
 done

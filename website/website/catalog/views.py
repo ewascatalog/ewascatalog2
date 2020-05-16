@@ -90,7 +90,6 @@ def catalog_upload(request):
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
             name = request.POST.get('name')
-            name = name.replace(" ", "_")
             email = request.POST.get('email')
             email_check = upload.check_email(email, request)
             if email_check is not 'valid':
@@ -124,14 +123,15 @@ def catalog_upload(request):
                     r_out = subprocess.check_output(cmd, universal_newlines=True)
                     if r_out == 'Good':
                         # move data into new non-temporary folder
-                        upload.create_dir(UPLOAD_DIR+name)
-                        new_spath = UPLOAD_DIR+name+'/'+s_name # change this as someone could upload multiple files of same name
+                        upload_path=UPLOAD_DIR+name.replace(" ", "_")
+                        upload.create_dir(upload_path)
+                        new_spath = upload_path+'/'+s_name # change this as someone could upload multiple files of same name
                         shutil.move(spath, new_spath)
-                        new_rpath = UPLOAD_DIR+name+'/'+r_name
+                        new_rpath = upload_path+'/'+r_name
                         shutil.move(rpath, new_rpath)
                         # email
                         attachments=[new_spath] # ADD REPORT PATH HERE!
-                        # upload.send_email(name, email, attachments)
+                        upload.send_email(name, email, attachments)
                         return render(request, 'catalog/catalog_upload_message.html', {
                             'email': email
                         })
