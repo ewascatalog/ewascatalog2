@@ -1,6 +1,7 @@
-pkgs <- list(cran=c("data.table", "Hmisc", "dplyr", "devtools", "BiocManager","cluster"),
+pkgs <- list(cran=c("data.table", "Hmisc", "dplyr", "devtools", "BiocManager","cluster", "rmarkdown",
+                    "pander", "knitr"),
              bioc="biomaRt",
-      git="https://github.com/perishky/meffil")
+      git=c("https://github.com/perishky/meffil", "https://github.com/perishky/ewaff"))
 
 for (pkg in pkgs$cran) {
   cat("R package:", pkg, "\n")

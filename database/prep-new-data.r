@@ -7,19 +7,17 @@
 #	2. Generate report
 # 	3. Subset results
 #	4. Output data to FILE_DIR/ewas-sum-stats/published/STUDY-ID
-#	5. Add published/STUDY-ID to "studies-to-add.txt"
+#	5. Add STUDY-ID to "studies-to-add.txt"
 
 options(stringsAsFactors = FALSE)
 
 args <- commandArgs(trailingOnly = TRUE)
 res_dir <- args[1]
 file_dir <- args[2]
-# res_dir <- "../files/ewas-sum-stats/published/to-add/Thomas_Battram"
+# res_dir <- "../files/ewas-sum-stats/to-add/23456789_Thomas-Battram_a_trait"
 # file_dir <- "../files"
 
 library(ewaff)
-
-files <- list.files(res_dir)
 
 if (!file.exists(res_dir)) {
 	stop(paste("Results directory,", res_dir, ", does not exist"))
@@ -28,15 +26,13 @@ if (!file.exists(file_dir)) {
 	stop(paste("File directory,", file_dir, ", does not exist"))
 }
 
-out_dir <- file.path(file_dir, "ewas-sum-stats/published", unique(sid))
+files <- list.files(res_dir)
+sfile <- grep("studies", files, value = T)
+rfile <- grep("results", files, value = T)
 
-if (!file.exists(out_dir)) {
-	message("Making new directory: ", out_dir)
-	system(paste("mkdir", out_dir))
-}
 
-studies <- read.csv(file.path(res_dir, files[2])) # WILL NEED TO FIGURE THIS OUT!
-results <- read.csv(file.path(res_dir, files[1])) # WILL NEED TO FIGURE THIS OUT!
+studies <- read.csv(file.path(res_dir, sfile))
+results <- read.csv(file.path(res_dir, rfile))
 
 cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 
@@ -62,6 +58,17 @@ generate_study_id <- function(studies_dat) {
 sid <- generate_study_id(studies)
 studies$Study_ID <- sid
 full_results$Study_ID <- sid
+
+res_cols <- c("CpG", "Location", "Chr", "Pos", "Gene", "Type", "Beta", "SE", "P", "Details", "Study_ID")
+
+full_results <- full_results[, res_cols]
+
+out_dir <- file.path(file_dir, "ewas-sum-stats/published", unique(sid))
+
+if (!file.exists(out_dir)) {
+	message("Making new directory: ", out_dir)
+	system(paste("mkdir", out_dir))
+}
 
 # ----------------------------------------------------
 # generate report
@@ -137,19 +144,10 @@ write.table(full_results, file = file.path(out_dir, "results.txt"),
 studies_to_add_file <- file.path(file_dir, "ewas-sum-stats/studies-to-add.txt")
 studies_to_add <- readLines(studies_to_add_file)
 
-sid_to_add <- paste0("published/", unique(sid))
+sid_to_add <- unique(sid)
 sid_to_add <- sid_to_add[!sid_to_add %in% studies_to_add]
 message("Appending results directory to: ", studies_to_add_file)
 write.table(sid_to_add, file = file.path(file_dir, "ewas-sum-stats/studies-to-add.txt"),
 			col.names = F, row.names = F, quote = F, sep = "\n", append = T)
 
-# ----------------------------------------------------
-# bind to old results ---> THIS SHOULD NOW BE PART OF STEP 2!
-# ----------------------------------------------------
-
-all_dat_dir <- file.path(file_dir, "ewas-sum-stats/combined_data")
-
-# write.table(studies, file = file.path(all_dat_dir, "studies.txt"),
-# 			col.names = F, row.names = F, quote = F, sep = "\t", append = T)
-# write.table(results, file = file.path(all_dat_dir, "results.txt"),
-# 			col.names = F, row.names = F, quote = F, sep = "\t", append = T)
+# FIN

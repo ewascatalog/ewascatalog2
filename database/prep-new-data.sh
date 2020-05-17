@@ -14,7 +14,7 @@ source ${SETTINGS}
 declare -a NEW_DATA=()
 
 # add in new directories to add!
-PUB_PATH=/ewas-sum-stats/published/to-add
+PUB_PATH=/ewas-sum-stats/to-add
 for dir in ${FILE_DIR}${PUB_PATH}/*/     # list directories in the form "/tmp/dirname/"
 do
     dir=${dir%*/}

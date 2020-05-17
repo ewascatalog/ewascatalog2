@@ -14,7 +14,7 @@ from .forms import DocumentForm
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
-UPLOAD_DIR = '/files/ewas-sum-stats/published/to-add/'
+UPLOAD_DIR = '/files/ewas-sum-stats/to-add/'
 
 MAX_SUGGESTIONS=10
 MAX_ASSOCIATIONS=1000
@@ -77,11 +77,18 @@ def catalog_download(request):
     clear_directory(TMP_DIR)
     return render(request, 'catalog/catalog_download.html', {})
 
-def new(request):
-    response = check_log_in(request)
-    if response is not None:
-        return response
+def isNaN(num):
+    return num != num
 
+def gen_study_id(study_dat):
+    df = study_dat
+    auth_nam = df.iloc[0]['Author'].replace(" ", "-")
+    trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
+    if isNaN(df.iloc[0]['PMID']):
+        StudyID = auth_nam+"_"+trait_nam
+    else:
+        StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
+    return StudyID
 
 @never_cache
 def catalog_upload(request):
@@ -123,11 +130,13 @@ def catalog_upload(request):
                     r_out = subprocess.check_output(cmd, universal_newlines=True)
                     if r_out == 'Good':
                         # move data into new non-temporary folder
-                        upload_path=UPLOAD_DIR+name.replace(" ", "_")
+                        studyid = gen_study_id(sdata)
+                        upload_path = UPLOAD_DIR+studyid
                         upload.create_dir(upload_path)
-                        new_spath = upload_path+'/'+s_name # change this as someone could upload multiple files of same name
+                        dt = datetime.datetime.today().__str__().replace(" ", "_")
+                        new_spath = upload_path+'/'+dt+'_studies.csv'
                         shutil.move(spath, new_spath)
-                        new_rpath = upload_path+'/'+r_name
+                        new_rpath = upload_path+'/'+dt+'_results.csv'
                         shutil.move(rpath, new_rpath)
                         # email
                         attachments=[new_spath] # ADD REPORT PATH HERE!
