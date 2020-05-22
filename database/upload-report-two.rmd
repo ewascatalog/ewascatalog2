@@ -1,11 +1,8 @@
----
-title: Detailed EWAS report
-output: html_document
-date: "`r Sys.Date()`"
----
+# Detailed EWAS report
+### `r Sys.Date()`
 
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE}
-pkgs <- c("knitr", "pander")
+pkgs <- c("knitr")
 lapply(pkgs, require, character.only = TRUE)
 
 knitr::opts_chunk$set(echo = FALSE, 
@@ -17,25 +14,16 @@ knitr::opts_chunk$set(echo = FALSE,
 
 # Function for numbers in rmarkdown
 comma <- function(x) format(x, digits = 2, big.mark = ",")
-
-# Function for printing if object exists
-print_if_exists <- function(object) {
-	obj_nam <- deparse(substitute(object))
-	if (exists(obj_nam)) {
-		return(object)
-	} else {
-		print(paste(obj_nam, "isn't present"))
-	}
-}
 ```
 
 ## Checklist
 
 1. Range of summary statistics are reasonable, e.g. standard errors aren't all above 1000.
 2. Number of associations are reasonable.
-3. The EFO term is present. This will need to be filled in if not.
+3. Check the EFO term(s). If it's not present this should be filled in.
 4. Array entered and number of rows in results matches.
 5. If trait has well established cpg-trait associations, they are present in top hits (e.g. cg05575921 is present for smoking EWAS).
+6. If you haven't done so already, have check through the studies table that would have been sent back to the user in an email after they originally uploaded data. 
 
 ## Summary of results
 
@@ -44,7 +32,7 @@ print_if_exists <- function(object) {
 * N sites with P<1e-4: `r n_p4`
 * SE range is `r range(full_results$SE)`
 * Number of effect estimate outliers: `r length(beta_out)`
-* EFO term is present: `r !is.na(studies$EFO)`
+* EFO term entered for `r studies$Trait` is: `r studies$EFO`
 * Array: `r studies$Methylation_Array`
 * Rows in results: `r nrow(results)` 
 
@@ -53,15 +41,15 @@ print_if_exists <- function(object) {
 Here is a look at the top 10 strongest associations in your results (ordered by p-value):
 
 ```{r results-check, results="asis"}
-pander(top_hits)
+knitr::kable(top_hits, digits = Inf)
 ```
 
 ```{r man-plot, results="asis"}
-print_if_exists(manhattan.plot)
+manhattan.plot
 ```
 
 ```{r qq-plot, results="asis"}
-print_if_exists(qq.plot)
+qq.plot
 ```
 
 ## Beta + SE distributions

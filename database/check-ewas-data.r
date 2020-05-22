@@ -6,9 +6,13 @@
 args <- commandArgs(trailingOnly = TRUE)
 sfile <- args[1]
 rfile <- args[2]
+report_out_dir <- args[3]
 
-# sfile <- "../../test_files/studies_450k_test.csv"
-# rfile <- "../../test_files/results_450k_test.csv"
+library(rmdreport)
+
+# sfile <- "../test_files/studies_450k_test.csv"
+# rfile <- "../test_files/results_450k_test.csv"
+# report_out_dir <- "."
 
 if (!file.exists(rfile)) stop(cat("The results file doesn't exist"))
 if (!file.exists(sfile)) stop(cat("The studies file doesn't exist"))
@@ -155,21 +159,23 @@ if (any(sign(se) == -1)) {
 	quit("no")
 }
 
-err_msg <- function(e, r_msg = TRUE, user_msg = NULL, to_return = NA) {
-  # if (r_msg) print(e)
-  # if (!is.null(user_msg)) print(user_msg)
-  # return(to_return)
-  cat(as.character(e))
-  quit("no")
-}
+# ------------------------------------------
+# Create report
+# ------------------------------------------
 
-# if (file.exists("/code/database/upload-report-one.rmd")) {
-# 	library(rmarkdown)
-# 	tryCatch(rmarkdown::render("/code/database/upload-report-one.rmd"),
-# 		error = function(e) {err_msg(e)})
-# 	# rmarkdown::render("/code/database/upload-report-one.rmd")
-# }
+# NOTE: the output of the report needs to be added to some kind of
+# 		temporary file so that the output given back to python is 
+#		simply "Good". If it isn't then it'll throw and error
+#		See the "catalog_upload" function in the views for more info
 
-# invisible(rmarkdown::render("upload-report-one.rmd"))
+report <- "database/upload-report-one.rmd"
+report_out_file <- file.path(report_out_dir, "ewas-catalog-report.html")
+sink_file <- file.path(report_out_dir, "report-output.txt")
+sink(file = sink_file)
+rmdreport::rmdreport.generate(report, report_out_file)
+sink()
+
+
+### FIN
 
 cat("Good")

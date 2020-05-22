@@ -14,10 +14,11 @@ options(stringsAsFactors = FALSE)
 args <- commandArgs(trailingOnly = TRUE)
 res_dir <- args[1]
 file_dir <- args[2]
-# res_dir <- "../files/ewas-sum-stats/to-add/23456789_Thomas-Battram_a_trait"
-# file_dir <- "../files"
+# res_dir <- "/Users/tb13101/Desktop/projects/Main_project/ewas_catalog/new-catalog/files/ewas-sum-stats/to-add/23456789_Thomas-Battram_a_trait"
+# file_dir <- "/Users/tb13101/Desktop/projects/Main_project/ewas_catalog/new-catalog/files"
 
 library(ewaff)
+library(rmdreport)
 
 if (!file.exists(res_dir)) {
 	stop(paste("Results directory,", res_dir, ", does not exist"))
@@ -33,6 +34,9 @@ rfile <- grep("results", files, value = T)
 
 studies <- read.csv(file.path(res_dir, sfile))
 results <- read.csv(file.path(res_dir, rfile))
+
+# studies <- read.csv("../test_files/studies_450k_test.csv")
+# results <- read.csv("../test_files/results_450k_test.csv")
 
 cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 
@@ -107,7 +111,78 @@ if (se_present) {
 # qq + manhattan
 qq.plot <- ewaff.qq.plot(full_results$P)
 
-manhattan.plot <- ewaff.manhattan.plot(chr = full_results$Chr,
+scatter.thinning <- function(x,y,resolution=100,max.per.cell=100) {
+    x.cell <- floor((resolution-1)*(x - min(x,na.rm=T))/diff(range(x,na.rm=T))) + 1
+    y.cell <- floor((resolution-1)*(y - min(y,na.rm=T))/diff(range(y,na.rm=T))) + 1
+    z.cell <- x.cell * resolution + y.cell
+    frequency.table <- table(z.cell)
+    frequency <- rep(0,max(z.cell, na.rm=T))
+    frequency[as.integer(names(frequency.table))] <- frequency.table
+    f.cell <- frequency[z.cell]
+    
+    big.cells <- length(which(frequency > max.per.cell))
+    sort(c(which(f.cell <= max.per.cell),
+           sample(which(f.cell > max.per.cell),
+                  size=big.cells * max.per.cell, replace=F)),
+         decreasing=F)
+}
+
+
+new.ewaff.manhattan.plot <- function(chr, pos, estimates, p.values, 
+                                 sig.threshold=1e-7,
+                                 title="Manhattan plot") {
+    stopifnot(length(p.values) == length(estimates))
+    stopifnot(length(p.values) == length(chr))
+    stopifnot(length(p.values) == length(pos))
+
+    chromosomes <- sort(unique(as.character(chr)))
+
+    stats <- data.frame(chromosome=factor(as.character(chr), levels=chromosomes),
+                        position=pos,
+                        chr.colour=0)
+    stats$chr.colour[stats$chromosome %in% chromosomes[seq(1,length(chromosomes),2)]] <- 1
+    p.values[which(p.values < .Machine$double.xmin)] <- .Machine$double.xmin
+    
+    betas_present <- all(!is.na(estimates))
+
+    if (betas_present) {
+    	stats$stat <- -log(p.values,10) * sign(estimates)	
+    } else {
+    	stats$stat <- -log(p.values,10)
+    }
+    
+    stats <- stats[order(stats$stat, decreasing=T),]
+    
+    chromosome.lengths <- sapply(chromosomes, function(chromosome)
+                                 max(stats$position[which(stats$chromosome == chromosome)]))
+    chromosome.lengths <- as.numeric(chromosome.lengths)
+    chromosome.starts <- c(1,cumsum(chromosome.lengths)+1)
+    names(chromosome.starts) <- c(chromosomes, "NA")
+    stats$global <- stats$position + chromosome.starts[stats$chromosome] - 1
+    
+    selection.idx <- scatter.thinning(stats$global, stats$stat,
+                                      resolution=100, max.per.cell=100)
+    
+    p <- ggplot(stats[selection.idx,], aes(x=position, y=stat)) +
+     geom_point(aes(colour=chr.colour)) +
+     facet_grid(. ~ chromosome, space="free_x", scales="free_x") +
+     theme(strip.text.x = element_text(angle = 90)) +
+     guides(colour=FALSE) +
+     labs(x="Position",
+          y=bquote(-log[10]("p-value") * sign(beta))) +             
+     geom_hline(yintercept=-log(sig.threshold,10), colour="red") +
+     theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+     ggtitle(title)
+
+     if (betas_present) {
+     	(p + geom_hline(yintercept=log(sig.threshold,10), colour="red"))
+     } else {
+     	(p)
+     }
+}
+
+
+manhattan.plot <- new.ewaff.manhattan.plot(chr = full_results$Chr,
                                        pos = full_results$Pos, 
                                        estimates = full_results$Beta, 
                                        p.values = full_results$P)
@@ -122,11 +197,11 @@ top_hits <- top_hits[1:10, ]
 top_hits <- top_hits[, c("CpG", "Beta", "SE", "P", "Location", "Gene")]
 rownames(top_hits) <- NULL
 
-report_file <- file.path(getwd(), out_dir, "upload-report.html")
+report <- "upload-report-two.rmd"
+report_out_file <- file.path(out_dir, "upload-report.html")
 print("Rendering report")
-# rmarkdown::render("/code/database/upload-report-two.rmd")
-# rmarkdown::render("database/upload-report-two.rmd", output_file = report_file)
-# system(paste("open", report_file))
+rmdreport::rmdreport.generate(report, report_out_file)
+# system(paste("open", report_out_file))
 
 # ----------------------------------------------------
 # subset and write out

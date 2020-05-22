@@ -1,13 +1,7 @@
----
-title: Initial EWAS report
-output: html_document
-date: "`r Sys.Date()`"
----
+# Initial EWAS report
+### `r Sys.Date()`
 
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE}
-pkgs <- c("knitr", "pander")
-lapply(pkgs, require, character.only = TRUE)
-
 knitr::opts_chunk$set(echo = FALSE, 
             warning = FALSE, 
             message = TRUE, 
@@ -19,9 +13,9 @@ knitr::opts_chunk$set(echo = FALSE,
 comma <- function(x) format(x, digits = 2, big.mark = ",")
 ```
 
-Studies file uploaded: __`r sfile`__. The data contains `r nrow(studies)` rows and `r ncol(studies)` columns.
+Studies file uploaded: __`r basename(sfile)`__. The data contains `r nrow(studies)` rows and `r ncol(studies)` columns.
 
-Results file uploaded: __`r rfile`__. The data contains `r nrow(results)` rows and `r ncol(results)` columns.
+Results file uploaded: __`r basename(rfile)`__. The data contains `r nrow(results)` rows and `r ncol(results)` columns.
 
 Checks passed:
 
@@ -37,6 +31,6 @@ Here is a look at the top 10 strongest associations in your results (ordered by 
 ```{r results-check, results="asis"}
 top_hits <- results[order(results$P), ]
 top_hits <- head(top_hits, n = 10)
-pander(top_hits)
-# head(top_hits)
+top_hits <- apply(top_hits, 2, comma)
+knitr::kable(top_hits, digits = Inf)
 ```

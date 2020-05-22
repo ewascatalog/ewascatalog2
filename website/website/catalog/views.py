@@ -119,14 +119,14 @@ def catalog_upload(request):
                     command = 'Rscript'
                     script = 'database/check-ewas-data.r'
                     sdata = pd.read_csv(f_studies)
-                    spath = TMP_DIR+'temp_studies.csv'
+                    spath = TMP_DIR+s_name
                     sdata.to_csv(spath, index=False)
                     f_results = r_form.file
                     rdata = pd.read_csv(f_results)
-                    rpath = TMP_DIR+'temp_results.csv'
+                    rpath = TMP_DIR+r_name
                     rdata.to_csv(rpath, index=False)
 
-                    cmd = [command, script, spath, rpath]
+                    cmd = [command, script, spath, rpath, TMP_DIR]
                     r_out = subprocess.check_output(cmd, universal_newlines=True)
                     if r_out == 'Good':
                         # move data into new non-temporary folder
@@ -139,7 +139,8 @@ def catalog_upload(request):
                         new_rpath = upload_path+'/'+dt+'_results.csv'
                         shutil.move(rpath, new_rpath)
                         # email
-                        attachments=[new_spath] # ADD REPORT PATH HERE!
+                        report=TMP_DIR+'ewas-catalog-report.html'
+                        attachments=[new_spath, report]
                         upload.send_email(name, email, attachments)
                         return render(request, 'catalog/catalog_upload_message.html', {
                             'email': email
