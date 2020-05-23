@@ -4,13 +4,11 @@ from django.views.decorators.cache import never_cache
 import os, datetime
 from ratelimit.decorators import ratelimit
 
-from . import textquery, structuredquery, database
+from . import basicquery, advancedquery, database, constants
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
 
-MAX_SUGGESTIONS=10
-MAX_ASSOCIATIONS=1000
 
 
 def clear_directory(directory):
@@ -23,37 +21,43 @@ def clear_directory(directory):
 @never_cache
 def catalog_home(request):
     clear_directory(TMP_DIR)
-    keys = list(request.GET.keys())
+    keys = request.GET.keys()
     if len(keys) > 0:
-        db = database.default_connection()
-        key = keys[0]
-        query = list(request.GET.values())[0]
-        query = query.strip()
-        if key == "query":
-            query_list = textquery.execute(db, query, MAX_SUGGESTIONS)
-            if len(query_list) > 0:
-                return render(request, 'catalog/catalog_queries.html',
-                              {'query':query.replace(" ", "_"),
-                               'query_label':query,
-                               'query_list':query_list})
-            else:
-                return render(request, 'catalog/catalog_no_results.html',
-                              {'query':query})
+        if "query" in keys:
+            return basicquery_response(request)
         else:
-            ret = structuredquery.execute(db, key, query, MAX_ASSOCIATIONS)            
-            if isinstance(ret, structuredquery.response):
-                filename = ret.save(TMP_DIR)
-                return render(request, 'catalog/catalog_results.html',
-                              {'result':ret.table(),
-                               'query':query.replace(" ", "_"),
-                               'query_label':query,
-                               'filename':filename})
-            else:
-                return render(request, 'catalog/catalog_no_results.html',
-                              {'query':query})
+            return advancedquery_response(request)
     else:
         return render(request, 'catalog/catalog_home.html', {})
 
+def basicquery_response(request):
+    query = request.GET
+    text = next(iter(query.values()))
+    db = database.default_connection()
+    response = basicquery.execute(db, text, constants.MAX_SUGGESTIONS, constants.PVALUE_THRESHOLD)
+    if len(response) > 0:
+        return render(request, 'catalog/catalog_queries.html',
+                      {'query':text.replace(" ", "_"),
+                       'query_label':text,
+                       'query_list':response})
+    else:
+        return render(request, 'catalog/catalog_no_results.html',
+                      {'query':text})
+
+def advancedquery_response(request):
+    query = request.GET
+    db = database.default_connection()
+    response = advancedquery.execute(db, query, constants.MAX_ASSOCIATIONS, constants.PVALUE_THRESHOLD)            
+    if isinstance(response, advancedquery.response):
+        filename = response.save(TMP_DIR)
+        return render(request, 'catalog/catalog_results.html',
+                      {'response':response.table(),
+                       'query':response.value.replace(" ", "_"),
+                       'query_label':response.value,
+                       'filename':filename})
+    else:
+        return render(request, 'catalog/catalog_no_results.html',
+                      {'query':[key+"="+value for key,value in query.items()]})
 
 @never_cache
 def catalog_info(request):
@@ -73,10 +77,9 @@ def catalog_download(request):
 @ratelimit(key='ip', rate='1000/h', block=True)
 def catalog_api(request):
     db = database.default_connection()
-    category = request.GET.keys()[0]
-    query = request.GET.values()[0]
-    ret = structuredquery.execute(db, category, query)
-    if isinstance(ret, structuredquery.response):
+    query = request.GET 
+    ret = advancedquery.execute(db, query, constants.MAX_ASSOCIATIONS*100, constants.PVALUE_THRESHOLD)
+    if isinstance(ret, advancedquery.response):
         return ret.json()
     else:
         return JsonResponse({})
