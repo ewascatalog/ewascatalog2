@@ -27,6 +27,9 @@ while read id; do
 	tail -n +2 -q ${FILE_DIR}/ewas-sum-stats/published/${id}/studies.txt >> ${FILE_DIR}/ewas-sum-stats/combined_data/studies.txt
 	tail -n +2 -q ${FILE_DIR}/ewas-sum-stats/published/${id}/results.txt >> ${FILE_DIR}/ewas-sum-stats/combined_data/results.txt
 
+	# Create zenodo doi
+	python3 zenodo.py '${id}' '${FILE_DIR}'
+
 done <${FILE_DIR}/ewas-sum-stats/studies-to-add.txt
 
 # Remove all studies from "studies-to-add.txt"
