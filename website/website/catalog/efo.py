@@ -10,13 +10,23 @@ def unlist(x):
     return sum(x,[])
 
 def basic(text, filters=None):
-    """ Retrieve EFO terms matching the input text. """ 
+    """ Retrieve EFO terms matching the input text. """
+    ## format text from user input to something queriable
     text = re.sub('[^a-zA-Z\d\s]', '', text).replace(" ", "+")
+
+    ## construct EFO query url
     url = 'http://www.ebi.ac.uk/spot/zooma/v2/api/services/annotate?propertyValue='
     url = url + text
     if not filters is None:
-        url = url + "&filter=required:["+",".join(filters)+"]"        
-    responses = requests.get(url).json()
+        url = url + "&filter=required:["+",".join(filters)+"]"
+
+    ## run query, if zooma failure, then return nothing
+    try:
+        responses = requests.get(url).json()
+    except:
+        return dict()
+
+    ## parse xml for results
     natural = [response['annotatedProperty']['propertyValue'] for response in responses]
     efo_urls = [response['semanticTags'] for response in responses]
     efo_urls = unlist(efo_urls)

@@ -157,6 +157,8 @@ class genomic_location(catalog_object):
         for i in range(len(genes)):
             if genes[i] != "-":
                 genes[i] = list(set(genes[i].split(";")))
+            else:
+                genes[i] = []
         genes = set(sum(genes, []))
         return genes
     def studies(self):

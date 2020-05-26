@@ -59,6 +59,8 @@ def execute(db, query, max_associations, pvalue_threshold):
         obj = objects.trait(db, value, pvalue_threshold)
     elif category=="study":
         obj = objects.study(db, value, pvalue_threshold)
+    elif category=="author":
+        obj = objects.author(db, value, pvalue_threshold)
     elif category=="location" or category=="studies":
         loc = objects.retrieve_location(db,query['location'], pvalue_threshold)
         studies = objects.retrieve_studies(db,query['studies'], pvalue_threshold)

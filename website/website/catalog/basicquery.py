@@ -20,6 +20,9 @@ def execute(db, query, max_suggestions, pvalue_threshold):
     """
     obj = objects.retrieve(db, query, pvalue_threshold)
 
+    if not isinstance(obj, objects.catalog_object):
+        return []
+    
     ## sort suggested queries by number of CpG site associations
     def byassocs(obj): return obj.assocs()
     suggestions = obj.suggestions()
