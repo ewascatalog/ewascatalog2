@@ -142,15 +142,13 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 
 * Contact PACE members for full summary statistics of already published articles. Try Gemma first and test out the upload page (see New features below)
 
-* Add a feature to the EWAS Catalog R package that allows browsing of just the studies (e.g. the 'studies.txt' file in 'files/ewas-sub-stats/combined_data/'). 
-    
-### Errors
-    
-* When ZOOMA is down you can't search for traits in the database at all.
+* Add a feature to the EWAS Catalog R package that allows browsing of just the studies (e.g. the 'studies.txt' file in 'files/ewas-sub-stats/combined_data/').
 
+* Should only generate downloadable files of summary statistics when the user requests, not every time a query is run. Currently, to save space these files get deleted when a new query is submitted which could cause problems!
+    
 ### New features
 
 * Enrichment test for a set of CpG sites
 
-* Create an upload page for full summary statistics. This should cotain: Clear details on how to access the full dataset (data will be put on Zenoto and have a DOI), some boxes to fill in for the study details, an upload button (with details on format data needs to be in).
+* Create an upload page for full summary statistics. This should contain: Clear details on how to access the full dataset (data will be put on Zenoto and have a DOI), some boxes to fill in for the study details, an upload button (with details on format data needs to be in).
 

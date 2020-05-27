@@ -245,11 +245,13 @@ class gene(genomic_location):
     def details(self):
         """ Provide gene coordinates and number of CpG sites linked to the gene. """
         details = super().details()
-        ret = query.response(self.db, "SELECT chr,start,end FROM genes WHERE gene='"+self.title()+"'")
+        ret = query.response(self.db, "SELECT chr,start,end FROM genes WHERE " + self.where_sql())
         if ret.nrow() > 0: 
             coords = ret.row(0)
             details['location'] = coords[0] + ":" + str(coords[1]) + "-" + str(coords[2])
-        ret = query.singleton_response(self.db, "SELECT COUNT(DISTINCT cpg) FROM cpgs WHERE "+self.where_sql())
+        #ret = query.singleton_response(self.db, "SELECT COUNT(DISTINCT cpg) FROM cpgs WHERE "+self.where_sql())
+        ## the line above is correct but very slow so we created a table to store number of CpG sites per gene
+        ret = query.singleton_response(self.db, "SELECT nsites FROM gene_details WHERE " + self.where_sql())
         details['CpG sites'] = ret.value()
         return details
 
@@ -272,7 +274,8 @@ class region(genomic_location):
         ret = OrderedDict()
         ret['region'] = [self]
         ret['genes'] = [gene(self.db, name, self.pvalue_threshold) for name in self.genes()]
-        ret['studies'] = [study(self.db, study_id, self.pvalue_threshold) for study_id in self.studies()]
+        ## the following line can very time consuming for a regional query
+        #ret['studies'] = [study(self.db, study_id, self.pvalue_threshold) for study_id in self.studies()]
         return ret
     def details(self):
         """ Provide the number of CpG sites inside the region. """

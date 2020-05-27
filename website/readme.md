@@ -61,6 +61,28 @@ and print out the p-values.
 5.7e-48
 ```
 
+Below we continue the sample showing how to
+use code from `website/catalog/objects.py`
+to query a genomic region.
+```
+## make catalog Python modules importable in the Python session
+>>> import sys
+>>> sys.path = sys.path + [".."]
+  ## note: assumes [repository directory]/website/website is the current directory
+## load the module in objects.py
+>>> from catalog import objects
+## query the genomic region
+>>> r = objects.retrieve_location(db, "6:15000000-25000000", 1e-4)
+## construct a list of CpG sites and genes inside the region
+>>> s = r.suggestions()
+## how many genes are there
+>>> len(s['genes'])
+## look at the first gene
+>>> s['genes'][0].title()
+>>> s['genes'][0].category
+>>> s['genes'][0].details()
+```
+
 ## Origins of the website files
 
 The basic template for the website was created using Django:
