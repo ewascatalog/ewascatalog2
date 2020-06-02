@@ -42,9 +42,14 @@ TABLE_EXISTS=`echo $?`
 if [ ${TABLE_EXISTS} -eq 1 ]; then
     echo "Creating genes table"
     ${ROOT_CMD} ${DB} < create-gene-table.sql
-    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/gene_annotation.txt' INTO TABLE genes LINES TERMINATED BY '\n' IGNORE 1 LINES" 
+    ${ROOT_CMD} ${DB} -e "LOAD DATA LOCAL INFILE '${FILE_DIR}/gene_annotation.txt' INTO TABLE genes LINES TERMINATED BY '\n' IGNORE 1 LINES"
+
+    echo "Creating gene_details table"
+    ${ROOT_CMD} ${DB} < create-gene-details-table.sql
 fi
 
+
+       
 ###########################################################
 ## Create EWAS table
 ${ROOT_CMD} ${DB} -e "desc results" > /dev/null 2>&1

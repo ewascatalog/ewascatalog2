@@ -20,6 +20,7 @@ from catalog import efo
 import time
 from django.http import JsonResponse
 
+from . import objects
 
 HTML_FIELDS = ["author","pmid","outcome","exposure","analysis","n",
                "cpg","chrpos","gene","beta","p"]
@@ -32,35 +33,46 @@ TSV_FIELDS = ["author","consortium","pmid","date","trait","efo",
               "n_afr","n_amr","n_oth",
               "cpg","chrpos","chr","pos","gene","type",
               "beta","se","p","details","study_id"]
-PVALUE_THRESHOLD=1e-4
 
 
-def execute(db, category, value, max_associations):
+def execute(db, query, max_associations, pvalue_threshold):
     """ Structured query entry point. 
 
     This function is called in views.py to 
     execute a structured query of the EWAS catalog.
     """
+    category = next(iter(query.keys()))
+    value = query[category]
+    obj = ""
+    ret = ""
     if category=="cpg":
-        ret = response(db, value, cpg_sql(value))
+        obj = objects.cpg(db, value, pvalue_threshold)
     elif category=="loc":
-        ret = response(db, value, loc_sql(value))
+        obj = objects.loc(db, value, pvalue_threshold)
     elif category=="region":
-        ret = response(db, value, region_sql(value))
+        obj = objects.region(db, value, pvalue_threshold)
     elif category=="gene":
-        ret = response(db, value, gene_sql(value))
+        obj = objects.gene(db, value, pvalue_threshold)
     elif category=="efo":
-        ret = response(db, value, efo_sql(value))
-    elif category=="trait": 
-        ret = response(db, value, trait_sql(value))       
+        obj = objects.efo_term(db, value, pvalue_threshold)
+    elif category=="trait":
+        obj = objects.trait(db, value, pvalue_threshold)
     elif category=="study":
-        ret = response(db, value, study_sql(value))
-    else:
-        ret = ""
-    if isinstance(ret, response) and ret.nrow() > max_associations:
-        ret.subset(rows=range(max_associations))
+        obj = objects.study(db, value, pvalue_threshold)
+    elif category=="author":
+        obj = objects.author(db, value, pvalue_threshold)
+    elif category=="location" or category=="studies":
+        loc = objects.retrieve_location(db,query['location'], pvalue_threshold)
+        studies = objects.retrieve_studies(db,query['studies'], pvalue_threshold)
+        if (isinstance(loc, objects.catalog_object)
+            and isinstance(studies, objects.catalog_object)):
+            obj = objects.complex(loc,studies)
+    if isinstance(obj, objects.catalog_object):
+        sql = response_sql("("+obj.where_sql()+") AND p<"+str(pvalue_threshold))
+        ret = response(db, obj.title(), sql)
+        if ret.nrow() > max_associations:
+            ret.subset(rows=range(max_associations))
     return ret
-    
 
 def response_sql(where):
     """ The basic SQL query syntax. 
@@ -72,39 +84,8 @@ def response_sql(where):
     return ("SELECT studies.*,results.* "
             "FROM results JOIN studies "
             "ON results.study_id=studies.study_id "
-            "WHERE ( "+where+" ) AND p <"+str(PVALUE_THRESHOLD))
+            "WHERE "+where)
 
-def cpg_sql(cpg):
-    return response_sql("cpg='"+cpg+"'")
-
-def loc_sql(loc):
-    return response_sql("chrpos='"+loc+"'")
-
-def gene_sql(gene):
-    return response_sql("gene='"+gene+"'")
-
-def region_sql(region):
-    region = re.split(':|-',region)
-    chr = region[0]
-    start = region[1]
-    end = region[2]
-    return response_sql("chr='"+chr+"' "
-                     "AND pos>="+start+" "
-                     "AND pos<="+end)
-
-def trait_sql(trait):
-    efo_terms = efo.lookup(trait) 
-    sql = "trait LIKE '%"+trait.replace("+"," ")+"%'"
-    if len(efo_terms) > 0:
-        sql = (sql + "OR (efo LIKE '%"+ "%' OR efo LIKE '%".join(efo_terms.keys()) + "%') ")
-    return response_sql(sql)
-
-def efo_sql(term):
-    return response_sql("efo LIKE '%"+term+"%'")
-
-def study_sql(query):
-    return response_sql("pmid='"+query+"' OR study_id='"+query+"'")
-           
 class response(query.response):
     """ Query response object. 
 

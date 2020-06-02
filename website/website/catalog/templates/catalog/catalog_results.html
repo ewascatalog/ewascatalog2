@@ -2,6 +2,15 @@
 {% block content %}
 {% load static %}
 
+<script type="text/javascript" class="init">
+  $(document).ready(function(){
+   $('#myTable').DataTable({
+    "order": [[ 10, "asc" ]]
+   });
+  });
+</script>
+
+
 <h1> Search results for <i>{{query_label}}</i> </h1>
 <p class="small">&nbsp;</p>
 
@@ -23,7 +32,7 @@
 		</tr>
 	</thead>
 	<tbody>
-                {% for row in result %}
+                {% for row in response %}
 		<tr>
                    {% for col in row %}
 			<td>{{ col }}</td>
@@ -34,12 +43,11 @@
 </table>
 </div>
 
-</div>
 <p class="small">&nbsp;</p>
 
 <a href="{% static "" %}/tmp/{{filename}}" download="{{query}}.tsv" style="font-size : 13pt" class="btn btn-default"><span class="glyphicon glyphicon-download-alt"></span> Download</a>
 <p class="small">&nbsp;</p>
-<p class="smalltext">*this tab-deliminated tsv file contains the full set of variables, i.e. those in the <a href="{% url 'catalog_download' %}#variables">downloadable catalog. </p> 
+<p class="smalltext">*this tab-deliminated tsv file contains the full set of variables, i.e. those in the <a href="{% url 'catalog_download' %}#variables">downloadable catalog</a>. </p> 
 
 {% endblock %}
 
