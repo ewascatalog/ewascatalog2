@@ -1,17 +1,13 @@
 from django import forms
 from django.conf import settings
-from .models import Doc
 from . import textquery, structuredquery, database, upload
-
-# class DocumentForm(forms.ModelForm):
-#     class Meta:
-#         model = Doc
-#         fields = ('name', 'email', 'studies', 'results', )
-
-class StudyForm(forms.Form):
-	db = database.default_connection()
 	
 class ListTextWidget(forms.TextInput):
+	""" Custom widget to allow users to choose
+	from previous entries
+
+	This widget is used in the DocumentForm form below
+	"""
 	def __init__(self, data_list, name, *args, **kwargs):
 		super(ListTextWidget, self).__init__(*args, **kwargs)
 		self._name = name

@@ -165,7 +165,7 @@ if (any(sign(se) == -1)) {
 
 # NOTE: the output of the report needs to be added to some kind of
 # 		temporary file so that the output given back to python is 
-#		simply "Good". If it isn't then it'll throw and error
+#		simply "Good". If it isn't then it'll throw an error
 #		See the "catalog_upload" function in the views for more info
 
 report <- "database/upload-report-one.rmd"

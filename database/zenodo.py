@@ -8,29 +8,16 @@
 import sys, json, requests
 import pandas as pd
 
-def examine_user_input(add_zenodo):
-	if add_zenodo not in ["y", "n"]:
-		raise ValueError("Please enter 'y' or 'n'")
-	elif add_zenodo == "n":
-		print("You have chosen against producing a zenodo doi for the data")
-		sys.exit()
-	elif add_zenodo == "y":
-		add_zenodo2 = input("Are you sure you want to create a zenodo doi? [y/n] ")
-		if add_zenodo2 not in ["y", "n"]:
-			raise ValueError("Please enter 'y' or 'n'")
-		elif add_zenodo2 == "n":
-			print("You have chosen against producing a zenodo doi for the data")
-			sys.exit()
-		elif add_zenodo2 == "y":
-			print("Continuing with making a zenodo doi")
-
 studyid = sys.argv[1]
 file_dir = sys.argv[2]
 data_dir = file_dir+'/ewas-sum-stats/published/'+studyid
 
-add_zenodo = input("Create zenodo doi for data with study ID: "+studyid+"? [y/n] ")
-
-examine_user_input(add_zenodo)
+zfile=data_dir+'/zenodo.csv'
+try:
+    zdata = pd.read_csv(zfile)
+except FileNotFoundError:
+    print("Can't find the file "+zfile)
+    sys.exit()
 
 # specify ACCESS_TOKEN
   # this needs to be generated for each sanbox/real account
@@ -59,11 +46,6 @@ r.json()
 # data = {'metadata': {'title': 'My first upload', 'upload_type': 'poster', 'description': 'This is my first upload', 'creators': [{'name': 'Doe, John', 'affiliation': 'Zenodo'}]}}
 # sdata = pd.read_table(data_dir+'/studies.txt')
 # sdata = pd.read_csv("../test_files/studies_450k_test.csv")
-zfile=data_dir+'/zenodo.csv'
-try:
-    zdata = pd.read_csv(zfile)
-except FileNotFoundError:
-    print('File does not exist!')
 
 title = zdata.loc[0, 'title']
 authors = zdata.loc[0, 'authors']

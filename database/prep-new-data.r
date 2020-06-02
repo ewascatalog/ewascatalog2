@@ -46,6 +46,24 @@ cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 # ---------------------------------------------------- 
 
 full_results <- dplyr::left_join(results, cpg_annotations)
+def gen_study_id(study_dat):
+  """ Generating a Study ID from the study data.
+
+  This function is called in views.py to
+  generate the study ID 
+  """    
+    df = study_dat
+    auth_nam = df.iloc[0]['Author'].replace(" ", "-")
+    trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
+    if isNaN(df.iloc[0]['PMID']):
+        StudyID = auth_nam+"_"+trait_nam
+    else:
+        StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
+    if isNaN(df.iloc[0]['Analysis']):
+      analysis_nam = df.iloc[0]['Analysis'].replace(" ", "_").lower()
+      StudyID = StudyID+'_'+analysis_nam
+
+    return StudyID
 
 generate_study_id <- function(studies_dat) {
   df <- studies_dat
@@ -56,7 +74,12 @@ generate_study_id <- function(studies_dat) {
   } else {
     pmid <- df$PMID
   }
-  StudyID <- paste(c(pmid, auth_nam, trait_nam), collapse = "_")
+  if (is.na(df$Analysis)) {
+    analysis <- gsub(" ", "_", tolower(df$Analysis))
+  } else {
+    analysis <- NULL
+  }
+  StudyID <- paste(c(pmid, auth_nam, trait_nam, analysis), collapse = "_")
   return(StudyID)
 }
 
@@ -112,78 +135,7 @@ if (se_present) {
 # qq + manhattan
 qq.plot <- ewaff.qq.plot(full_results$P)
 
-scatter.thinning <- function(x,y,resolution=100,max.per.cell=100) {
-    x.cell <- floor((resolution-1)*(x - min(x,na.rm=T))/diff(range(x,na.rm=T))) + 1
-    y.cell <- floor((resolution-1)*(y - min(y,na.rm=T))/diff(range(y,na.rm=T))) + 1
-    z.cell <- x.cell * resolution + y.cell
-    frequency.table <- table(z.cell)
-    frequency <- rep(0,max(z.cell, na.rm=T))
-    frequency[as.integer(names(frequency.table))] <- frequency.table
-    f.cell <- frequency[z.cell]
-    
-    big.cells <- length(which(frequency > max.per.cell))
-    sort(c(which(f.cell <= max.per.cell),
-           sample(which(f.cell > max.per.cell),
-                  size=big.cells * max.per.cell, replace=F)),
-         decreasing=F)
-}
-
-
-new.ewaff.manhattan.plot <- function(chr, pos, estimates, p.values, 
-                                 sig.threshold=1e-7,
-                                 title="Manhattan plot") {
-    stopifnot(length(p.values) == length(estimates))
-    stopifnot(length(p.values) == length(chr))
-    stopifnot(length(p.values) == length(pos))
-
-    chromosomes <- sort(unique(as.character(chr)))
-
-    stats <- data.frame(chromosome=factor(as.character(chr), levels=chromosomes),
-                        position=pos,
-                        chr.colour=0)
-    stats$chr.colour[stats$chromosome %in% chromosomes[seq(1,length(chromosomes),2)]] <- 1
-    p.values[which(p.values < .Machine$double.xmin)] <- .Machine$double.xmin
-    
-    betas_present <- all(!is.na(estimates))
-
-    if (betas_present) {
-    	stats$stat <- -log(p.values,10) * sign(estimates)	
-    } else {
-    	stats$stat <- -log(p.values,10)
-    }
-    
-    stats <- stats[order(stats$stat, decreasing=T),]
-    
-    chromosome.lengths <- sapply(chromosomes, function(chromosome)
-                                 max(stats$position[which(stats$chromosome == chromosome)]))
-    chromosome.lengths <- as.numeric(chromosome.lengths)
-    chromosome.starts <- c(1,cumsum(chromosome.lengths)+1)
-    names(chromosome.starts) <- c(chromosomes, "NA")
-    stats$global <- stats$position + chromosome.starts[stats$chromosome] - 1
-    
-    selection.idx <- scatter.thinning(stats$global, stats$stat,
-                                      resolution=100, max.per.cell=100)
-    
-    p <- ggplot(stats[selection.idx,], aes(x=position, y=stat)) +
-     geom_point(aes(colour=chr.colour)) +
-     facet_grid(. ~ chromosome, space="free_x", scales="free_x") +
-     theme(strip.text.x = element_text(angle = 90)) +
-     guides(colour=FALSE) +
-     labs(x="Position",
-          y=bquote(-log[10]("p-value") * sign(beta))) +             
-     geom_hline(yintercept=-log(sig.threshold,10), colour="red") +
-     theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-     ggtitle(title)
-
-     if (betas_present) {
-     	(p + geom_hline(yintercept=log(sig.threshold,10), colour="red"))
-     } else {
-     	(p)
-     }
-}
-
-
-manhattan.plot <- new.ewaff.manhattan.plot(chr = full_results$Chr,
+manhattan.plot <- ewaff.manhattan.plot(chr = full_results$Chr,
                                        pos = full_results$Pos, 
                                        estimates = full_results$Beta, 
                                        p.values = full_results$P)

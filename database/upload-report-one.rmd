@@ -13,8 +13,6 @@ knitr::opts_chunk$set(echo = FALSE,
 comma <- function(x) format(x, digits = 2, big.mark = ",")
 ```
 
-Studies file uploaded: __`r basename(sfile)`__. The data contains `r nrow(studies)` rows and `r ncol(studies)` columns.
-
 Results file uploaded: __`r basename(rfile)`__. The data contains `r nrow(results)` rows and `r ncol(results)` columns.
 
 Checks passed:
@@ -23,7 +21,7 @@ Checks passed:
 * Values in the required columns were present
 * Character length of values in columns were not too large
 * P-values are between 0 and 1
-* Values in CpG column of the results file (`r rfile`) look like CpGs
+* Values in CpG column of the results file look like CpGs
 * Standard errors are positive (if present)
 
 Here is a look at the top 10 strongest associations in your results (ordered by p-value)

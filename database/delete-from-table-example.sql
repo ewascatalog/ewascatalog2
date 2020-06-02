@@ -5,8 +5,8 @@
 # look at columns
 SHOW COLUMNS FROM `studies`;
 # check you can find the data you want to delete
-SELECT * FROM studies WHERE study_id = '23456789_Thomas-Battram_a_trait';
+SELECT * FROM studies WHERE author = 'Author A';
 # delete it from results
-DELETE FROM results WHERE study_id = '23456789_Thomas-Battram_a_trait';
+DELETE FROM results WHERE study_id = '23456789_Author-A_a_trait';
 # and then from studies
-DELETE FROM studies WHERE study_id = '23456789_Thomas-Battram_a_trait';
+DELETE FROM studies WHERE study_id = '23456789_Author-A_a_trait';

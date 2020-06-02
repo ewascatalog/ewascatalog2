@@ -9,7 +9,6 @@ from django.core.files.storage import FileSystemStorage
 from django.core.mail import EmailMessage
 
 from . import textquery, structuredquery, database, upload
-from .models import Doc
 from .forms import DocumentForm
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,51 +76,13 @@ def catalog_download(request):
     clear_directory(TMP_DIR)
     return render(request, 'catalog/catalog_download.html', {})
 
-def isNaN(num):
-    return num != num
-
-def gen_study_id(study_dat):
-    df = study_dat
-    auth_nam = df.iloc[0]['Author'].replace(" ", "-")
-    trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
-    if isNaN(df.iloc[0]['PMID']):
-        StudyID = auth_nam+"_"+trait_nam
-    else:
-        StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
-    return StudyID
-
-def extract_sql_data(var, cursor):
-    sql = "SELECT DISTINCT "+var+" FROM studies"
-    cursor.execute(sql)
-    results = cursor.fetchall()
-    return results
-
-def gen_zenodo_msg(zenodo):
-    if zenodo == 'Yes':
-        msg = 'You indicated you wanted a zenodo doi so we will generate this for you with the information you provided.'
-    else:
-        msg = 'You indicated you did not want a zenodo doi.'
-    return msg
-
-def save_zenodo_dat(zenodo, rcopy, upload_path):
-    if zenodo == 'No':
-        return None
-    else:
-        zen_dat = {'desc': [rcopy.get('zenodo_desc')], 
-                   'title': [rcopy.get('zenodo_title')],
-                   'authors': [rcopy.get('zenodo_authors')]
-                   }
-        df = pd.DataFrame(zen_dat)
-        df.to_csv(upload_path+'/zenodo.csv', index=False)
-
-
 @never_cache
 def catalog_upload(request):
     clear_directory(TMP_DIR)
     db = database.default_connection()
     cursor = db.cursor()
-    arrays = extract_sql_data("array", cursor)
-    tissues = extract_sql_data("tissue", cursor)
+    arrays = upload.extract_sql_data("array", cursor)
+    tissues = upload.extract_sql_data("tissue", cursor)
     out_ex = (('DNA methylation',))
     if request.method == 'POST':
         form = DocumentForm(request.POST, 
@@ -137,73 +98,68 @@ def catalog_upload(request):
             if email_check is not 'valid':
                 return email_check
 
-            # s_form = request.FILES['studies']
             r_form = request.FILES['results']
             
-            # s_name = s_form.name
-            # s_size = s_form.size
-            # s_limit = 10 * 1024 * 1024
-
             r_name = r_form.name
             r_size = r_form.size
             r_limit = 224425040 * 10
 
-            if r_size < r_limit:
-                if r_name.endswith('.csv'):
-                    # f_studies = s_form.file
-                    command = 'Rscript'
-                    script = 'database/check-ewas-data.r'
-                    sdata = upload.extract_study_info(rcopy)
-                    spath = TMP_DIR+name+'-studies.csv'
-                    sdata.to_csv(spath, index=False)
-                    f_results = r_form.file
-                    rdata = pd.read_csv(f_results)
-                    rpath = TMP_DIR+r_name
-                    rdata.to_csv(rpath, index=False)
-
-                    cmd = [command, script, spath, rpath, UPLOAD_DIR]
-                    r_out = subprocess.check_output(cmd, universal_newlines=True)
-                    if r_out == 'Good':
-                        # move data into new non-temporary folder
-                        studyid = gen_study_id(sdata)
-                        upload_path = UPLOAD_DIR+studyid
-                        upload.create_dir(upload_path)
-                        dt = datetime.datetime.today().__str__().replace(" ", "_")
-                        new_spath = upload_path+'/'+dt+'_studies.csv'
-                        shutil.move(spath, new_spath)
-                        new_rpath = upload_path+'/'+dt+'_results.csv'
-                        shutil.move(rpath, new_rpath)
-                        # save zenodo data for later
-                        zenodo_gen=rcopy.get('zenodo')
-                        zen_msg=gen_zenodo_msg(zenodo_gen)
-                        save_zenodo_dat(zenodo_gen, rcopy, upload_path)
-                        # email
-                        report=UPLOAD_DIR+'ewas-catalog-report.html'
-                        attachments=[new_spath, report]
-                        upload.send_email(name, email, attachments)
-                        # remove report and other files it created!
-                        os.remove(report)
-                        os.remove(UPLOAD_DIR+'ewas-catalog-report.md')
-                        os.remove(UPLOAD_DIR+'report-output.txt')
-                        return render(request, 'catalog/catalog_upload_message.html', {
-                            'email': email, 
-                            'zenodo_msg': zen_msg
-                        })
-                    else:
-                        return render(request, 'catalog/catalog_bad_upload_message.html', {
-                            'x': r_out
-                        })
-                    return render(request, 'catalog/catalog_upload_message.html')
-                else:
-                    x = "Files aren't csv files"
-                    return render(request, 'catalog/catalog_bad_upload_message.html', {
-                        'x': x
-                    })
-            else:
+            if r_size > r_limit:
                 x = "Files uploaded are too big"
                 return render(request, 'catalog/catalog_bad_upload_message.html', {
                     'x': x
                 })
+
+            if r_name.endswith('.csv'):
+                x = "Files aren't csv files"
+                return render(request, 'catalog/catalog_bad_upload_message.html', {
+                    'x': x
+                })
+            
+            # f_studies = s_form.file
+            command = 'Rscript'
+            script = 'database/check-ewas-data.r'
+            sdata = upload.extract_study_info(rcopy)
+            spath = TMP_DIR+name+'-studies.csv'
+            sdata.to_csv(spath, index=False)
+            f_results = r_form.file
+            rdata = pd.read_csv(f_results)
+            rpath = TMP_DIR+r_name
+            rdata.to_csv(rpath, index=False)
+
+            cmd = [command, script, spath, rpath, UPLOAD_DIR]
+            r_out = subprocess.check_output(cmd, universal_newlines=True)
+            if r_out == 'Good':
+                # move data into new non-temporary folder
+                studyid = upload.gen_study_id(sdata)
+                upload_path = UPLOAD_DIR+studyid
+                upload.create_dir(upload_path)
+                dt = datetime.datetime.today().__str__().replace(" ", "_")
+                new_spath = upload_path+'/'+dt+'_studies.csv'
+                shutil.move(spath, new_spath)
+                new_rpath = upload_path+'/'+dt+'_results.csv'
+                shutil.move(rpath, new_rpath)
+                # save zenodo data for later
+                zenodo_gen=rcopy.get('zenodo')
+                zen_msg=upload.gen_zenodo_msg(zenodo_gen)
+                upload.save_zenodo_dat(zenodo_gen, rcopy, upload_path)
+                # email
+                report=UPLOAD_DIR+'ewas-catalog-report.html'
+                attachments=[new_spath, report]
+                upload.send_email(name, email, attachments)
+                # remove report and other files it created!
+                os.remove(report)
+                os.remove(UPLOAD_DIR+'ewas-catalog-report.md')
+                os.remove(UPLOAD_DIR+'report-output.txt')
+                return render(request, 'catalog/catalog_upload_message.html', {
+                    'email': email, 
+                    'zenodo_msg': zen_msg
+                })
+            else:
+                return render(request, 'catalog/catalog_bad_upload_message.html', {
+                    'x': r_out
+                })
+            return render(request, 'catalog/catalog_upload_message.html')
     else:
         form = DocumentForm(array_list=arrays, tissue_list=tissues, trait_list=out_ex)
     return render(request, 'catalog/catalog_upload.html', {
