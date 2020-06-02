@@ -22,7 +22,7 @@ def examine_user_input(add_zenodo):
 			print("You have chosen against producing a zenodo doi for the data")
 			sys.exit()
 		elif add_zenodo2 == "y":
- 			print("Continuing with making a zenodo doi")
+			print("Continuing with making a zenodo doi")
 
 studyid = sys.argv[1]
 file_dir = sys.argv[2]
@@ -58,21 +58,31 @@ r.json()
 # specify and attach the metadata for the upload
 # data = {'metadata': {'title': 'My first upload', 'upload_type': 'poster', 'description': 'This is my first upload', 'creators': [{'name': 'Doe, John', 'affiliation': 'Zenodo'}]}}
 # sdata = pd.read_table(data_dir+'/studies.txt')
-sdata = pd.read_csv("../test_files/studies_450k_test.csv")
+# sdata = pd.read_csv("../test_files/studies_450k_test.csv")
+zfile=data_dir+'/zenodo.csv'
+try:
+    zdata = pd.read_csv(zfile)
+except FileNotFoundError:
+    print('File does not exist!')
 
-au = sdata.loc[0, 'Author']
-pmid = sdata.loc[0, 'PMID']
-trait = sdata.loc[0, 'Trait']
-title = au + ' et al. EWAS of ' + trait + '. PMID = ' + str(pmid)
-desc = 'Upload of this dataset was completed by The EWAS Catalog team. The data can be queried along with hundreds of other EWAS at ewascatalog.org. To upload your EWAS summary statistics and have a zenodo DOI generated for you go to ewascatalog.org/upload'
+title = zdata.loc[0, 'title']
+authors = zdata.loc[0, 'authors']
+desc = zdata.loc[0, 'desc']
+
+desc = desc + '\n\n' + 'Upload of this dataset was completed by The EWAS Catalog team. The data can be queried along with hundreds of other EWAS at ewascatalog.org. To upload your EWAS summary statistics and have a zenodo DOI generated for you go to ewascatalog.org/upload'
+
+# au = sdata.loc[0, 'Author']
+# pmid = sdata.loc[0, 'PMID']
+# trait = sdata.loc[0, 'Trait']
+# title = au + ' et al. EWAS of ' + trait + '. PMID = ' + str(pmid)
+# desc = 'Upload of this dataset was completed by The EWAS Catalog team. The data can be queried along with hundreds of other EWAS at ewascatalog.org. To upload your EWAS summary statistics and have a zenodo DOI generated for you go to ewascatalog.org/upload'
 
 data = {'metadata': 
 				   {'title': title, 
 				    'upload_type': 'dataset', 
 				    'description': desc, 
-				    'creators': [{'name': au}]}}
+				    'creators': [{'name': authors}]}}
 
-[{'name': 'Doe, John', 'affiliation': 'Zenodo'}]
 r = requests.put('https://sandbox.zenodo.org/api/deposit/depositions/%s' % deposition_id, params={'access_token': SANDBOX_TOKEN}, data=json.dumps(data), headers=headers)
 
 r.status_code
@@ -81,5 +91,9 @@ r.json()
 # publish 
 r = requests.post('https://sandbox.zenodo.org/api/deposit/depositions/%s/actions/publish' % deposition_id, params={'access_token': SANDBOX_TOKEN} )
 
-r.status_code
+status_code = r.status_code
+if status_code != 202:
+	raise ValueError("Status code was" + str(status_code) + " and it should be 202. Check zenodo")
+else:
+	print("Status code is 202 so it seems")
 # should be: 202
