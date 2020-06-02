@@ -96,6 +96,25 @@ def extract_sql_data(var, cursor):
     results = cursor.fetchall()
     return results
 
+def gen_zenodo_msg(zenodo):
+    if zenodo == 'Yes':
+        msg = 'You indicated you wanted a zenodo doi so we will generate this for you with the information you provided.'
+    else:
+        msg = 'You indicated you did not want a zenodo doi.'
+    return msg
+
+def save_zenodo_dat(zenodo, rcopy, upload_path):
+    if zenodo == 'No':
+        return None
+    else:
+        zen_dat = {'desc': [rcopy.get('zenodo_desc')], 
+                   'title': [rcopy.get('zenodo_title')],
+                   'authors': [rcopy.get('zenodo_authors')]
+                   }
+        df = pd.DataFrame(zen_dat)
+        df.to_csv(upload_path+'/zenodo.csv', index=False)
+
+
 @never_cache
 def catalog_upload(request):
     clear_directory(TMP_DIR)
@@ -154,13 +173,21 @@ def catalog_upload(request):
                         shutil.move(spath, new_spath)
                         new_rpath = upload_path+'/'+dt+'_results.csv'
                         shutil.move(rpath, new_rpath)
+                        # save zenodo data for later
+                        zenodo_gen=rcopy.get('zenodo')
+                        zen_msg=gen_zenodo_msg(zenodo_gen)
+                        save_zenodo_dat(zenodo_gen, rcopy, upload_path)
                         # email
                         report=UPLOAD_DIR+'ewas-catalog-report.html'
                         attachments=[new_spath, report]
                         upload.send_email(name, email, attachments)
+                        # remove report and other files it created!
                         os.remove(report)
+                        os.remove(UPLOAD_DIR+'ewas-catalog-report.md')
+                        os.remove(UPLOAD_DIR+'report-output.txt')
                         return render(request, 'catalog/catalog_upload_message.html', {
-                            'email': email
+                            'email': email, 
+                            'zenodo_msg': zen_msg
                         })
                     else:
                         return render(request, 'catalog/catalog_bad_upload_message.html', {
