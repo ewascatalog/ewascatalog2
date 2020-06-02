@@ -5,16 +5,17 @@ and an email sent to them detailing what they've sent
 """
 
 import os, re
+import pandas as pd
 from django.core.mail import EmailMessage
 from django.shortcuts import render
 
 def check_email(email, request):
 	""" Simple email check.
 
-    This function is called in views.py to
-    check the email entered is valid with regards 
-    to structure. 
-    """
+	This function is called in views.py to
+	check the email entered is valid with regards 
+	to structure. 
+	"""
 	regex = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
 	if(re.search(regex, email)):
 		return 'valid'
@@ -24,6 +25,45 @@ def check_email(email, request):
 			'x': x
 		})            
 
+
+def extract_study_info(rcopy):
+	""" Extracting study information from POST data.
+
+	This function is called in views.py to
+	extract the user input POST data from the upload 
+	page. 
+	"""
+	study_dat = {'Author': [rcopy.get('author')],
+				 'Consortium': [rcopy.get('consortium')],
+				 'PMID': [rcopy.get('pmid')],
+				 'Date': [rcopy.get('publication_date')],
+				 'Trait': [rcopy.get('trait')],
+				 'EFO':[rcopy.get('efo')],
+				 'Analysis': [rcopy.get('analysis')],
+				 'Source': [rcopy.get('source')],
+				 'Outcome': [rcopy.get('outcome')],
+				 'Exposure': [rcopy.get('exposure')],
+				 'Covariates': [rcopy.get('covariates')],
+				 'Outcome_Units': [rcopy.get('outcome_unit')],
+				 'Exposure_Units': [rcopy.get('exposure_unit')],
+				 'Methylation_Array': [rcopy.get('array')],
+				 'Tissue': [rcopy.get('tissue')],
+				 'Further_Details': [rcopy.get('further_details')],
+				 'N': [rcopy.get('n')],
+				 'N_Cohorts': [rcopy.get('n_studies')],
+				 'Categories': [rcopy.get('categories')],
+				 'Age': [rcopy.get('age')],
+				 'N_Males': [rcopy.get('n_males')],
+				 'N_Females': [rcopy.get('n_females')],
+				 'N_EUR': [rcopy.get('n_eur')],
+				 'N_EAS': [rcopy.get('n_eas')],
+				 'N_SAS': [rcopy.get('n_sas')],
+				 'N_AFR': [rcopy.get('n_afr')],
+				 'N_AMR': [rcopy.get('n_amr')],
+				 'N_OTH': [rcopy.get('n_oth')]
+				}
+	df = pd.DataFrame(study_dat)
+	return df
 
 
 def create_dir(new_dir):

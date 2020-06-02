@@ -103,44 +103,46 @@ def catalog_upload(request):
     cursor = db.cursor()
     arrays = extract_sql_data("array", cursor)
     tissues = extract_sql_data("tissue", cursor)
-    out_ex = ('DNA methylation')
+    out_ex = (('DNA methylation',))
     if request.method == 'POST':
         form = DocumentForm(request.POST, 
                             request.FILES,
                             array_list=arrays, 
-                            tissue_list=tissues)
+                            tissue_list=tissues, 
+                            trait_list=out_ex)
         if form.is_valid():
-            name = request.POST.get('name')
-            email = request.POST.get('email')
+            rcopy = request.POST.copy()
+            name = rcopy.get('name')
+            email = rcopy.get('email')
             email_check = upload.check_email(email, request)
             if email_check is not 'valid':
                 return email_check
 
-            s_form = request.FILES['studies']
+            # s_form = request.FILES['studies']
             r_form = request.FILES['results']
             
-            s_name = s_form.name
-            s_size = s_form.size
-            s_limit = 10 * 1024 * 1024
+            # s_name = s_form.name
+            # s_size = s_form.size
+            # s_limit = 10 * 1024 * 1024
 
             r_name = r_form.name
             r_size = r_form.size
             r_limit = 224425040 * 10
 
-            if r_size < r_limit and s_size < s_limit:
-                if r_name.endswith('.csv') and s_name.endswith('.csv'):
-                    f_studies = s_form.file
+            if r_size < r_limit:
+                if r_name.endswith('.csv'):
+                    # f_studies = s_form.file
                     command = 'Rscript'
                     script = 'database/check-ewas-data.r'
-                    sdata = pd.read_csv(f_studies)
-                    spath = TMP_DIR+s_name
+                    sdata = upload.extract_study_info(rcopy)
+                    spath = TMP_DIR+name+'-studies.csv'
                     sdata.to_csv(spath, index=False)
                     f_results = r_form.file
                     rdata = pd.read_csv(f_results)
                     rpath = TMP_DIR+r_name
                     rdata.to_csv(rpath, index=False)
 
-                    cmd = [command, script, spath, rpath, TMP_DIR]
+                    cmd = [command, script, spath, rpath, UPLOAD_DIR]
                     r_out = subprocess.check_output(cmd, universal_newlines=True)
                     if r_out == 'Good':
                         # move data into new non-temporary folder
@@ -153,9 +155,10 @@ def catalog_upload(request):
                         new_rpath = upload_path+'/'+dt+'_results.csv'
                         shutil.move(rpath, new_rpath)
                         # email
-                        report=TMP_DIR+'ewas-catalog-report.html'
+                        report=UPLOAD_DIR+'ewas-catalog-report.html'
                         attachments=[new_spath, report]
                         upload.send_email(name, email, attachments)
+                        os.remove(report)
                         return render(request, 'catalog/catalog_upload_message.html', {
                             'email': email
                         })
@@ -175,7 +178,7 @@ def catalog_upload(request):
                     'x': x
                 })
     else:
-        form = DocumentForm(array_list=arrays, tissue_list=tissues)
+        form = DocumentForm(array_list=arrays, tissue_list=tissues, trait_list=out_ex)
     return render(request, 'catalog/catalog_upload.html', {
         'form': form
     })
