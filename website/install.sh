@@ -24,7 +24,9 @@ mkdir -p ${WEBSITE_DIR}/catalog/static/tmp
 mkdir -p ${WEBSITE_DIR}/catalog/static/docs
 cp ${FILE_DIR}/catalog-download/ewascatalog.txt.gz \
    ${WEBSITE_DIR}/catalog/static/docs
-
+## copy results template for uploads
+cp ${FILE_DIR}/ewas-sum-stats/results_template.csv \
+   ${WEBSITE_DIR}/catalog/static/docs
 
 #chmod -R o-rwx ${WEBSITE_DIR}
 #chgrp -R www-data ${WEBSITE_DIR}
