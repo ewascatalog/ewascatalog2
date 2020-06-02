@@ -74,18 +74,18 @@ def gen_study_id(study_dat):
 	This function is called in views.py to
 	generate the study ID 
 	"""    
-    df = study_dat
-    auth_nam = df.iloc[0]['Author'].replace(" ", "-")
-    trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
-    if isNaN(df.iloc[0]['PMID']):
-        StudyID = auth_nam+"_"+trait_nam
-    else:
-        StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
-    if isNaN(df.iloc[0]['Analysis']):
-    	analysis_nam = df.iloc[0]['Analysis'].replace(" ", "_").lower()
-    	StudyID = StudyID+'_'+analysis_nam
+	df = study_dat
+	auth_nam = df.iloc[0]['Author'].replace(" ", "-")
+	trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
+	if isNaN(df.iloc[0]['PMID']):
+	    StudyID = auth_nam+"_"+trait_nam
+	else:
+	    StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
+	if isNaN(df.iloc[0]['Analysis']):
+		analysis_nam = df.iloc[0]['Analysis'].replace(" ", "_").lower()
+		StudyID = StudyID+'_'+analysis_nam
 
-    return StudyID
+	return StudyID
 
 def extract_sql_data(var, cursor):
 	""" Extracting variables from database.
@@ -95,10 +95,10 @@ def extract_sql_data(var, cursor):
 	can be used to populate multiple choice options
 	on the upload webpage 
 	"""    
-    sql = "SELECT DISTINCT "+var+" FROM studies"
-    cursor.execute(sql)
-    results = cursor.fetchall()
-    return results
+	sql = "SELECT DISTINCT "+var+" FROM studies"
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	return results
 
 def gen_zenodo_msg(zenodo):
 	""" Generating zenodo message.
@@ -108,11 +108,11 @@ def gen_zenodo_msg(zenodo):
 	on the upload webpage and gives a message to them
 	letting them know whether a doi will be generated
 	"""    	
-    if zenodo == 'Yes':
-        msg = 'You indicated you wanted a zenodo doi so we will generate this for you with the information you provided.'
-    else:
-        msg = 'You indicated you did not want a zenodo doi.'
-    return msg
+	if zenodo == 'Yes':
+	    msg = 'You indicated you wanted a zenodo doi so we will generate this for you with the information you provided.'
+	else:
+	    msg = 'You indicated you did not want a zenodo doi.'
+	return msg
 
 def save_zenodo_dat(zenodo, rcopy, upload_path):
 	""" Saving zenodo data.
@@ -120,15 +120,15 @@ def save_zenodo_dat(zenodo, rcopy, upload_path):
 	This function is used in views.py to save
 	the zenodo data if it is provided
 	"""    		
-    if zenodo == 'No':
-        return None
-    else:
-        zen_dat = {'desc': [rcopy.get('zenodo_desc')], 
-                   'title': [rcopy.get('zenodo_title')],
-                   'authors': [rcopy.get('zenodo_authors')]
-                   }
-        df = pd.DataFrame(zen_dat)
-        df.to_csv(upload_path+'/zenodo.csv', index=False)
+	if zenodo == 'No':
+	    return None
+	else:
+		zen_dat = {'desc': [rcopy.get('zenodo_desc')], 
+					'title': [rcopy.get('zenodo_title')],
+					'authors': [rcopy.get('zenodo_authors')]
+					}
+		df = pd.DataFrame(zen_dat)
+		df.to_csv(upload_path+'/zenodo.csv', index=False)
 
 
 def create_dir(new_dir):

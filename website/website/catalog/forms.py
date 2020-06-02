@@ -1,6 +1,5 @@
 from django import forms
 from django.conf import settings
-from . import textquery, structuredquery, database, upload
 	
 class ListTextWidget(forms.TextInput):
 	""" Custom widget to allow users to choose
