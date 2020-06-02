@@ -50,6 +50,7 @@ update_webserver() {
     cd ${WEBSITE_DIR}; eval "${DOCKER_COMPOSE} start nginx"
 }
 update_database() {
+    cd ${WEBSITE_DIR}; eval "${DOCKER_COMPOSE} exec web bash -c 'cd /code/database; bash generate-zenodo-doi.sh /files'"
     cd ${WEBSITE_DIR}; eval "${DOCKER_COMPOSE} exec db bash -c 'cd /code/database; bash add-to-ewas.sh ../settings.env /files'"
 }
 check_new_upload() {
