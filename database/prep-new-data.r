@@ -30,7 +30,8 @@ if (!file.exists(file_dir)) {
 files <- list.files(res_dir)
 sfile <- grep("studies", files, value = T)
 rfile <- grep("results", files, value = T)
-
+zfile <- grep("zenodo", files, value = T)
+if (length(zfile) == 0) zfile <- "file-does-not-exist.badfile"
 
 studies <- read.csv(file.path(res_dir, sfile))
 results <- read.csv(file.path(res_dir, rfile))
@@ -214,6 +215,11 @@ write.table(studies, file = file.path(out_dir, "studies.txt"),
 			col.names = T, row.names = F, quote = F, sep = "\t")
 write.table(full_results, file = file.path(out_dir, "results.txt"),
 			col.names = T, row.names = F, quote = F, sep = "\t")
+
+if (file.exists(file.path(res_dir, zfile))) {
+  message("Moving zenodo data to: ", out_dir)
+  system(paste0("mv ", file.path(res_dir, zfile), " ", out_dir, "/"))
+}
 
 # Write to studies-to-add.txt --> APPEND!!! 
 studies_to_add_file <- file.path(file_dir, "ewas-sum-stats/studies-to-add.txt")
