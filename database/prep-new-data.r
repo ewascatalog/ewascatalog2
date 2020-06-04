@@ -46,24 +46,6 @@ cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 # ---------------------------------------------------- 
 
 full_results <- dplyr::left_join(results, cpg_annotations)
-def gen_study_id(study_dat):
-  """ Generating a Study ID from the study data.
-
-  This function is called in views.py to
-  generate the study ID 
-  """    
-    df = study_dat
-    auth_nam = df.iloc[0]['Author'].replace(" ", "-")
-    trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
-    if isNaN(df.iloc[0]['PMID']):
-        StudyID = auth_nam+"_"+trait_nam
-    else:
-        StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
-    if isNaN(df.iloc[0]['Analysis']):
-      analysis_nam = df.iloc[0]['Analysis'].replace(" ", "_").lower()
-      StudyID = StudyID+'_'+analysis_nam
-
-    return StudyID
 
 generate_study_id <- function(studies_dat) {
   df <- studies_dat
@@ -74,7 +56,7 @@ generate_study_id <- function(studies_dat) {
   } else {
     pmid <- df$PMID
   }
-  if (is.na(df$Analysis)) {
+  if (!is.na(df$Analysis)) {
     analysis <- gsub(" ", "_", tolower(df$Analysis))
   } else {
     analysis <- NULL
@@ -169,8 +151,7 @@ write.table(full_results, file = file.path(out_dir, "results.txt"),
 			col.names = T, row.names = F, quote = F, sep = "\t")
 
 if (file.exists(file.path(res_dir, zfile))) {
-  message("Moving zenodo data to: ", out_dir)
-  system(paste0("mv ", file.path(res_dir, zfile), " ", out_dir, "/"))
+  system(paste0("mv ", file.path(res_dir, rfile), " ", res_dir, "/results.csv"))
 }
 
 # Write to studies-to-add.txt --> APPEND!!! 
