@@ -87,6 +87,9 @@ def catalog_upload(request):
     cursor = db.cursor()
     arrays = upload.extract_sql_data("array", cursor)
     tissues = upload.extract_sql_data("tissue", cursor)
+    tissues_aslist = list(tissues)
+    tissues_aslist.remove(('NA',),)
+    tissues = tuple(tissues_aslist)
     out_ex = (('DNA methylation',))
     if request.method == 'POST':
         form = DocumentForm(request.POST, 
