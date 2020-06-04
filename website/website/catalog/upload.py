@@ -33,17 +33,20 @@ def extract_study_info(rcopy):
 	extract the user input POST data from the upload 
 	page. 
 	"""
+	covs = rcopy.getlist('covariates')
+	other_covs = rcopy.get('other_covariates')
+	covs.append(other_covs)
 	study_dat = {'Author': [rcopy.get('author')],
 				 'Consortium': [rcopy.get('consortium')],
 				 'PMID': [rcopy.get('pmid')],
 				 'Date': [rcopy.get('publication_date')],
 				 'Trait': [rcopy.get('trait')],
-				 'EFO':[rcopy.get('efo')],
+				 'EFO': [rcopy.get('efo')],
 				 'Analysis': [rcopy.get('analysis')],
 				 'Source': [rcopy.get('source')],
 				 'Outcome': [rcopy.get('outcome')],
 				 'Exposure': [rcopy.get('exposure')],
-				 'Covariates': [rcopy.get('covariates')],
+				 'Covariates': [', '.join(covs)],
 				 'Outcome_Units': [rcopy.get('outcome_unit')],
 				 'Exposure_Units': [rcopy.get('exposure_unit')],
 				 'Methylation_Array': [rcopy.get('array')],
@@ -51,16 +54,18 @@ def extract_study_info(rcopy):
 				 'Further_Details': [rcopy.get('further_details')],
 				 'N': [rcopy.get('n')],
 				 'N_Cohorts': [rcopy.get('n_studies')],
-				 'Categories': [rcopy.get('categories')],
+				 # 'Categories': [rcopy.get('categories')],
 				 'Age': [rcopy.get('age')],
-				 'N_Males': [rcopy.get('n_males')],
-				 'N_Females': [rcopy.get('n_females')],
-				 'N_EUR': [rcopy.get('n_eur')],
-				 'N_EAS': [rcopy.get('n_eas')],
-				 'N_SAS': [rcopy.get('n_sas')],
-				 'N_AFR': [rcopy.get('n_afr')],
-				 'N_AMR': [rcopy.get('n_amr')],
-				 'N_OTH': [rcopy.get('n_oth')]
+				 'Sex': [rcopy.get('sex')],
+				 # 'N_Males': [rcopy.get('n_males')],
+				 # 'N_Females': [rcopy.get('n_females')],
+				 'Ethnicity': [', '.join(rcopy.getlist('ethnicity'))]
+				 # 'N_EUR': [rcopy.get('n_eur')],
+				 # 'N_EAS': [rcopy.get('n_eas')],
+				 # 'N_SAS': [rcopy.get('n_sas')],
+				 # 'N_AFR': [rcopy.get('n_afr')],
+				 # 'N_AMR': [rcopy.get('n_amr')],
+				 # 'N_OTH': [rcopy.get('n_oth')]
 				}
 	df = pd.DataFrame(study_dat)
 	return df

@@ -83,39 +83,40 @@ studies_cols <- c("Author",
 				  "Further_Details", 
 				  "N", 
 				  "N_Cohorts", 
-				  "Categories", 
+				  # "Categories", 
 				  "Age",
-				  "N_Males", 
-				  "N_Females", 
-				  "N_EUR", 
-				  "N_EAS", 
-				  "N_SAS", 
-				  "N_AFR", 
-				  "N_AMR", 
-				  "N_OTH")
-
-optional_studies_cols <- c("StudyID")
+				  "Sex",
+				  # "N_Males", 
+				  # "N_Females", 
+				  "Ethnicity"
+				  # "N_EUR", 
+				  # "N_EAS", 
+				  # "N_SAS", 
+				  # "N_AFR", 
+				  # "N_AMR", 
+				  # "N_OTH"
+				  )
 
 if (!all(colnames(studies) == studies_cols)) {
 	cat("Studies file column names do not match the template columns")
 	quit("no")
 }
 
-### Required columns are filled in
-required_cols <- c("Author", "Trait", "Outcome", "Exposure", "Methylation_Array", "Tissue")
-tmp <- check_required_cols("studies", required_cols)
+# ### Required columns are filled in
+# required_cols <- c("Author", "Trait", "Outcome", "Exposure", "Methylation_Array", "Tissue")
+# tmp <- check_required_cols("studies", required_cols)
 
-### Character length doesn't exceed that set in mysql database 
-char50 <- c("Author", "Consortium", "Source", "Outcome_Units", "Exposure_Units",
-			"Array")
-char20 <- c("PMID", "Date", "N", "N_Cohorts", "Age", "N_Males", "N_Females",
-			"N_EUR", "N_EAS", "N_SAS", "N_AFR", "N_OTH")
-char100 <- "Tissue"
-char300 <- "Covariates"
-char200 <- studies_cols[!studies_cols %in% c(char50, char20, char100, char300)]
+# ### Character length doesn't exceed that set in mysql database 
+# char50 <- c("Author", "Consortium", "Source", "Outcome_Units", "Exposure_Units",
+# 			"Array")
+# char20 <- c("PMID", "Date", "N", "N_Cohorts", "Age", "N_Males", "N_Females",
+# 			"N_EUR", "N_EAS", "N_SAS", "N_AFR", "N_OTH")
+# char100 <- "Tissue"
+# char300 <- "Covariates"
+# char200 <- studies_cols[!studies_cols %in% c(char50, char20, char100, char300)]
 
-max_chars <- c(20, 50, 100, 200, 300)
-tmp <- check_nchar("studies", max_chars)
+# max_chars <- c(20, 50, 100, 200, 300)
+# tmp <- check_nchar("studies", max_chars)
 
 # ------------------------------------------
 # Results data checks
