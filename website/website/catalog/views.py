@@ -11,11 +11,6 @@ from django.core.mail import EmailMessage
 from . import basicquery, advancedquery, database, upload, constants
 from .forms import DocumentForm
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TMP_DIR = BASE_DIR+'/catalog/static/tmp/'
-UPLOAD_DIR = '/files/ewas-sum-stats/to-add/'
-
-
 
 def clear_directory(directory):
     for file in os.listdir(directory):
@@ -26,7 +21,7 @@ def clear_directory(directory):
 
 @never_cache
 def catalog_home(request):
-    clear_directory(TMP_DIR)
+    clear_directory(constants.TMP_DIR)
     keys = request.GET.keys()
     if len(keys) > 0:
         if "query" in keys:
@@ -55,7 +50,7 @@ def advancedquery_response(request):
     db = database.default_connection()
     response = advancedquery.execute(db, query, constants.MAX_ASSOCIATIONS, constants.PVALUE_THRESHOLD)            
     if isinstance(response, advancedquery.response):
-        filename = response.save(TMP_DIR)
+        filename = response.save(constants.TMP_DIR)
         return render(request, 'catalog/catalog_results.html',
                       {'response':response.table(),
                        'query':response.value.replace(" ", "_"),
@@ -67,22 +62,22 @@ def advancedquery_response(request):
 
 @never_cache
 def catalog_info(request):
-    clear_directory(TMP_DIR)
+    clear_directory(constants.TMP_DIR)
     return render(request, 'catalog/catalog_about.html', {})
 
 @never_cache
 def catalog_documents(request):
-    clear_directory(TMP_DIR)
+    clear_directory(constants.TMP_DIR)
     return render(request, 'catalog/catalog_documents.html', {})
 
 @never_cache
 def catalog_download(request):
-    clear_directory(TMP_DIR)
+    clear_directory(constants.TMP_DIR)
     return render(request, 'catalog/catalog_download.html', {})
 
 @never_cache
 def catalog_upload(request):
-    clear_directory(TMP_DIR)
+    clear_directory(constants.TMP_DIR)
     db = database.default_connection()
     cursor = db.cursor()
     arrays = upload.extract_sql_data("array", cursor)
@@ -119,19 +114,19 @@ def catalog_upload(request):
                 command = 'Rscript'
                 script = 'database/check-ewas-data.r'
                 sdata = upload.extract_study_info(rcopy)
-                spath = TMP_DIR+name+'-studies.csv'
+                spath = constants.TMP_DIR+name+'-studies.csv'
                 sdata.to_csv(spath, index=False)
                 f_results = r_form.file
                 rdata = pd.read_csv(f_results)
-                rpath = TMP_DIR+r_name
+                rpath = constants.TMP_DIR+r_name
                 rdata.to_csv(rpath, index=False)
 
-                cmd = [command, script, spath, rpath, UPLOAD_DIR]
+                cmd = [command, script, spath, rpath, constants.UPLOAD_DIR]
                 r_out = subprocess.check_output(cmd, universal_newlines=True)
                 if r_out == 'Good':
                     # move data into new non-temporary folder
                     studyid = upload.gen_study_id(sdata)
-                    upload_path = UPLOAD_DIR+studyid
+                    upload_path = constants.UPLOAD_DIR+studyid
                     upload.create_dir(upload_path)
                     dt = datetime.datetime.today().__str__().replace(" ", "_")
                     new_spath = upload_path+'/'+dt+'_studies.csv'
@@ -143,13 +138,13 @@ def catalog_upload(request):
                     zen_msg=upload.gen_zenodo_msg(zenodo_gen)
                     upload.save_zenodo_dat(zenodo_gen, rcopy, upload_path)
                     # email
-                    report=UPLOAD_DIR+'ewas-catalog-report.html'
+                    report=constants.UPLOAD_DIR+'ewas-catalog-report.html'
                     attachments=[new_spath, report]
                     upload.send_email(name, email, attachments)
                     # remove report and other files it created!
                     os.remove(report)
-                    os.remove(UPLOAD_DIR+'ewas-catalog-report.md')
-                    os.remove(UPLOAD_DIR+'report-output.txt')
+                    os.remove(constants.UPLOAD_DIR+'ewas-catalog-report.md')
+                    os.remove(constants.UPLOAD_DIR+'report-output.txt')
                     return render(request, 'catalog/catalog_upload_message.html', {
                         'email': email, 
                         'zenodo_msg': zen_msg
