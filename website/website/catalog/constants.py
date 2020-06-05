@@ -16,6 +16,11 @@ P-value threshold for counting and returning associations
 PVALUE_THRESHOLD=1e-4
 
 """
+Maximum size for uploaded files
+"""
+FILE_SIZE_LIMIT = 224425040 * 10
+
+"""
 Directories
 """ 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
