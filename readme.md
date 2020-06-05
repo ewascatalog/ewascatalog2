@@ -145,6 +145,10 @@ docker inspect dev.ewascatalog | grep -e '"IPAddress"' | head -n 1 | sed 's/[^0-
 * Add a feature to the EWAS Catalog R package that allows browsing of just the studies (e.g. the 'studies.txt' file in 'files/ewas-sub-stats/combined_data/').
 
 * Should only generate downloadable files of summary statistics when the user requests, not every time a query is run. Currently, to save space these files get deleted when a new query is submitted which could cause problems!
+
+* Update the 'in-house-ewas' pipeline so it matches the new 'upload' pipeline
+	- Update the study file generation to match the new data
+	- Update the scripts used in `bash catalog check-new-upload` and `bash catalog update-database` to incorporate in-house ewas 
     
 ### New features
 
