@@ -3,7 +3,7 @@ from django.conf import settings
 	
 class ListTextWidget(forms.TextInput):
 	""" Custom widget to allow users to choose
-	from previous entries
+	from previous database entries
 
 	This widget is used in the DocumentForm form below
 	"""

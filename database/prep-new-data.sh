@@ -1,9 +1,6 @@
 #!/bin/bash
 
 # BEFORE THIS SCRIPT REPORT SHOULD HAVE BEEN GENERATED!
-# could be worth doing the subsetting and report at the same time...
-# At end of report can just say, check report and if it's good then
-# can run second part of adding EWAS
 
 SETTINGS=$1
 FILE_DIR=$2
@@ -19,8 +16,6 @@ for dir in ${FILE_DIR}${PUB_PATH}/*/     # list directories in the form "/tmp/di
 do
     dir=${dir%*/}
     NEW_DATA+=($dir)
-    # NEW_DATA+=($PUB_PATH}/${dir##*/})      # remove the trailing "/"
-    # echo ${dir##*/}    # print everything after the final "/"
 done
 
 NEW_DATA+=() # add filepath of summary stats completed in-house here

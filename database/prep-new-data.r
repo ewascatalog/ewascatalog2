@@ -5,7 +5,7 @@
 # Script objectives:
 #	1  Annotate the data (inc study ID!)
 #	2. Generate report
-# 	3. Subset results
+# 3. Subset results
 #	4. Output data to FILE_DIR/ewas-sum-stats/published/STUDY-ID
 #	5. Add STUDY-ID to "studies-to-add.txt"
 
@@ -14,8 +14,6 @@ options(stringsAsFactors = FALSE)
 args <- commandArgs(trailingOnly = TRUE)
 res_dir <- args[1]
 file_dir <- args[2]
-# res_dir <- "/Users/tb13101/Desktop/projects/Main_project/ewas_catalog/new-catalog/files/ewas-sum-stats/to-add/23456789_Thomas-Battram_a_trait"
-# file_dir <- "/Users/tb13101/Desktop/projects/Main_project/ewas_catalog/new-catalog/files"
 
 library(ewaff)
 library(rmdreport)
@@ -35,9 +33,6 @@ if (length(zfile) == 0) zfile <- "file-does-not-exist.badfile"
 
 studies <- read.csv(file.path(res_dir, sfile))
 results <- read.csv(file.path(res_dir, rfile))
-
-# studies <- read.csv("../test_files/studies_450k_test.csv")
-# results <- read.csv("../test_files/results_450k_test.csv")
 
 cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 
@@ -83,13 +78,6 @@ if (!file.exists(out_dir)) {
 # ----------------------------------------------------
 # generate report
 # ----------------------------------------------------
-# for report:
-# 	1. SE distribution 
-#	2. Beta distribution + outliers
-#	3. qq and manhattan 
-#	4. Number of sites that passed P<1e-7 + P<1e-4
-#	5. If EFO term is present 
-#	6. List of things to do
 
 betas_present <- any(!is.na(full_results$Beta))
 se_present <- any(!is.na(full_results$SE))
@@ -136,7 +124,6 @@ report <- "upload-report-two.rmd"
 report_out_file <- file.path(out_dir, "upload-report.html")
 print("Rendering report")
 rmdreport::rmdreport.generate(report, report_out_file)
-# system(paste("open", report_out_file))
 
 # ----------------------------------------------------
 # subset and write out

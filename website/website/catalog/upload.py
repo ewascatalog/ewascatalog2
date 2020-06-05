@@ -9,23 +9,6 @@ import pandas as pd
 from django.core.mail import EmailMessage
 from django.shortcuts import render
 
-def check_email(email, request):
-	""" Simple email check.
-
-	This function is called in views.py to
-	check the email entered is valid with regards 
-	to structure. 
-	"""
-	regex = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
-	if(re.search(regex, email)):
-		return 'valid'
-	else:
-		x = "The email address "+email+" is a bad email address."
-		return render(request, 'catalog/catalog_bad_upload_message.html', {
-			'x': x
-		})            
-
-
 def extract_study_info(rcopy):
 	""" Extracting study information from POST data.
 

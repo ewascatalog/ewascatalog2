@@ -101,9 +101,6 @@ def catalog_upload(request):
             rcopy = request.POST.copy()
             name = rcopy.get('name')
             email = rcopy.get('email')
-            email_check = upload.check_email(email, request)
-            if email_check is not 'valid':
-                return email_check
 
             r_form = request.FILES['results']
             
@@ -118,7 +115,7 @@ def catalog_upload(request):
                 })
 
             if r_name.endswith('.csv'):
-                # f_studies = s_form.file
+                # Run the data through an R script to perform checks
                 command = 'Rscript'
                 script = 'database/check-ewas-data.r'
                 sdata = upload.extract_study_info(rcopy)
@@ -173,82 +170,6 @@ def catalog_upload(request):
         'form': form
     })
 
-
-# @never_cache
-# def catalog_upload(request):
-#     clear_directory(TMP_DIR)
-#     if request.method == 'POST':
-#         form = DocumentForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             name = request.POST.get('name')
-#             email = request.POST.get('email')
-#             email_check = upload.check_email(email, request)
-#             if email_check is not 'valid':
-#                 return email_check
-
-#             s_form = request.FILES['studies']
-#             r_form = request.FILES['results']
-            
-#             s_name = s_form.name
-#             s_size = s_form.size
-#             s_limit = 10 * 1024 * 1024
-
-#             r_name = r_form.name
-#             r_size = r_form.size
-#             r_limit = 224425040 * 10
-
-#             if r_size < r_limit and s_size < s_limit:
-#                 if r_name.endswith('.csv') and s_name.endswith('.csv'):
-#                     f_studies = s_form.file
-#                     command = 'Rscript'
-#                     script = 'database/check-ewas-data.r'
-#                     sdata = pd.read_csv(f_studies)
-#                     spath = TMP_DIR+s_name
-#                     sdata.to_csv(spath, index=False)
-#                     f_results = r_form.file
-#                     rdata = pd.read_csv(f_results)
-#                     rpath = TMP_DIR+r_name
-#                     rdata.to_csv(rpath, index=False)
-
-#                     cmd = [command, script, spath, rpath, TMP_DIR]
-#                     r_out = subprocess.check_output(cmd, universal_newlines=True)
-#                     if r_out == 'Good':
-#                         # move data into new non-temporary folder
-#                         studyid = gen_study_id(sdata)
-#                         upload_path = UPLOAD_DIR+studyid
-#                         upload.create_dir(upload_path)
-#                         dt = datetime.datetime.today().__str__().replace(" ", "_")
-#                         new_spath = upload_path+'/'+dt+'_studies.csv'
-#                         shutil.move(spath, new_spath)
-#                         new_rpath = upload_path+'/'+dt+'_results.csv'
-#                         shutil.move(rpath, new_rpath)
-#                         # email
-#                         report=TMP_DIR+'ewas-catalog-report.html'
-#                         attachments=[new_spath, report]
-#                         upload.send_email(name, email, attachments)
-#                         return render(request, 'catalog/catalog_upload_message.html', {
-#                             'email': email
-#                         })
-#                     else:
-#                         return render(request, 'catalog/catalog_bad_upload_message.html', {
-#                             'x': r_out
-#                         })
-#                     return render(request, 'catalog/catalog_upload_message.html')
-#                 else:
-#                     x = "Files aren't csv files"
-#                     return render(request, 'catalog/catalog_bad_upload_message.html', {
-#                         'x': x
-#                     })
-#             else:
-#                 x = "Files uploaded are too big"
-#                 return render(request, 'catalog/catalog_bad_upload_message.html', {
-#                     'x': x
-#                 })
-#     else:
-#         form = DocumentForm()
-#     return render(request, 'catalog/catalog_upload.html', {
-#         'form': form
-#     })
 
 @ratelimit(key='ip', rate='1000/h', block=True)
 def catalog_api(request):
