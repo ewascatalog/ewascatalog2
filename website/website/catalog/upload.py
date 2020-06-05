@@ -4,10 +4,135 @@ Users can upload their data and it should be checked
 and an email sent to them detailing what they've sent
 """
 
-import os, re
+import os, re, shutil, datetime, subprocess
 import pandas as pd
 from django.core.mail import EmailMessage
 from django.shortcuts import render
+from .forms import DocumentForm
+from . import constants
+
+def create_form(db, post=None, files=None):
+    """ Create upload form in views.py 
+    """
+    arrays = extract_arrays(db)
+    tissues = extract_tissues(db)
+    traits = extract_traits(db)
+    if post is None:
+        return DocumentForm(array_list=arrays, 
+                            tissue_list=tissues, 
+                            trait_list=traits)
+    else:
+        return DocumentForm(post, 
+                            files,
+                            array_list=arrays, 
+                            tissue_list=tissues, 
+                            trait_list=traits)
+
+def extract_arrays(db):
+    """ Create list of microarray array formats for user to choose from
+    """
+    cursor = db.cursor()
+    return extract_sql_data("array", cursor)
+
+def extract_tissues(db):
+    """ Create list of tissues for user to choose from
+    """
+    cursor = db.cursor()
+    return extract_sql_data("tissue", cursor)
+
+def extract_traits(db):
+    """ Create list of traits for user to choose from
+    """
+    return (('DNA methylation',))
+
+def process(db, file_info, upload_info):
+    """ Process a study upload
+
+        Processing includes checking for errors, 
+        saving uploaded study information and summary statistics, 
+        sending a report to the user by email, 
+        and finally saving information for generating a zenodo doi.
+    """
+    if file_info.size > constants.FILE_SIZE_LIMIT:
+        return {"error": "File uploaded is too big"}
+    if not file_info.name.endswith(".csv"):
+        return {"error": "File uploaded is not CSV format"}
+    ## extract study info
+    study_info = extract_study_info(upload_info)
+    ## create study upload dir
+    study_dir = constants.UPLOAD_DIR+gen_study_id(study_info)
+    create_dir(study_dir)
+    ## save study files
+    study_file = save_study(study_info, study_dir)
+    results_file = save_results(file_info.file, study_dir)
+    ## verify study files
+    check_result = check_study(study_file, results_file)
+    if check_result != 'Good':
+        shutil.rmtree(study_dir)
+        return {"error": check_result}
+    ## send upload report to user
+    send_report(upload_info['name'], upload_info['email'], study_file)
+    ## save zenodo info
+    zenodo_msg = save_zenodo(upload_info, study_dir)
+    ## return variables for website response
+    return {"email": upload_info['email'],
+            "zenodo_msg": zenodo_msg}
+
+def generate_timestamp():
+    return datetime.datetime.today().__str__().replace(" ", "_")
+
+def save_study(info, base):
+    """ Save uploaded study metadata to a csv file
+    """
+    dt = generate_timestamp()
+    study_file = base+'/'+dt+'_studies.csv'
+    info.to_csv(study_file, index=False)
+    return study_file
+
+def save_results(filename, base):
+    """ Save uploaded study summary statistics to a csv file
+
+        In fact, the data is already in a csv file, 
+        the file just needs to be copied to another directory.
+    """
+    dt = generate_timestamp()
+    results_data = pd.read_csv(filename)
+    results_file = base+'/'+dt+'_results.csv'
+    results_data.to_csv(results_file, index = False)
+    # shutil.copyfile(filename, results_file)
+    return results_file
+
+def save_zenodo(info, base):
+    """ Save information for generating zenodo doi for a study
+    """
+    if info['zenodo'] == 'Yes':
+        zenodo_info = { 'desc': [info['zenodo_desc']], 
+                        'title': [info['zenodo_title']],
+                        'authors': [info['zenodo_authors']]}
+        df = pd.DataFrame(zenodo_info)
+        df.to_csv(base+'/zenodo.csv', index=False)
+        return 'You indicated you wanted a zenodo doi so we will generate this for you with the information you provided.'
+    else:
+        return 'You indicated you did not want a zenodo doi.'
+
+def send_report(name, email, study_file):
+    """ Send an upload report to the user email address
+    """
+    report=constants.UPLOAD_DIR+'ewas-catalog-report.html'
+    attachments=[study_file, report]
+    send_email(name, email, attachments)
+    os.remove(report)
+    os.remove(constants.UPLOAD_DIR+'ewas-catalog-report.md')
+    os.remove(constants.UPLOAD_DIR+'report-output.txt')
+
+def check_study(study_file, results_file):
+    """ Verify that uploaded study information satisfies requirements
+    """
+    command = 'Rscript'
+    script = 'database/check-ewas-data.r'
+    cmd = [command, script, study_file, results_file, constants.UPLOAD_DIR]
+    return subprocess.check_output(cmd, universal_newlines=True)
+
 
 def extract_study_info(rcopy):
 	""" Extracting study information from POST data.
@@ -87,37 +212,6 @@ def extract_sql_data(var, cursor):
 	cursor.execute(sql)
 	results = cursor.fetchall()
 	return results
-
-def gen_zenodo_msg(zenodo):
-	""" Generating zenodo message.
-
-	This function is used in views.py. 
-	It takes a Yes/No answer as input by the user 
-	on the upload webpage and gives a message to them
-	letting them know whether a doi will be generated
-	"""    	
-	if zenodo == 'Yes':
-	    msg = 'You indicated you wanted a zenodo doi so we will generate this for you with the information you provided.'
-	else:
-	    msg = 'You indicated you did not want a zenodo doi.'
-	return msg
-
-def save_zenodo_dat(zenodo, rcopy, upload_path):
-	""" Saving zenodo data.
-
-	This function is used in views.py to save
-	the zenodo data if it is provided
-	"""    		
-	if zenodo == 'No':
-	    return None
-	else:
-		zen_dat = {'desc': [rcopy.get('zenodo_desc')], 
-					'title': [rcopy.get('zenodo_title')],
-					'authors': [rcopy.get('zenodo_authors')]
-					}
-		df = pd.DataFrame(zen_dat)
-		df.to_csv(upload_path+'/zenodo.csv', index=False)
-
 
 def create_dir(new_dir):
     if not os.path.exists(new_dir):

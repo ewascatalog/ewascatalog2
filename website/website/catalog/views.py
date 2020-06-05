@@ -79,92 +79,24 @@ def catalog_download(request):
 def catalog_upload(request):
     clear_directory(constants.TMP_DIR)
     db = database.default_connection()
-    cursor = db.cursor()
-    arrays = upload.extract_sql_data("array", cursor)
-    tissues = upload.extract_sql_data("tissue", cursor)
-    tissues_aslist = list(tissues)
-    tissues_aslist.remove(('NA',),)
-    tissues = tuple(tissues_aslist)
-    out_ex = (('DNA methylation',))
     if request.method == 'POST':
-        form = DocumentForm(request.POST, 
-                            request.FILES,
-                            array_list=arrays, 
-                            tissue_list=tissues, 
-                            trait_list=out_ex)
+        form = upload.create_form(db, request.POST, request.FILES)
         if form.is_valid():
-            rcopy = request.POST.copy()
-            name = rcopy.get('name')
-            email = rcopy.get('email')
-
-            r_form = request.FILES['results']
-            
-            r_name = r_form.name
-            r_size = r_form.size
-            r_limit = 224425040 * 10
-
-            if r_size > r_limit:
-                x = "Files uploaded are too big"
+            response = upload.process(db, request.FILES['results'], request.POST.copy())
+            if "error" in response.keys():
                 return render(request, 'catalog/catalog_bad_upload_message.html', {
-                    'x': x
+                    'x': response['error']
                 })
-
-            if r_name.endswith('.csv'):
-                # Run the data through an R script to perform checks
-                command = 'Rscript'
-                script = 'database/check-ewas-data.r'
-                sdata = upload.extract_study_info(rcopy)
-                spath = constants.TMP_DIR+name+'-studies.csv'
-                sdata.to_csv(spath, index=False)
-                f_results = r_form.file
-                rdata = pd.read_csv(f_results)
-                rpath = constants.TMP_DIR+r_name
-                rdata.to_csv(rpath, index=False)
-
-                cmd = [command, script, spath, rpath, constants.UPLOAD_DIR]
-                r_out = subprocess.check_output(cmd, universal_newlines=True)
-                if r_out == 'Good':
-                    # move data into new non-temporary folder
-                    studyid = upload.gen_study_id(sdata)
-                    upload_path = constants.UPLOAD_DIR+studyid
-                    upload.create_dir(upload_path)
-                    dt = datetime.datetime.today().__str__().replace(" ", "_")
-                    new_spath = upload_path+'/'+dt+'_studies.csv'
-                    shutil.move(spath, new_spath)
-                    new_rpath = upload_path+'/'+dt+'_results.csv'
-                    shutil.move(rpath, new_rpath)
-                    # save zenodo data for later
-                    zenodo_gen=rcopy.get('zenodo')
-                    zen_msg=upload.gen_zenodo_msg(zenodo_gen)
-                    upload.save_zenodo_dat(zenodo_gen, rcopy, upload_path)
-                    # email
-                    report=constants.UPLOAD_DIR+'ewas-catalog-report.html'
-                    attachments=[new_spath, report]
-                    upload.send_email(name, email, attachments)
-                    # remove report and other files it created!
-                    os.remove(report)
-                    os.remove(constants.UPLOAD_DIR+'ewas-catalog-report.md')
-                    os.remove(constants.UPLOAD_DIR+'report-output.txt')
-                    return render(request, 'catalog/catalog_upload_message.html', {
-                        'email': email, 
-                        'zenodo_msg': zen_msg
-                    })
-                else:
-                    return render(request, 'catalog/catalog_bad_upload_message.html', {
-                        'x': r_out
-                    })
-            else: 
-                x = "Files aren't csv files"
-                return render(request, 'catalog/catalog_bad_upload_message.html', {
-                    'x': x
+            else:
+                return render(request, 'catalog/catalog_upload_message.html', {
+                    'email': response['email'], 
+                    'zenodo_msg': response['zenodo_msg']
                 })
-            return render(request, 'catalog/catalog_upload_message.html')
     else:
-        form = DocumentForm(array_list=arrays, tissue_list=tissues, trait_list=out_ex)
+        form = upload.create_form(db)
     return render(request, 'catalog/catalog_upload.html', {
         'form': form
     })
-
 
 @ratelimit(key='ip', rate='1000/h', block=True)
 def catalog_api(request):
