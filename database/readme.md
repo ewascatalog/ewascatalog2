@@ -19,15 +19,18 @@ tables and files from `${FILES_DIR}/published-ewas` to create
 the 'results' and 'studies' tables.
 
 ## Updating with new data
-The new data to be added should be stored in a directory in `${FILE_DIR}`. Then add this directory to `${FILE_DIR}/ewas-sum-stats/ewas-to-add.sh` where indicated. 
 
-When the container is running `bash catalog update-database` can be used to update the database with new data using the `add-to-ewas.sh` script. This script creates the 'new_results' and 'new_studies' tables before adding these tables to the 'results' and 'studies' tables. 
+### Uploading via ewascatalog.org/upload/
+This is a 3 step process:
+1. Input study data on the website and upload the results file
+2. Run `bash catalog check-new-upload`
+	+ If you need to check data report generated it should be in `${FILE_DIR}/ewas-sum-stats/published/$STUDY-ID`
+3. Run `bash catalog update-database`
 
-Other things that should be done when adding in new data:
+More details of the pipeline found on notebook
 
-* Add the data to ${FILE_DIR}/ewas-sum-stats/combined_data/ using `bind-results.r`
-* Copy the files into the original directory, e.g. `/projects/MRC-IEU/research/projects/ieu1/wp2/004/working/data/data-files-for-ewascatalog2`
-* 
+### Uploading EWAS data generated in-house
+THIS NEEDS TO BE UPDATED!  
 
 
 
