@@ -1,6 +1,7 @@
 from django import forms
 from django.conf import settings
-	
+from django.utils.safestring import mark_safe
+
 class ListTextWidget(forms.TextInput):
 	""" Custom widget to allow users to choose
 	from previous database entries
@@ -28,9 +29,7 @@ COVARIATE_CHOICES = [
 	('Smoking', 'Smoking'),
 	('Cell composition (reference based)', 'Cell composition (reference based)'),
 	('Cell composition (reference free)', 'Cell composition (reference free)'),
-	('Batch effects (PCA)', 'Batch effects (PCA)'), 
-	('Batch effects (SVA)', 'Batch effects (SVA)'), 
-	('Batch effects (other)', 'Batch effects (other)'),
+	('Batch effects', 'Batch effects'), 
 	('Ancestry (genomic PCs)', 'Ancestry (genomic PCs)'), 
 	('Ancestry (other)', 'Ancestry (other)'),
 	('Body mass index', 'Body mass index'), 
@@ -65,59 +64,55 @@ ETHNICITY_CHOICES = [
 
 class DocumentForm(forms.Form):
 	# study information
-	name = forms.CharField(max_length=50, label = "Name*")
-	email = forms.EmailField(label = "Email*")
-	author = forms.CharField(max_length=50, label="First Author (Surname Initials)*")
-	consortium = forms.CharField(required=False, max_length=50)
+	name = forms.CharField(max_length=50, label = "Uploader Name*", 
+						   widget=forms.TextInput(attrs={'class':'special', 'size': '40'}))
+	email = forms.EmailField(label = "Uploader Email*")
+	author = forms.CharField(max_length=50, label="First Author* (In format Surname Initials, e.g. 'Doe J')")
+	consortium = forms.CharField(required=False, max_length=50, label="Cohort(s) or Consortium Name (separate by comma if multiple)")
 	pmid = forms.CharField(required=False, max_length=20, label="PubMed ID (or DOI)")
 	publication_date = forms.DateField(required=False, label="Publication Date (DD/MM/YY)")
 	trait = forms.CharField(max_length=100, label="Trait*")
-	efo = forms.CharField(required=False, max_length=50, label="EFO Term")
+	efo = forms.CharField(required=False, max_length=50, 
+						  label=mark_safe('EFO Term (the corresponding <a href="http://www.ebi.ac.uk/efo/" target="_blank">ontology term(s)</a> for the trait. In the form "EFO_ID", e.g. for body mass index, EFO Term = EFO_0004340. If there are multiple terms, separate them with a comma)'))
+	trait_units = forms.CharField(required=False, max_length=50, label="Trait Units (If categorical trait then leave blank)")
+	dnam_as_outcome = forms.ChoiceField(choices=[('Outcome', 'Outcome'), ('Exposure', 'Exposure')],
+									    widget=forms.RadioSelect, 
+									    label="How was DNA methylation specified in the model?*")
+	dnam_units = forms.ChoiceField(choices=[('Beta Values', 'Beta Values'), ('M Values', 'M Values'), ('Other', 'Other')],
+								   widget=forms.RadioSelect,
+								   label="DNA Methylation Units*")
 	analysis = forms.CharField(required=False, max_length=100, label="Analysis (e.g. Discovery or Discovery and replication)")
 	source = forms.CharField(required=False, max_length=50, label="Source (e.g. Table 1, Table S1)")
 	## analysis information
-	outcome = forms.CharField(max_length=200, label="Outcome*")
-	exposure = forms.CharField(max_length=200, label="Exposure*")
-	covariates = forms.MultipleChoiceField(required=False, label="Covariates (select all that apply)",
+	covariates = forms.MultipleChoiceField(required=False, label="Covariates (select all that apply. For meta-analysis entries select the covariates commonly used across studies)",
 								 widget=forms.CheckboxSelectMultiple, choices=COVARIATE_CHOICES)
 	other_covariates = forms.CharField(required=False, max_length = 300, label="Other Covariates (Please separate each with a comma, e.g. a covariate, another covariate)")
-	outcome_unit = forms.CharField(required=False, max_length=50, label="Outcome Units (e.g. Beta values)")
-	exposure_unit = forms.CharField(required=False, max_length=50, label="Exposure Units")
 	array = forms.CharField(max_length=50, label="Methylation Array*")
 	tissue = forms.CharField(max_length=100, label="Tissue* (start typing to see some options)")
 	further_details = forms.CharField(required=False, max_length=200, label="Extra important details about the analysis (e.g. analysis of twins)")
 	## participant info
 	n = forms.CharField(max_length=20, label="Total Number of Participants*")
 	n_studies = forms.CharField(max_length=20, label="Total Number of Cohorts*")
-	# categories = forms.CharField(max_length=200, required=False, label="Categories (eg. 200 smokers, 200 non-smokers)")
 	age = forms.ChoiceField(label="Age group* (choose the most prominent age group in your study)", 
 							widget=forms.RadioSelect, choices=AGE_CHOICES)
-	sex = forms.ChoiceField(label='Sex*', widget=forms.RadioSelect, choices=SEX_CHOICES)
-	# n_males = forms.CharField(max_length=20, required=False, label="Total Number of Males")
-	# n_females = forms.CharField(max_length=20, required=False, label="Total Number of Females")
+	sex = forms.ChoiceField(label='Sex* (of individuals DNA methylation was measured in)', widget=forms.RadioSelect, choices=SEX_CHOICES)
 	ethnicity = forms.MultipleChoiceField(label='Ethnicity* (select all that apply)', 
 										  widget=forms.CheckboxSelectMultiple, choices=ETHNICITY_CHOICES)
-	# n_eur = forms.CharField(max_length=20, required=False, label="Total Number of Europeans")
-	# n_eas = forms.CharField(max_length=20, required=False, label="Total Number of East Asians")
-	# n_sas = forms.CharField(max_length=20, required=False, label="Total Number of South Asians")
-	# n_afr = forms.CharField(max_length=20, required=False, label="Total Number of Africans")
-	# n_amr = forms.CharField(max_length=20, required=False, label="Total Number of Admixed Americans (eg. Mexican)")
-	# n_oth = forms.CharField(max_length=20, required=False, label="Total Number of Other Ancestry")
 	## zenodo info
 	zenodo = forms.ChoiceField(choices=[('Yes', 'Yes'), ('No', 'No')], widget=forms.RadioSelect, label="Generate zenodo DOI?*")
 	zenodo_title = forms.CharField(required = False, max_length=200, label="Title of Manuscript")
 	zenodo_desc = forms.CharField(required = False, max_length=5000, widget=forms.Textarea(), label="Description for Zenodo (e.g. manuscript abstract)")
-	zenodo_authors = forms.CharField(required = False, max_length=200, label="All Authors")
+	zenodo_authors = forms.CharField(required = False, max_length=5000, label="All Authors (Put in format you wish to see the list to appear on the zenodo website)")
 	## results upload
 	results = forms.FileField(label = "Results File*")
 	## def __init__ for multiple choice lists
 	def __init__(self, *args, **kwargs):
 		_array_list = kwargs.pop('array_list', None)
 		_tissue_list = kwargs.pop('tissue_list', None)
-		_trait_list = kwargs.pop('trait_list', None)
 		super(DocumentForm, self).__init__(*args, **kwargs)
 		self.fields['array'].widget = ListTextWidget(data_list=_array_list, name='array-list')
 		self.fields['tissue'].widget = ListTextWidget(data_list=_tissue_list, name='tissue-list')
-		self.fields['outcome'].widget = ListTextWidget(data_list=_trait_list, name='outcome-list')
-		self.fields['exposure'].widget = ListTextWidget(data_list=_trait_list, name='exposure-list')
-
+		docfields = iter(self.fields)
+		for fname in docfields:
+			self.fields[fname].widget.attrs['class'] = 'special'
+			self.fields[fname].widget.attrs['size'] = '40'

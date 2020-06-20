@@ -16,17 +16,14 @@ def create_form(db, post=None, files=None):
     """
     arrays = extract_arrays(db)
     tissues = extract_tissues(db)
-    traits = extract_traits(db)
     if post is None:
         return DocumentForm(array_list=arrays, 
-                            tissue_list=tissues, 
-                            trait_list=traits)
+                            tissue_list=tissues)
     else:
         return DocumentForm(post, 
                             files,
                             array_list=arrays, 
-                            tissue_list=tissues, 
-                            trait_list=traits)
+                            tissue_list=tissues)
 
 def extract_arrays(db):
     """ Create list of microarray array formats for user to choose from
@@ -39,11 +36,6 @@ def extract_tissues(db):
     """
     cursor = db.cursor()
     return extract_sql_data("tissue", cursor)
-
-def extract_traits(db):
-    """ Create list of traits for user to choose from
-    """
-    return (('DNA methylation',))
 
 def process(db, file_info, upload_info):
     """ Process a study upload
@@ -133,6 +125,31 @@ def check_study(study_file, results_file):
     cmd = [command, script, study_file, results_file, constants.UPLOAD_DIR]
     return subprocess.check_output(cmd, universal_newlines=True)
 
+def get_outcome_and_exposure(rcopy):
+    """ Use form to define outcome and exposure and units.
+    """
+    dnam_as_outcome = rcopy.get('dnam_as_outcome')
+    if dnam_as_outcome == 'Outcome':
+        outcome = 'DNA methylation'
+        outcome_units = rcopy.get('dnam_units')
+        exposure = rcopy.get('trait')
+        exposure_units = rcopy.get('trait_units')
+    else:
+        outcome = rcopy.get('trait')
+        outcome_units = rcopy.get('trait_units')
+        exposure = 'DNA methylation'
+        exposure_units = rcopy.get('dnam_units')
+    return [outcome, outcome_units, exposure, exposure_units]
+
+def combine_covariates(rcopy):
+    """ Extract all covariates from form and combine to one list
+    """
+    covs = rcopy.getlist('covariates')
+    other_covs = rcopy.get('other_covariates')
+    covs.append(other_covs)
+    covs = ', '.join(covs)
+    return covs
+
 
 def extract_study_info(rcopy):
 	""" Extracting study information from POST data.
@@ -141,9 +158,8 @@ def extract_study_info(rcopy):
 	extract the user input POST data from the upload 
 	page. 
 	"""
-	covs = rcopy.getlist('covariates')
-	other_covs = rcopy.get('other_covariates')
-	covs.append(other_covs)
+	covs = combine_covariates(rcopy)
+	outcome_exposure = get_outcome_and_exposure(rcopy)
 	study_dat = {'Author': [rcopy.get('author')],
 				 'Consortium': [rcopy.get('consortium')],
 				 'PMID': [rcopy.get('pmid')],
@@ -152,28 +168,19 @@ def extract_study_info(rcopy):
 				 'EFO': [rcopy.get('efo')],
 				 'Analysis': [rcopy.get('analysis')],
 				 'Source': [rcopy.get('source')],
-				 'Outcome': [rcopy.get('outcome')],
-				 'Exposure': [rcopy.get('exposure')],
-				 'Covariates': [', '.join(covs)],
-				 'Outcome_Units': [rcopy.get('outcome_unit')],
-				 'Exposure_Units': [rcopy.get('exposure_unit')],
+				 'Outcome': [outcome_exposure[0]],
+				 'Exposure': [outcome_exposure[2]],
+				 'Covariates': [covs],
+				 'Outcome_Units': [outcome_exposure[1]],
+				 'Exposure_Units': [outcome_exposure[3]],
 				 'Methylation_Array': [rcopy.get('array')],
 				 'Tissue': [rcopy.get('tissue')],
 				 'Further_Details': [rcopy.get('further_details')],
 				 'N': [rcopy.get('n')],
 				 'N_Cohorts': [rcopy.get('n_studies')],
-				 # 'Categories': [rcopy.get('categories')],
 				 'Age': [rcopy.get('age')],
 				 'Sex': [rcopy.get('sex')],
-				 # 'N_Males': [rcopy.get('n_males')],
-				 # 'N_Females': [rcopy.get('n_females')],
 				 'Ethnicity': [', '.join(rcopy.getlist('ethnicity'))]
-				 # 'N_EUR': [rcopy.get('n_eur')],
-				 # 'N_EAS': [rcopy.get('n_eas')],
-				 # 'N_SAS': [rcopy.get('n_sas')],
-				 # 'N_AFR': [rcopy.get('n_afr')],
-				 # 'N_AMR': [rcopy.get('n_amr')],
-				 # 'N_OTH': [rcopy.get('n_oth')]
 				}
 	df = pd.DataFrame(study_dat)
 	return df
@@ -225,7 +232,7 @@ def send_email(name, useremail, attachments):
     to the catalog.
     """
 	email_start = 'Dear '+name+',\n\n'
-	email_body = 'Thank you for uploading your results to the EWAS Catalog. Please find attached an initial report on the data you uploaded. We will conduct more checks and if the data looks good we will email you with a zenodo doi and to let you know the data is in the catalog.\n\n'
+	email_body = 'Thank you for uploading your results to the EWAS Catalog. Please find attached an initial report on the data you uploaded as well as csv file with the study information provided. We will conduct more checks and if the data looks good we will email you with a zenodo doi if you requested one and we will let you know the data is in the catalog.\n\n'
 	email_end = 'Kind regards,\nThe EWAS Catalog team'
 	email_full_body = email_start+email_body+email_end
 	email_msg = EmailMessage(
