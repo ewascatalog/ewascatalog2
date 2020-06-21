@@ -12,27 +12,117 @@
 options(stringsAsFactors = FALSE)
 
 args <- commandArgs(trailingOnly = TRUE)
-res_dir <- args[1]
-file_dir <- args[2]
+file_dir <- args[1]
+inhouse_dir <- file.path(file_dir, "ewas-sum-stats/inhouse-data")
+res_dir <- file.path(inhouse_dir, "results")
+sfile <- "studies.xlsx"
+# sfile <- "studies_template_inhouse_test.xlsx"
 
-library(ewaff)
-library(rmdreport)
-
-if (!file.exists(res_dir)) {
-	stop(paste("Results directory,", res_dir, ", does not exist"))
-}
-if (!file.exists(file_dir)) {
-	stop(paste("File directory,", file_dir, ", does not exist"))
+if (!file.exists(file.path(inhouse_dir, sfile))) {
+    stop("studies.xlsx doesn't exist")
 }
 
-files <- list.files(res_dir)
-sfile <- grep("studies", files, value = T)
-rfile <- grep("results", files, value = T)
-zfile <- grep("zenodo", files, value = T)
-if (length(zfile) == 0) zfile <- "file-does-not-exist.badfile"
+studies <- readxl::read_excel(file.path(inhouse_dir, sfile), sheet="data")
 
-studies <- read.csv(file.path(res_dir, sfile))
-results <- read.csv(file.path(res_dir, rfile))
+# ------------------------------------------
+# Functions to check data
+# ------------------------------------------
+
+# function to check character length of data
+# character length has been determined in "database/create-cpg-table.sql"
+check_nchar <- function(dat_nam, max_nchars) 
+{
+    lapply(max_nchars, function(n) {
+        var <- get(paste0("char", n))
+        dat <- get(dat_nam)
+        lapply(var, function(x) {
+            all_vals <- dat[[x]]
+            if (all(is.na(all_vals))) return(NULL)
+            if (any(nchar(all_vals) > n)) {
+                cat(paste("A value in the", x, "column in the", dat_nam, "data is too long", 
+                          "please make sure it is", n, "characters or fewer."))
+                quit("no")
+            }
+        })
+    })
+}
+
+# function to check columns for NAs
+check_required_cols <- function(dat_nam, cols) 
+{
+    ### Checks columns for NAs and quits if there are NAs
+
+    dat <- get(dat_nam)
+    lapply(cols, function(col) {
+        vals <- dat[[col]]
+        if (any(is.na(vals))) {
+            cat(paste("A value in the", col, "column in the", dat_nam, "data is missing", 
+                      "and this is a required column."))
+            quit("no")
+        } else {
+            return(NULL)
+        }
+    })
+}
+
+# sort study columns
+sort_study_cols <- function()
+
+#
+
+#
+
+studies_cols <- c("Author", 
+                  "Consortium", 
+                  "PMID", 
+                  "Date", 
+                  "Trait", 
+                  "EFO", 
+                  "Analysis", 
+                  "Source", 
+                  "Outcome", 
+                  "Exposure", 
+                  "Covariates", 
+                  "Outcome_Units", 
+                  "Exposure_Units", 
+                  "Methylation_Array", 
+                  "Tissue", 
+                  "Further_Details", 
+                  "N", 
+                  "N_Cohorts", 
+                  # "Categories", 
+                  "Age",
+                  "Sex",
+                  # "N_Males", 
+                  # "N_Females", 
+                  "Ethnicity"
+                  # "N_EUR", 
+                  # "N_EAS", 
+                  # "N_SAS", 
+                  # "N_AFR", 
+                  # "N_AMR", 
+                  # "N_OTH"
+                  )
+
+if (!all(colnames(studies) == studies_cols)) {
+    cat("Studies file column names do not match the template columns")
+    quit("no")
+}
+
+### Required columns are filled in
+required_cols <- c("Author", "Trait", "Outcome", "Exposure", "Methylation_Array", "Tissue")
+tmp <- check_required_cols("studies", required_cols)
+### Character length doesn't exceed that set in mysql database 
+char50 <- c("Author", "Consortium", "Source", "Outcome_Units", "Exposure_Units",
+            "Array")
+char20 <- c("PMID", "Date", "N", "N_Cohorts", "Age", "N_Males", "N_Females",
+            "N_EUR", "N_EAS", "N_SAS", "N_AFR", "N_OTH")
+char100 <- "Tissue"
+char300 <- "Covariates"
+char200 <- studies_cols[!studies_cols %in% c(char50, char20, char100, char300)]
+max_chars <- c(20, 50, 100, 200, 300)
+tmp <- check_nchar("studies", max_chars)
+
 
 cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 
@@ -40,33 +130,33 @@ cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 # annotate
 # ---------------------------------------------------- 
 
-full_results <- dplyr::left_join(results, cpg_annotations)
+# full_results <- dplyr::left_join(results, cpg_annotations)
 
 generate_study_id <- function(studies_dat) {
     df <- studies_dat
     auth_nam <- gsub(" ", "-", df$Author)
     trait_nam <- gsub(" ", "_", tolower(df$Trait))
     if (is.na(df$PMID)) {
-    pmid <- NULL
+        pmid <- NULL
     } else {
-    pmid <- df$PMID
+        pmid <- df$PMID
     }
     if (!is.na(df$Analysis)) {
-    analysis <- gsub(" ", "_", tolower(df$Analysis))
+        analysis <- gsub(" ", "_", tolower(df$Analysis))
     } else {
-    analysis <- NULL
+        analysis <- NULL
     }
-    StudyID <- paste(c(pmid, auth_nam, trait_nam, analysis), collapse = "_")
+        StudyID <- paste(c(pmid, auth_nam, trait_nam, analysis), collapse = "_")
     return(StudyID)
 }
 
 sid <- generate_study_id(studies)
 studies$Study_ID <- sid
-full_results$Study_ID <- sid
+# full_results$Study_ID <- sid
 
 res_cols <- c("CpG", "Location", "Chr", "Pos", "Gene", "Type", "Beta", "SE", "P", "Details", "Study_ID")
 
-full_results <- full_results[, res_cols]
+# full_results <- full_results[, res_cols]
 
 out_dir <- file.path(file_dir, "ewas-sum-stats/study-data", unique(sid))
 
