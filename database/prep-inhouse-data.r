@@ -3,11 +3,13 @@
 # ----------------------------------------------------
 
 # Script objectives:
-#	1  Annotate the data (inc study ID!)
-#	2. Generate report
-#   3. Subset results
+#	1  Run checks on study and results data
+#	2. Update study data columns so they fit what's in the catalog
+#   3. Generate STUDY-ID for each study
 #	4. Output data to FILE_DIR/ewas-sum-stats/study-data/STUDY-ID
 #	5. Add STUDY-ID to "studies-to-add.txt"
+#   6. Remove results files from FILE_DIR/ewas-sum-stats/inhouse-data/
+#   7. Write out any failures in prep
 
 options(stringsAsFactors = FALSE)
 
@@ -23,25 +25,32 @@ if (!file.exists(file.path(inhouse_dir, sfile))) {
     stop("studies.xlsx doesn't exist")
 }
 
+res_files <- list.files(res_dir)
+if (any(duplicated(res_files))) stop("There are duplicated results files, please rename the files!")
+
 studies <- readxl::read_excel(file.path(inhouse_dir, sfile), sheet="data")
 cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 # ----------------------------------------------------
 # Functions to check data
 # ----------------------------------------------------
 
-check_nchar <- function(dat, max_nchars) 
+check_nchar <- function(dat, max_nchars, stud_dat) 
 {
     ### check character length of data
     ### character length has been determined in "database/create-cpg-table.sql"
+    if (stud_dat) {
+        var_nam <- "schar"
+    } else {
+        var_nam <- "rchar"
+    }
     lapply(max_nchars, function(n) {
-        var <- get(paste0("char", n))
+        var <- get(paste0(var_nam, n))
         lapply(var, function(x) {
             all_vals <- dat[[x]]
             if (all(is.na(all_vals))) return(NULL)
             if (any(nchar(all_vals) > n)) {
-                cat(paste("A value in the", x, "column in the", dat_nam, "data is too long", 
+                stop(paste("A value in the", x, "column in the data is too long", 
                           "please make sure it is", n, "characters or fewer."))
-                quit("no")
             }
         })
     })
@@ -86,10 +95,9 @@ sort_study_cols <- function(studies)
     ### Change study columns to what they are in the 
     ### database
     df <- get_outcome_and_exposure(studies)
-    df <- df %>%
-        mutate(Consortium = Cohorts_or_consortium, 
-               Age = Age_group) %>%
-        dplyr::select(one_of(out_studies_cols))
+    df <- dplyr::mutate(df, Consortium = Cohorts_or_consortium, 
+               Age = Age_group)
+    df <- dplyr::select(df, one_of(out_studies_cols))
     return(df)
 }
 
@@ -116,6 +124,7 @@ generate_study_id <- function(studies)
 check_efo <- function(efo_terms) 
 {
     ### check efo term(s) are in correct format
+    if (is.na(efo_terms)) return(NULL)
     efos <- trimws(unlist(strsplit(efo_terms, ",")))
     if (length(efos) > 0) {
         check_split <- grepl("_", efos)
@@ -153,13 +162,6 @@ check_results_cols <- function(results)
     return(NULL)
 }
 
-error_out <- function(error, row) 
-{
-    ### capture an error and return error and study ID
-    out <- data.frame(row = row, error = error)
-    return(out)
-}
-
 make_directory <- function(dir_to_make) 
 {
     ### make new directory if it doesn't already exist
@@ -177,25 +179,27 @@ master_sort_function <- function(studies)
     check_required_cols(studies, s_required_cols)
     res <- load_results_file(file = studies$Results_file, res_dir = res_dir)
     studies <- dplyr::select(studies, -Results_file)
+    check_efo(studies$EFO)
     check_required_cols(res, r_required_cols)
-    check_nchar(studies, smax_chars)
-    check_nchar(res, rmax_chars)
+    check_nchar(studies, smax_chars, stud_dat = TRUE)
+    check_nchar(res, rmax_chars, stud_dat = FALSE)
     check_results_cols(res)
     sid <- generate_study_id(studies)
     res$StudyID <- studies$StudyID <- sid
-    full_res <- left_join(res, cpg_annotations) %>%
-        dplyr::filter(P < 1e-4)
+    full_res <- dplyr::left_join(res, cpg_annotations)
+    full_res <- dplyr::filter(full_res, P < 1e-4)
     sid_dir <- file.path(out_dir, sid)
     make_directory(dir_to_make = sid_dir)
     message("Writing out data to new directory")
     write.table(studies, file = file.path(sid_dir, "studies.txt"), 
                 col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
-    write.table(results, file = file.path(sid_dir, "results.txt"), 
+    write.table(full_res, file = file.path(sid_dir, "results.txt"), 
                 col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
     message("Appending results directory to: ", studies_to_add_file)
-    sid_to_add <- sid_dir[!sid_dir %in% studies_to_add]
+    sid_to_add <- sid[!sid %in% studies_to_add]
     write.table(sid_to_add, file = file.path(file_dir, "ewas-sum-stats/studies-to-add.txt"),
             col.names = F, row.names = F, quote = F, sep = "\n", append = T)
+    return(NULL)
 }
 
 # ----------------------------------------------------
@@ -271,7 +275,7 @@ schar50 <- c("Author", "Cohorts_or_consortium", "Source", "Trait_Units", "dnam_u
 schar20 <- c("PMID", "Date", "N", "N_Cohorts", "Age_group", "Sex")
 schar100 <- c("Tissue", "EFO")
 schar300 <- "Covariates"
-schar200 <- template_study_cols[!template_study_cols %in% c(char50, char20, char100, char300)]
+schar200 <- template_study_cols[!template_study_cols %in% c(schar50, schar20, schar100, schar300)]
 smax_chars <- c(20, 50, 100, 200, 300)
 # tmp <- check_nchar("studies", max_chars)
 
@@ -287,10 +291,52 @@ if (!all(colnames(studies) == template_study_cols)) {
     stop("Studies file column names do not match the template columns")
 }
 
-lapply(1:nrow(studies), function(x) {
+x=4
+out <- lapply(1:nrow(studies), function(x) {
     message(x)
     df <- studies[x, ]
-    out <- tryCatch(master_sort_function(df), error = function(e) return(e))
+    out <- tryCatch(master_sort_function(df), error = function(e) return(e$message))
+    if (!is.null(out)) {
+        df$success <- FALSE
+        df$message <- out
+    } else {
+        df$success <- TRUE
+        df$message <- NA
+    }
+    return(df)
 })
+
+new_studies <- dplyr::bind_rows(out)
+message(sum(new_studies$success), " / ", nrow(new_studies), " studies have been successfully prepared.")
+
+# ----------------------------------------------------
+# Clean inhouse-data directory and write out failed studies!
+# ----------------------------------------------------
+
+# worth removing studies.xlsx??? -> I'm not so sure... just write over it each time!
+
+message("Removing successful results files from ", res_dir)
+lapply(1:nrow(new_studies), function(x) {
+    df <- new_studies[x, ]
+    if (!df$success) return(NULL)
+
+    to_rm <- file.path(res_dir, df$Results_file)
+    system(paste("rm", to_rm))
+    out_msg <- message("Removed results file: ", to_rm)
+    return(out_msg)
+})
+
+failed_studies <- new_studies[!new_studies$success, ]
+today <- Sys.Date()
+out_nam <- paste0("failed_studies_", today, ".tsv")
+out_path <- file.path(inhouse_dir, out_nam)
+
+if (!nrow(failed_studies) == 0) {
+    message("Writing out failed studies to ", out_path)
+    write.table(failed_studies, file = out_path, 
+            col.names = T, row.names = F, quote = F, sep = "\t")    
+} else {
+    message("There were no failed studies!! Happy days!!")
+}
 
 # FIN
