@@ -186,7 +186,7 @@ master_sort_function <- function(studies)
     check_results_cols(res)
     sid <- generate_study_id(studies)
     res$StudyID <- studies$StudyID <- sid
-    full_res <- dplyr::left_join(res, cpg_annotations)
+    full_res <- dplyr::left_join(res, cpg_annotations, by = c("CpG" = "CpG"))
     full_res <- dplyr::filter(full_res, P < 1e-4)
     sid_dir <- file.path(out_dir, sid)
     make_directory(dir_to_make = sid_dir)
@@ -203,7 +203,7 @@ master_sort_function <- function(studies)
 }
 
 # ----------------------------------------------------
-# Setup checks
+# Setup for data checks
 # ----------------------------------------------------
 
 template_study_cols <- c("Author", 
@@ -257,19 +257,15 @@ results_cols <- c("CpG",
                   "P", 
                   "Details")
 
-
-### Required columns are filled in
 s_required_cols <- c("Author", "Trait", "dnam_in_model", "dnam_units", "Methylation_Array", "Tissue", "Age_group", "Sex", "Ethnicity", "Results_file")
 r_required_cols <- c("CpG", "P")
 
-### Character length doesn't exceed that set in mysql database 
+# max number of characters for each variable in the mysql database
 rchar20 <- c("CpG", "Beta", "SE")
 rchar50 <- c("P")
 rchar200 <- c("Details")
 rmax_chars <- c(20, 50, 200)
 
-# tmp <- check_required_cols("studies", required_cols)
-### Character length doesn't exceed that set in mysql database 
 schar50 <- c("Author", "Cohorts_or_consortium", "Source", "Trait_Units", "dnam_units",
             "Methylation_Array")
 schar20 <- c("PMID", "Date", "N", "N_Cohorts", "Age_group", "Sex")
@@ -277,8 +273,8 @@ schar100 <- c("Tissue", "EFO")
 schar300 <- "Covariates"
 schar200 <- template_study_cols[!template_study_cols %in% c(schar50, schar20, schar100, schar300)]
 smax_chars <- c(20, 50, 100, 200, 300)
-# tmp <- check_nchar("studies", max_chars)
 
+# loading in the studies-to-add file so as to not duplicate additions
 studies_to_add_file <- file.path(file_dir, "ewas-sum-stats/studies-to-add.txt")
 studies_to_add <- readLines(studies_to_add_file)
 
@@ -291,9 +287,8 @@ if (!all(colnames(studies) == template_study_cols)) {
     stop("Studies file column names do not match the template columns")
 }
 
-x=4
 out <- lapply(1:nrow(studies), function(x) {
-    message(x)
+    message("Preparing row ", x, " of ", nrow(studies), " from the studies file.")
     df <- studies[x, ]
     out <- tryCatch(master_sort_function(df), error = function(e) return(e$message))
     if (!is.null(out)) {
@@ -310,10 +305,10 @@ new_studies <- dplyr::bind_rows(out)
 message(sum(new_studies$success), " / ", nrow(new_studies), " studies have been successfully prepared.")
 
 # ----------------------------------------------------
-# Clean inhouse-data directory and write out failed studies!
+# Clean inhouse-data directory and write out failed studies
 # ----------------------------------------------------
 
-# worth removing studies.xlsx??? -> I'm not so sure... just write over it each time!
+# worth removing studies.xlsx??? -> I'm not so sure... just write over it each time.
 
 message("Removing successful results files from ", res_dir)
 lapply(1:nrow(new_studies), function(x) {
