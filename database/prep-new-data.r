@@ -5,8 +5,8 @@
 # Script objectives:
 #	1  Annotate the data (inc study ID!)
 #	2. Generate report
-# 3. Subset results
-#	4. Output data to FILE_DIR/ewas-sum-stats/published/STUDY-ID
+#   3. Subset results
+#	4. Output data to FILE_DIR/ewas-sum-stats/study-data/STUDY-ID
 #	5. Add STUDY-ID to "studies-to-add.txt"
 
 options(stringsAsFactors = FALSE)
@@ -43,21 +43,21 @@ cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 full_results <- dplyr::left_join(results, cpg_annotations)
 
 generate_study_id <- function(studies_dat) {
-  df <- studies_dat
-  auth_nam <- gsub(" ", "-", df$Author)
-  trait_nam <- gsub(" ", "_", tolower(df$Trait))
-  if (is.na(df$PMID)) {
+    df <- studies_dat
+    auth_nam <- gsub(" ", "-", df$Author)
+    trait_nam <- gsub(" ", "_", tolower(df$Trait))
+    if (is.na(df$PMID)) {
     pmid <- NULL
-  } else {
+    } else {
     pmid <- df$PMID
-  }
-  if (!is.na(df$Analysis)) {
+    }
+    if (!is.na(df$Analysis)) {
     analysis <- gsub(" ", "_", tolower(df$Analysis))
-  } else {
+    } else {
     analysis <- NULL
-  }
-  StudyID <- paste(c(pmid, auth_nam, trait_nam, analysis), collapse = "_")
-  return(StudyID)
+    }
+    StudyID <- paste(c(pmid, auth_nam, trait_nam, analysis), collapse = "_")
+    return(StudyID)
 }
 
 sid <- generate_study_id(studies)
@@ -68,7 +68,7 @@ res_cols <- c("CpG", "Location", "Chr", "Pos", "Gene", "Type", "Beta", "SE", "P"
 
 full_results <- full_results[, res_cols]
 
-out_dir <- file.path(file_dir, "ewas-sum-stats/published", unique(sid))
+out_dir <- file.path(file_dir, "ewas-sum-stats/study-data", unique(sid))
 
 if (!file.exists(out_dir)) {
 	message("Making new directory: ", out_dir)
@@ -138,7 +138,7 @@ write.table(full_results, file = file.path(out_dir, "results.txt"),
 			col.names = T, row.names = F, quote = F, sep = "\t")
 
 if (file.exists(file.path(res_dir, zfile))) {
-  system(paste0("mv ", file.path(res_dir, rfile), " ", res_dir, "/results.csv"))
+    system(paste0("mv ", file.path(res_dir, rfile), " ", res_dir, "/results.csv"))
 }
 
 # Write to studies-to-add.txt --> APPEND!!! 
