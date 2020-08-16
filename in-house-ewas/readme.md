@@ -38,7 +38,7 @@ These data can be found in the geo rdsf space: /projects/MRC-IEU/research/projec
 * These results are moved to the RDSF space
 * The study meta data are formatted for the catalog with __format_for_catalog.R__ (__L__)
 
-* After running __format_for_catalog.R__ all the results should be in the correct format and in the correct files folder space so they can be added to the catalog by running `bash catalog update-website`
+* After running __format_for_catalog.R__ all the results should be in the correct format and in the correct files folder space so they can be added to the catalog by running `bash catalog update-database`
 
 ## Finished data
 
@@ -46,7 +46,9 @@ All the data can be found in the cohort directories (alspac/ or geo/) within the
 
 ## Issues
 
+* Need to re-format how the studies files are made. Ideally everything should be able to be run through the same code as the published data (`bash catalog prep-inhouse-data` and then `bash catalog update-database`). This means:
+	+ Changing scripts so the studies file is produced at the end of data cleaning phase (with gaps for things that won't be known until after the EWAS like sample size)
+	+ Re-formatting __ewas_script.R__
 * Directories will need to be updated or code changed when more ARIES timepoints are added (essentially each timepoint will have to be treated as a different cohort with the current code!)
 * There is currently no code to easily move files to and from the RDSF, will add this later!
-* Either make "usefunc" an actual package that can be loaded into R properly OR make the scripts so that it isn't required! 
 * Study IDs should be PMID_author_trait, but the trait names were funny for GEO datasets so have been manually altered post-EWAS. So the study IDs for some GEO datasets don't contain the trait name.
