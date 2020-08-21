@@ -25,7 +25,8 @@ message("timepoints are: ", timepoints)
 # setwd(wd)
 stopifnot(file.exists(output_path))
 stopifnot(file.exists(alspac_data_dir))
-stopifnot(file.exists(paste0(output_path, aries_ids_file))
+id_file_path <- paste0(local_rdsf_dir, "data/alspac/", aries_ids_file)
+stopifnot(file.exists(id_file_path))
 
 setDataDir(alspac_data_dir)
 
@@ -46,7 +47,7 @@ data(useful)
 # -------------------------------------------------------
 
 # Read in the ARIES IDs and extract ones from timepoint of interest
-IDs <- read_tsv(aries_ids_file)
+IDs <- read_tsv(id_file_path)
 IDs <- dplyr::filter(IDs, time_point == timepoints)
 str(IDs)
 
@@ -296,8 +297,85 @@ write.table(new_phen_list, file = phen_file_nam,
 res4 <- res4 %>%
 	dplyr::select(aln, qlet, alnqlet, one_of(new_phen_list$phen))
 
+meta_data_out %>%
+	dplyr::filter(grepl("insulin", unedited_label, ignore.case = T)) %>%
+	dplyr::select(unedited_label, obj)
+
 res_file_nam <- file.path(output_path, "phenotype_data.txt")
 write.table(res4, file = res_file_nam, quote = F, col.names = T, row.names = F, sep = "\t")
+
+if (timepoints == "F7" | timepoints == "15up") {
+	age_g <- "Children"
+} else if (timepoints == "cord") {
+	age_g <- "Infants"
+} else {
+	age_g <- "Adults"
+}
+if (timepoints == "FOM" | timepoints == "antenatal") {
+	sex <- "Females"
+} else if (timepoints == "FOF") {
+	sex <- "Males"
+} else {
+	sex <- "Both"
+}
+# Write studies file
+studies <- tibble(Author = "Battram T", 
+                  Consortium = "ARIES", 
+                  PMID = NA, 
+                  Date = Sys.Date(),
+                  Trait = new_phen_list$unedited_label, 
+                  EFO = NA,
+                  Trait_units = NA, 
+                  dnam_in_model = "Outcome",
+                  dnam_units = "Beta Values", 
+                  Analysis = NA, 
+                  Source = NA, 
+                  Covariates = NA, 
+                  Methylation_Array = "Illumina HumanMethylation450", 
+                  Tissue = "Whole blood", 
+                  Further_Details = NA, 
+                  N = NA, 
+                  N_Cohorts = 1, 
+                  Age = age_g, 
+                  Sex = sex, 
+                  Ethnicity = "European", 
+                  Results_file = NA
+                 )
+
+# making temp directory for excel files to be moved over to the 
+# rdsf because it is so bloody slow to write and edit in rdsf
+temp_dir <- "temp"
+make_dir(temp_dir)
+
+studies <- studies %>%
+	arrange(Trait) %>%
+	mutate(unedited_label = Trait)
+
+openxlsx::write.xlsx(studies, file = file.path(temp_dir, "catalog_meta_data.xlsx"))
+
+# Open, alter traits, add EFO terms, add to analysis and further details too
+system(paste0("open ", file.path(temp_dir, "catalog_meta_data.xlsx")))
+
+# Read the data back in and bind it to the meta-data
+studies <- readxl::read_xlsx(file.path(temp_dir, "catalog_meta_data.xlsx"))
+
+phen_meta <- new_phen_list %>%
+	arrange(unedited_label)
+
+meta_data_out <- left_join(phen_meta, studies)
+
+## make some manual changes if needed
+# traits_to_rm <- c("Insulin u/ml, fasting FOM1", "Trunk Left Bone Mass (g)", 
+# 				  "Trunk Left Fat Mass (g)", "Trunk Left Lean Mass (g)")
+# meta_data_out <- meta_data_out %>%
+# 	dplyr::filter(!Trait %in% traits_to_rm)
+
+# write.table(traits_to_rm, file = file.path(output_path, "removed_phens.txt"), 
+# 			row.names = F, col.names = F, quote = F, sep = "\t", append=T)
+
+# overwrite old phen list file
+write.table(meta_data_out, file = phen_file_nam, 
+			row.names = F, col.names = T, quote = F, sep = "\t")
 
 # Set new password each time
 PASSWORD <- password ## REMEMBER THIS!
