@@ -82,7 +82,7 @@ run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path)
     # get phenotype of interest
     phen <- meta_dat$phen
     res_file <- paste0(out_path, phen, ".txt")
-    if (file.exists(res_file)) return(NULL)
+    # if (file.exists(res_file)) return(NULL)
 
     # read in svs  
     svs <- read_tsv(file.path("data", data_path, "svs", paste0(phen, ".txt")))
@@ -152,7 +152,7 @@ meta_out <- map_dfr(1:nrow(pheno_meta), function(x) {
     return(df_out)
 })
 
-meta_out_nam <- file.path("results", cohort, "raw", extra_cohort_info, "catalog_meta_data", split, ".txt")
+meta_out_nam <- file.path("results", cohort, "raw", extra_cohort_info, paste0("catalog_meta_data", split, ".txt"))
 write.table(meta_out, file = meta_out_nam,
             quote = F, row.names = F, col.names = T, sep = "\t")
 
