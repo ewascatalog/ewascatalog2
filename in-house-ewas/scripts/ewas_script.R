@@ -33,9 +33,9 @@ pheno_dat <- read_tsv(pheno_file)
 
 pheno_meta_file <- file.path("data", cohort_data_path, "phenotype_metadata.txt")
 pheno_meta <- read_tsv(pheno_meta_file)
-pheno_meta$Results_file <- paste0(cohort, "_", extra_cohort_info, "_", 1:nrow(pheno_meta))
+pheno_meta$Results_file <- paste0(cohort, "_", extra_cohort_info, "_", 1:nrow(pheno_meta), ".csv")
 
-splits <- round(seq(1, nrow(pheno_meta), length.out = n_splits))
+splits <- round(seq(1, nrow(pheno_meta), length.out = n_splits+1))
 if (max(splits) != nrow(pheno_meta)) {
     splits[length(splits)] <- nrow(pheno_meta)
 }
@@ -119,6 +119,8 @@ run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path)
         obj <- ewaff.sites(model, variable.of.interest = phen,
                            methylation = temp_meth, data = temp_phen, method = "glm", 
                            generate.confounders = NULL, family = "gaussian")
+        # freeing up some space
+        rm(temp_meth)
 
         res <- obj$table %>%
         	rownames_to_column(var = "probeID") %>%
@@ -134,6 +136,7 @@ run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path)
     meta_dat$N <- nrow(temp_phen)
     meta_dat$Covariates <- all_covs_nam
     meta_dat$Methylation_Array <- array
+    meta_dat$full_stats_file <- res_file
     return(meta_dat)
 }
 
