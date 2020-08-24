@@ -7,7 +7,7 @@
 # 2. Loop through the studies and extract data at P<1e-4
 # 3. Tidy up studies file and output results into a "results/" directory
 
-pkgs <- c("tidyverse", "readxl", "openxlsx")
+pkgs <- c("tidyverse", "openxlsx")
 lapply(pkgs, require, character.only = TRUE)
 
 source("scripts/read_filepaths.R")
@@ -16,11 +16,8 @@ read_filepaths("filepaths.sh")
 
 args <- commandArgs(trailingOnly = TRUE)
 cohort <- args[1]
-extra_cohort_info <- args[2]
 # cohort <- "alspac"
 # cohort <- "geo"
-# extra_cohort_info <- "FOM"
-# extra_cohort_info <- "GSE101961"
 
 # res_dir <- paste0(local_rdsf_dir, "data/", cohort, "/results/")
 res_dir <- file.path("results", cohort)
@@ -32,7 +29,9 @@ derived_path <- file.path(res_dir, "derived")
 
 extra_cohort_dirs <- list.files(raw_path)
 
-# bind studies files together
+# --------------------------------------------------------
+# Bind studies files together
+# --------------------------------------------------------
 di=extra_cohort_dirs[1]
 meta_dat <- map_dfr(extra_cohort_dirs, function(di) {
 	meta_files <- grep("catalog_meta_data", list.files(file.path(raw_path, di)), value=T)
@@ -45,24 +44,61 @@ meta_dat <- map_dfr(extra_cohort_dirs, function(di) {
 	return(meta_out)
 })
 
-# check which ewas have not run
-old_meta_dat <- map_dfr(extra_cohort_dirs, function(di) {
-	cohort_data_path <- file.path(cohort, di)
-	pheno_meta_file <- file.path("data", cohort_data_path, "phenotype_metadata.txt")
-	pheno_meta <- read_tsv(pheno_meta_file)
-	return(pheno_meta)
+comb_file_nam <- file.path(derived_path, "combined_meta_data.txt")
+
+if (file.exists(comb_file_nam)) {
+	current_meta_dat <- read_tsv(comb_file_nam)
+	meta_dat <- bind_rows(current_meta_dat, meta_dat) %>%
+		distinct()
+}
+
+write.table(meta_dat, file = comb_file_nam, 
+			col.names = T, row.names = F, quote = F, sep = "\t")
+
+# --------------------------------------------------------
+# Check EWAS that have failed 
+# --------------------------------------------------------
+
+# extract those phens that failed in the EWAS stage
+ewas_failed_phens <- map_chr(extra_cohort_dirs, function(di) {
+	failed_files <- grep("failed_ewas", list.files(file.path(raw_path, di)), value=T)
+	if (length(failed_files) == 0) return(NULL)
+	failed_out <- map_chr(failed_files, function(f) {
+		out <- readLines(file.path(raw_path, di, f))
+		system(paste0("rm ", raw_path, "/", di, "/", f))
+		return(out)
+	})
+	return(failed_out)
 })
 
-failed_phens <- old_meta_dat %>%
+# extract those that failed due to another technical issue
+old_meta_dat <- map_dfr(extra_cohort_dirs, function(di) {
+	meta_file <- file.path("data", cohort, di, "phenotype_metadata.txt")
+	read_tsv(meta_file)
+})
+
+other_failed_phens <- old_meta_dat %>%
 	dplyr::filter(!phen %in% meta_dat$phen) %>%
 	pull(phen)
 
+all_failed_phens <- unique(c(ewas_failed_phens, other_failed_phens))
+
+all_failed_phens <- all_failed_phens[!all_failed_phens %in% meta_dat$phen]
+
+write.table(all_failed_phens, file = file.path(derived_path, "combined_failed_ewas.txt"), 
+			col.names = F, row.names = F, quote = F, sep = "\n")
+
+message("Figure out why the EWAS for these phenotypes failed!!")
+
+# --------------------------------------------------------
+# Make final studies file!
+# --------------------------------------------------------
 studies_columns <- c("Author", "Consortium", "PMID", "Date", "Trait", 
 					 "EFO", "Trait_units", "dnam_in_model", "dnam_units", 
 					 "Analysis", "Source", "Covariates", "Methylation_Array", 
 					 "Tissue", "Further_Details", "N", "N_Cohorts", "Age", "Sex",
 					 "Ethnicity", "Results_file")
-x=1
+
 studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	print(x)
 	df <- meta_dat[x, ]

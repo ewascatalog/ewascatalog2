@@ -15,6 +15,7 @@ cohort <- args[1]
 extra_cohort_info <- args[2] # for alspac this would be the timepoint and for geo the geo accession
 split <- as.numeric(args[3])
 n_splits <- as.numeric(args[4])
+custom_phens_list <- args[5]
 
 cohort_data_path <- file.path(cohort, extra_cohort_info)
 
@@ -35,6 +36,12 @@ pheno_meta_file <- file.path("data", cohort_data_path, "phenotype_metadata.txt")
 pheno_meta <- read_tsv(pheno_meta_file)
 pheno_meta$Results_file <- paste0(cohort, "_", extra_cohort_info, "_", 1:nrow(pheno_meta), ".csv")
 
+if (!is.na(custom_phens_list)) {
+    phens <- readLines(custom_phens_list)
+    pheno_meta <- pheno_meta %>%
+        dplyr::filter(phen %in% phens)
+}
+
 splits <- round(seq(1, nrow(pheno_meta), length.out = n_splits+1))
 if (max(splits) != nrow(pheno_meta)) {
     splits[length(splits)] <- nrow(pheno_meta)
@@ -47,8 +54,6 @@ if (split2 == nrow(pheno_meta) - 1) {
 }
 
 pheno_meta <- pheno_meta[split1:split2, ]
-
-# pheno_meta <- dplyr::filter(pheno_meta, phen == "Total_cholines__mmol_l___FOM1")
 
 traits <- pheno_meta$phen
 pmid <- ifelse(any(grepl("pmid", colnames(pheno_meta))), pheno_meta$pmid, NA)
@@ -79,43 +84,21 @@ covs <- c(pc_covs, other_covs)
 cov_nam <- paste(other_nam, pc_nam, sep = ", ")
 n_cov <- length(covs)
 
-run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path, failed_path) 
+prep_pheno_data <- function(phen, data_path, samples, covs)
 {
-    # get phenotype of interest
-    phen <- meta_dat$phen
-    res_file <- paste0(out_path, phen, ".txt")
-    # if (file.exists(res_file)) return(NULL)
-
     # read in svs  
     svs <- read_tsv(file.path("data", data_path, "svs", paste0(phen, ".txt")))
-    sv_nam <- grep("sv[0-9]", colnames(svs), value = T)
-
-    all_covs <- c(covs, sv_nam)
-    sv_out_nam <- paste(length(sv_nam), "surrogate variables")
-    all_covs_nam <- paste(c(cov_nam, sv_out_nam), collapse = ", ")
 
     # Prepare phenotype data
     temp_phen <- pheno_dat %>%
         dplyr::select(one_of(samples), one_of(phen), one_of(covs)) %>%
         left_join(svs) %>%
         na.omit(.)
+    return(temp_phen)
+}
 
-    # Match meth to Pheno
-    temp_meth <- meth_dat[, na.omit(match(temp_phen[[samples]], colnames(meth_dat)))]
-    temp_phen <- temp_phen[match(colnames(temp_meth), temp_phen[[samples]]), ]
-
-    if (!all(temp_phen[[samples]] == colnames(temp_meth))) stop("phenotype and DNAm data not matched.")
-
-    # old_phen_name <- phen
-    # phen <- "test_phen"
-    # temp_phen <- rename(temp_phen, test_phen = old_phen_name)
-
-    model <- as.formula(paste0(addq(phen), " ~ ", paste(c("methylation", all_covs), collapse = " + ")))
-
-    age_var <- grep("age", all_covs, value = TRUE, ignore.case = FALSE)
-    age_vals <- ifelse(length(age_var) == 1, temp_phen[[age_var]], NA)
-    array <- ifelse(nrow(temp_meth) > 5e5, "Illumina MethylationEPIC", "Illumina HumanMethylation450")
-
+run_ewas <- function(model, phen, temp_meth, temp_phen, failed_path, res_file)
+{
     # Run EWAS using ewaff
     obj <- tryCatch({
         ewaff.sites(model, variable.of.interest = phen,
@@ -125,7 +108,7 @@ run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path, failed_
         usr_m <- paste0("Error in EWAS of ", phen)
         err_msg(e, r_msg = TRUE, user_msg = usr_m, to_return = phen)
     })
-    # freeing up some space
+    # free up some space
     rm(temp_meth)
 
     if (length(obj) == 1) {
@@ -140,7 +123,39 @@ run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path, failed_
 
     write.table(res, file = res_file, sep = "\t", col.names = T, row.names = F, quote = F)
 
-    message("EWAS for ", phen, " saved")
+    print(paste0("EWAS for ", phen, " saved"))
+    return("Run")
+}
+
+run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path, failed_path) 
+{
+    # get phenotype of interest
+    phen <- meta_dat$phen
+    res_file <- paste0(out_path, phen, ".txt")
+    # if (file.exists(res_file)) return(NULL)
+
+    # prep pheno data
+    temp_phen <- prep_pheno_data(phen, data_path, samples, covs)
+
+    sv_nam <- grep("sv[0-9]", colnames(temp_phen), value = T)
+
+    all_covs <- c(covs, sv_nam)
+    sv_out_nam <- paste(length(sv_nam), "surrogate variables")
+    all_covs_nam <- paste(c(cov_nam, sv_out_nam), collapse = ", ")
+
+    # Match meth to Pheno
+    temp_meth <- meth_dat[, na.omit(match(temp_phen[[samples]], colnames(meth_dat)))]
+    temp_phen <- temp_phen[match(colnames(temp_meth), temp_phen[[samples]]), ]
+
+    if (!all(temp_phen[[samples]] == colnames(temp_meth))) stop("phenotype and DNAm data not matched.")
+
+    model <- as.formula(paste0(addq(phen), " ~ ", paste(c("methylation", all_covs), collapse = " + ")))
+
+    array <- ifelse(nrow(temp_meth) > 5e5, "Illumina MethylationEPIC", "Illumina HumanMethylation450")
+
+    ewas_run <- run_ewas(model, phen, temp_meth, temp_phen, failed_path, res_file)
+
+    if (is.null(ewas_run)) return(NULL)
 
     # extract meta data for catalog and output that!
     meta_dat$N <- nrow(temp_phen)
@@ -157,16 +172,15 @@ if (!file.exists(out_dir)) make_dir(out_dir)
 x=1
 meta_out <- map_dfr(1:nrow(pheno_meta), function(x) {
     df <- pheno_meta[x, ]
-    df_out <- run_ewas(meta_dat = df, 
-                       pheno_dat = pheno_dat,
-                       meth_dat = meth, 
-                       data_path = cohort_data_path,  
-                       out_path = out_dir, 
-                       failed_path = failed_dir)
+    df_out <- run_all_ewas_steps(meta_dat = df, 
+                                 pheno_dat = pheno_dat,
+                                 meth_dat = meth, 
+                                 data_path = cohort_data_path,  
+                                 out_path = out_dir, 
+                                 failed_path = failed_dir)
     return(df_out)
 })
 
 meta_out_nam <- file.path("results", cohort, "raw", extra_cohort_info, paste0("catalog_meta_data", split, ".txt"))
 write.table(meta_out, file = meta_out_nam,
             quote = F, row.names = F, col.names = T, sep = "\t")
-
