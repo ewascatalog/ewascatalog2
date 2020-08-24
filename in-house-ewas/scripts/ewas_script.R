@@ -48,6 +48,8 @@ if (split2 == nrow(pheno_meta) - 1) {
 
 pheno_meta <- pheno_meta[split1:split2, ]
 
+# pheno_meta <- dplyr::filter(pheno_meta, phen == "Total_cholines__mmol_l___FOM1")
+
 traits <- pheno_meta$phen
 pmid <- ifelse(any(grepl("pmid", colnames(pheno_meta))), pheno_meta$pmid, NA)
 pmid <- unique(pmid)
@@ -77,7 +79,7 @@ covs <- c(pc_covs, other_covs)
 cov_nam <- paste(other_nam, pc_nam, sep = ", ")
 n_cov <- length(covs)
 
-run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path) 
+run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path, failed_path) 
 {
     # get phenotype of interest
     phen <- meta_dat$phen
@@ -115,23 +117,31 @@ run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path)
     array <- ifelse(nrow(temp_meth) > 5e5, "Illumina MethylationEPIC", "Illumina HumanMethylation450")
 
     # Run EWAS using ewaff
-    tryCatch({
-        obj <- ewaff.sites(model, variable.of.interest = phen,
+    obj <- tryCatch({
+        ewaff.sites(model, variable.of.interest = phen,
                            methylation = temp_meth, data = temp_phen, method = "glm", 
                            generate.confounders = NULL, family = "gaussian")
-        # freeing up some space
-        rm(temp_meth)
-
-        res <- obj$table %>%
-        	rownames_to_column(var = "probeID") %>%
-        	dplyr::select(probeID, estimate, se, p.value) %>%
-            mutate(Details = NA)
-
-        write.table(res, file = res_file, sep = "\t", col.names = T, row.names = F, quote = F)
-        print(paste0("Results for ", phen, " saved."))
     }, error = function(e) {
-        print(paste0("Error in EWAS of ", phen, ". Variance of ", phen, " = ", var(temp_phen[[phen]])))
+        usr_m <- paste0("Error in EWAS of ", phen)
+        err_msg(e, r_msg = TRUE, user_msg = usr_m, to_return = phen)
     })
+    # freeing up some space
+    rm(temp_meth)
+
+    if (length(obj) == 1) {
+        write.table(obj, file = file.path(failed_path, "failed_ewas.txt"), 
+                    col.names = F, row.names = F, quote = F, sep = "\n", append = T)
+        return(NULL)
+    }
+    res <- obj$table %>%
+        rownames_to_column(var = "probeID") %>%
+        dplyr::select(probeID, estimate, se, p.value) %>%
+        mutate(Details = NA)
+
+    write.table(res, file = res_file, sep = "\t", col.names = T, row.names = F, quote = F)
+
+    message("EWAS for ", phen, " saved")
+
     # extract meta data for catalog and output that!
     meta_dat$N <- nrow(temp_phen)
     meta_dat$Covariates <- all_covs_nam
@@ -141,7 +151,7 @@ run_ewas <- function(meta_dat, pheno_dat, meth_dat, data_path, out_path)
 }
 
 out_dir <- file.path("results", cohort, "raw", extra_cohort_info, "full_stats/")
-
+failed_dir <- file.path("results", cohort, "raw", extra_cohort_info)
 if (!file.exists(out_dir)) make_dir(out_dir)
 
 x=1
@@ -151,7 +161,8 @@ meta_out <- map_dfr(1:nrow(pheno_meta), function(x) {
                        pheno_dat = pheno_dat,
                        meth_dat = meth, 
                        data_path = cohort_data_path,  
-                       out_path = out_dir)
+                       out_path = out_dir, 
+                       failed_path = failed_dir)
     return(df_out)
 })
 
