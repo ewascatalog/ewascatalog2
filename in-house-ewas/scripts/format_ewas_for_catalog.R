@@ -62,7 +62,7 @@ write.table(meta_dat, file = comb_file_nam,
 # extract those phens that failed in the EWAS stage
 ewas_failed_phens <- map_chr(extra_cohort_dirs, function(di) {
 	failed_files <- grep("failed_ewas", list.files(file.path(raw_path, di)), value=T)
-	if (length(failed_files) == 0) return(NULL)
+	if (length(failed_files) == 0) return("")
 	failed_out <- map_chr(failed_files, function(f) {
 		out <- readLines(file.path(raw_path, di, f))
 		system(paste0("rm ", raw_path, "/", di, "/", f))
