@@ -96,7 +96,7 @@ message("Figure out why the EWAS for these phenotypes failed!!")
 studies_columns <- c("Author", "Consortium", "PMID", "Date", "Trait", 
 					 "EFO", "Trait_units", "dnam_in_model", "dnam_units", 
 					 "Analysis", "Source", "Covariates", "Methylation_Array", 
-					 "Tissue", "Further_Details", "N", "N_Cohorts", "Age", "Sex",
+					 "Tissue", "Further_Details", "N", "N_Cohorts", "Age_group", "Sex",
 					 "Ethnicity", "Results_file")
 
 studies <- map_dfr(1:nrow(meta_dat), function(x) {
