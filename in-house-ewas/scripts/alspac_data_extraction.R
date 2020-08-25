@@ -320,7 +320,7 @@ if (timepoints == "FOM" | timepoints == "antenatal") {
 }
 # Write studies file
 studies <- tibble(Author = "Battram T", 
-                  Consortium = "ARIES", 
+                  Cohorts_or_consortium = "ARIES", 
                   PMID = NA, 
                   Date = Sys.Date(),
                   Trait = new_phen_list$unedited_label, 

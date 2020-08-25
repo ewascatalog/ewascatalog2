@@ -93,7 +93,7 @@ message("Figure out why the EWAS for these phenotypes failed!!")
 # --------------------------------------------------------
 # Make final studies file!
 # --------------------------------------------------------
-studies_columns <- c("Author", "Consortium", "PMID", "Date", "Trait", 
+studies_columns <- c("Author", "Cohorts_or_consortium", "PMID", "Date", "Trait", 
 					 "EFO", "Trait_units", "dnam_in_model", "dnam_units", 
 					 "Analysis", "Source", "Covariates", "Methylation_Array", 
 					 "Tissue", "Further_Details", "N", "N_Cohorts", "Age_group", "Sex",
