@@ -117,4 +117,6 @@ studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	return(studies_out)
 })
 
-write.xlsx(studies, file = file.path(derived_path, "studies.xlsx"))
+write.xlsx(studies, file = file.path(derived_path, "studies.xlsx"), 
+		   sheetName = "data")
+
