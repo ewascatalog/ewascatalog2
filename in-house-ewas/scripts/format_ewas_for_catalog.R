@@ -105,7 +105,8 @@ studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	# read in full stats and get P<1e-4
 	derived_dat <- read_tsv(df$full_stats_file) %>%
 		dplyr::filter(p.value < 1e-4) %>%
-		rename(CpG = probeID, Beta = estimate, SE = se, P = p.value)
+		rename(CpG = probeID, Beta = estimate, SE = se, P = p.value) %>%
+		mutate(Beta = round(Beta, 10), SE = round(SE, 10), P = signif(P, 3))
 	# if no results return null
 	if (nrow(derived_dat) == 0) return(NULL)
 	# write out results to already determined results file

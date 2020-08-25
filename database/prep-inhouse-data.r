@@ -46,7 +46,7 @@ check_nchar <- function(dat, max_nchars, stud_dat)
     lapply(max_nchars, function(n) {
         var <- get(paste0(var_nam, n))
         lapply(var, function(x) {
-            all_vals <- dat[[x]]
+            all_vals <- as.character(dat[[x]])
             if (all(is.na(all_vals))) return(NULL)
             if (any(nchar(all_vals) > n)) {
                 stop(paste("A value in the", x, "column in the data is too long", 
@@ -107,6 +107,7 @@ generate_study_id <- function(studies)
     df <- studies
     auth_nam <- gsub(" ", "-", df$Author)
     trait_nam <- gsub(" ", "_", tolower(df$Trait))
+    trait_nam <- gsub("(?!-)[[:punct:]]", "_", trait_nam, perl=TRUE)
     if (is.na(df$PMID)) {
         pmid <- NULL
     } else {
@@ -162,6 +163,17 @@ check_results_cols <- function(results)
     return(NULL)
 }
 
+check_for_duplicates <- function(old_studies, sid)
+{
+    ### check the new studies file isn't entering duplicated data
+    if (sid %in% old_studies$StudyID) {
+        dup_sid <- sid[sid %in% old_studies$StudyID]
+        stop(paste0("These study IDs are present in the database already: ", 
+                    dup_sid))
+    }
+    return(NULL)
+}
+
 make_directory <- function(dir_to_make) 
 {
     ### make new directory if it doesn't already exist
@@ -173,25 +185,28 @@ make_directory <- function(dir_to_make)
     }
 }
 
-master_sort_function <- function(studies) 
+master_sort_function <- function(studies_dat) 
 {
     ### master function for all data checks 
-    check_required_cols(studies, s_required_cols)
-    res <- load_results_file(file = studies$Results_file, res_dir = res_dir)
-    studies <- dplyr::select(studies, -Results_file)
-    check_efo(studies$EFO)
+    check_required_cols(studies_dat, s_required_cols)
+    res <- load_results_file(file = studies_dat$Results_file, res_dir = res_dir)
+    studies_dat <- dplyr::select(studies_dat, -Results_file)
+    check_efo(studies_dat$EFO)
     check_required_cols(res, r_required_cols)
-    check_nchar(studies, smax_chars, stud_dat = TRUE)
+    check_nchar(studies_dat, smax_chars, stud_dat = TRUE)
     check_nchar(res, rmax_chars, stud_dat = FALSE)
     check_results_cols(res)
-    sid <- generate_study_id(studies)
-    res$StudyID <- studies$StudyID <- sid
+    studies_dat <- sort_study_cols(studies_dat)
+    sid <- generate_study_id(studies_dat)
+    check_for_duplicates(old_studies, sid)
+    res$StudyID <- studies_dat$StudyID <- sid
     full_res <- dplyr::left_join(res, cpg_annotations, by = c("CpG" = "CpG"))
     full_res <- dplyr::filter(full_res, P < 1e-4)
+    full_res <- full_res[, c("CpG", "Location", "Chr", "Pos", "Gene", "Type", "Beta", "SE", "P", "Details", "StudyID")]
     sid_dir <- file.path(out_dir, sid)
     make_directory(dir_to_make = sid_dir)
     message("Writing out data to new directory")
-    write.table(studies, file = file.path(sid_dir, "studies.txt"), 
+    write.table(studies_dat, file = file.path(sid_dir, "studies.txt"), 
                 col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
     write.table(full_res, file = file.path(sid_dir, "results.txt"), 
                 col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
@@ -229,27 +244,27 @@ template_study_cols <- c("Author",
                          "Results_file")
 
 out_studies_cols <- c("Author", 
-                  "Consortium", 
-                  "PMID", 
-                  "Date", 
-                  "Trait", 
-                  "EFO", 
-                  "Analysis", 
-                  "Source", 
-                  "Outcome", 
-                  "Exposure", 
-                  "Covariates", 
-                  "Outcome_Units", 
-                  "Exposure_Units", 
-                  "Methylation_Array", 
-                  "Tissue", 
-                  "Further_Details", 
-                  "N", 
-                  "N_Cohorts", 
-                  "Age",
-                  "Sex",
-                  "Ethnicity"
-                  )
+                      "Consortium", 
+                      "PMID", 
+                      "Date", 
+                      "Trait", 
+                      "EFO", 
+                      "Analysis", 
+                      "Source", 
+                      "Outcome", 
+                      "Exposure", 
+                      "Covariates", 
+                      "Outcome_Units", 
+                      "Exposure_Units", 
+                      "Methylation_Array", 
+                      "Tissue", 
+                      "Further_Details", 
+                      "N", 
+                      "N_Cohorts", 
+                      "Age",
+                      "Sex",
+                      "Ethnicity"
+                    )
 
 results_cols <- c("CpG", 
                   "Beta", 
@@ -277,6 +292,12 @@ smax_chars <- c(20, 50, 100, 200, 300)
 # loading in the studies-to-add file so as to not duplicate additions
 studies_to_add_file <- file.path(file_dir, "ewas-sum-stats/studies-to-add.txt")
 studies_to_add <- readLines(studies_to_add_file)
+
+# loading in old studies file so as to not duplicate data
+old_stuides_file <- file.path(file_dir, "ewas-sum-stats/combined_data/studies.txt")
+old_studies <- read.delim(old_stuides_file)
+# create new study IDs for the old studies file as things may have changed
+old_studies$StudyID <- unlist(lapply(1:nrow(old_studies), function(x) generate_study_id(old_studies[x,])))
 
 # ----------------------------------------------------
 # Run checks
