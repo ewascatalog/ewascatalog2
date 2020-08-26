@@ -99,6 +99,16 @@ studies_columns <- c("Author", "Cohorts_or_consortium", "PMID", "Date", "Trait",
 					 "Tissue", "Further_Details", "N", "N_Cohorts", "Age_group", "Sex",
 					 "Ethnicity", "Results_file")
 
+format_num <- function(x) as.numeric(format(x, digits = 4, big.mark = ","))
+
+format_res <- function(df)
+{
+	df %>%
+		mutate(Beta = format_num(Beta), 
+			   SE = format_num(SE), 
+			   P = format_num(P))
+}
+
 studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	print(x)
 	df <- meta_dat[x, ]
@@ -106,7 +116,7 @@ studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	derived_dat <- read_tsv(df$full_stats_file) %>%
 		dplyr::filter(p.value < 1e-4) %>%
 		rename(CpG = probeID, Beta = estimate, SE = se, P = p.value) %>%
-		mutate(Beta = round(Beta, 10), SE = round(SE, 10), P = signif(P, 3))
+		format_res
 	# if no results return null
 	if (nrow(derived_dat) == 0) return(NULL)
 	# write out results to already determined results file
