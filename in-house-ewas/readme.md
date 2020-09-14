@@ -27,7 +27,8 @@ __NOTE__ There are 2 steps before using the scripts:
 
 These data can be found in the geo rdsf space: /projects/MRC-IEU/research/projects/ieu2/p5/020/working
 
-* GEO data are assessed using __geo_phenotype_sorting.R__ (__BC__)
+* GEO data are assessed using __geo_phenotype_sorting.R__ and __manual_geo_phenotype_sorting.R__ (__BC__)
+* The studies files should be manually edited 
 * The methylation data that will be used will need to be moved over from the RDSF to the bluecrystal space
 * The DNA methylation data is checked using __clean_geo_meth.R__ (__BC__)
 
