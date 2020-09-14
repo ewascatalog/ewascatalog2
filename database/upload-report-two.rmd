@@ -31,7 +31,7 @@ comma <- function(x) format(x, digits = 2, big.mark = ",")
 * N sites with P<1e-7: `r n_p7`
 * N sites with P<1e-4: `r n_p4`
 * SE range is `r range(full_results$SE)`
-* Number of effect estimate outliers: `r length(beta_out)`
+* Number of effect estimate outliers: `r n_beta_outliers`
 * EFO term entered for `r studies$Trait` is: `r studies$EFO`
 * Array: `r studies$Methylation_Array`
 * Rows in results: `r nrow(results)` 

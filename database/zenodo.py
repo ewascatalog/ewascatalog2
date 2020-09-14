@@ -29,6 +29,7 @@ ACCESS_TOKEN = access_token
 # create empty upload
 headers = {"Content-Type": "application/json"}
 r = requests.post('https://zenodo.org/api/deposit/depositions', params={'access_token': ACCESS_TOKEN}, json={}, headers=headers)
+# r = requests.post('https://sandbox.zenodo.org/api/deposit/depositions', params={'access_token': ACCESS_TOKEN}, json={}, headers=headers)
 
 r.status_code
 r.json()

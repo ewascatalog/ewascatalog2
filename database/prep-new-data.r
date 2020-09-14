@@ -97,6 +97,9 @@ tukey_test <- function(vals) {
 if (betas_present) {
 	beta_range <- range(full_results$Beta)
 	beta_out <- full_results$Beta[tukey_test(full_results$Beta)]
+    n_beta_outliers <- length(beta_out)
+} else {
+    n_beta_outliers <- 0
 }
 if (se_present) {
 	se_range <- range(full_results$SE)	
@@ -129,7 +132,7 @@ rmdreport::rmdreport.generate(report, report_out_file)
 # subset and write out
 # ----------------------------------------------------
 
-full_results <- full_results[results$P < 1e-4, ]
+full_results <- full_results[full_results$P < 1e-4, ]
 
 message("Writing results to: ", out_dir)
 write.table(studies, file = file.path(out_dir, "studies.txt"),
@@ -137,8 +140,14 @@ write.table(studies, file = file.path(out_dir, "studies.txt"),
 write.table(full_results, file = file.path(out_dir, "results.txt"),
 			col.names = T, row.names = F, quote = F, sep = "\t")
 
+# write out results for zenodo
 if (file.exists(file.path(res_dir, zfile))) {
-    system(paste0("mv ", file.path(res_dir, rfile), " ", res_dir, "/results.csv"))
+    res <- results[, !unlist(lapply(results, function(x) all(is.na(x))))]
+    zres_out_nam <- file.path(res_dir, "results.csv")
+    write.csv(res, file = zres_out_nam, row.names = F, quote = F)
+    if (file.path(res_dir, rfile) != zres_out_nam) {
+        system(paste0("rm ", file.path(res_dir, rfile)))
+    }
 }
 
 # Write to studies-to-add.txt --> APPEND!!! 
