@@ -140,7 +140,7 @@ run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_pat
 
     if (!all(temp_phen[[samples]] == colnames(temp_meth))) stop("phenotype and DNAm data not matched.")
 
-    model <- as.formula(paste0(addq(phen), " ~ ", paste(c("methylation", all_covs), collapse = " + ")))
+    model <- as.formula(paste0("methylation ~ ", paste(c(addq(phen), all_covs), collapse = " + ")))
 
     array <- ifelse(nrow(temp_meth) > 5e5, "Illumina MethylationEPIC", "Illumina HumanMethylation450")
 
