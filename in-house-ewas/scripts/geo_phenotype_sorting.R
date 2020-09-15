@@ -116,6 +116,10 @@ messy_out_list <- list(geo_asc = geo_asc,
 out_nam <- paste0("data/geo/messy_geo_data_to_sort_", Sys.Date(), ".RData")
 save(messy_out_list, file = out_nam)
 
+# go to manual_geo_phenotype_sorting.R
+# when done there, load packages and stuff up top and start
+# again from here
+
 # continue with data sorting
 clean_file_nam <- paste0("data/geo/clean_geo_data_to_sort_", Sys.Date(), ".RData")
 if (!file.exists(clean_file_nam)) stop("Sort out your data using the manual_geo_phenotype_sorting.R script")
@@ -168,9 +172,9 @@ generate_studies <- function(meta_dat)
            Trait_units = NA, 
            dnam_in_model = "Outcome",
            dnam_units = "Beta Values", 
-           Analysis = paste0("EWAS Catalog re-analysis of GEO data. GEO accession ID: ", meta_dat$geo_asc), 
+           Analysis = paste0("EWAS Catalog re-analysis of GEO data. GEO accession ID is ", meta_dat$geo_asc), 
            Source = NA, 
-           Covariates = NA, 
+           Covariates = "Batch effects, cell composition (reference free)", 
            Methylation_Array = "Illumina HumanMethylation450", 
            Tissue = NA, 
            Further_Details = NA, 

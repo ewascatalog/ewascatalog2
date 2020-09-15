@@ -69,19 +69,12 @@ devtools::load_all("~/repos/usefunc")
 ## CHANGE THIS --> ONLY WORKS FOR THIS ANALYSIS!
 pc_covs <- grep("pc[0-9]*", colnames(pheno_dat), 
                 value = TRUE, ignore.case = TRUE)
-if (length(pc_covs) != 0) {
-    pc_nam <- paste(length(pc_covs), "genetic principal components")
-} else {
-    pc_nam <- NULL
-}
 other_covs <- grep("^age$", colnames(pheno_dat), 
                    value = TRUE, ignore.case = TRUE)
 if (tolower(traits) %in% tolower(other_covs)) {
     other_covs <- other_covs[!tolower(other_covs) %in% tolower(traits)]
 }
-other_nam <- stringr::str_to_title(other_covs)
 covs <- c(pc_covs, other_covs)
-cov_nam <- paste(other_nam, pc_nam, sep = ", ")
 n_cov <- length(covs)
 
 prep_pheno_data <- function(phen, data_path, samples, covs)
@@ -140,8 +133,6 @@ run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_pat
     sv_nam <- grep("sv[0-9]", colnames(temp_phen), value = T)
 
     all_covs <- c(covs, sv_nam)
-    sv_out_nam <- paste(length(sv_nam), "surrogate variables")
-    all_covs_nam <- paste(c(cov_nam, sv_out_nam), collapse = ", ")
 
     # Match meth to Pheno
     temp_meth <- meth_dat[, na.omit(match(temp_phen[[samples]], colnames(meth_dat)))]
@@ -159,7 +150,6 @@ run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_pat
 
     # extract meta data for catalog and output that!
     meta_dat$N <- nrow(temp_phen)
-    meta_dat$Covariates <- all_covs_nam
     meta_dat$Methylation_Array <- array
     meta_dat$full_stats_file <- res_file
     return(meta_dat)
