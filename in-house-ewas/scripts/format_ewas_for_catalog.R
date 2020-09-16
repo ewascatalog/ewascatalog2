@@ -99,6 +99,9 @@ studies_columns <- c("Author", "Cohorts_or_consortium", "PMID", "Date", "Trait",
 					 "Tissue", "Further_Details", "N", "N_Cohorts", "Age_group", "Sex",
 					 "Ethnicity", "Results_file")
 
+out_res_path <- file.path(derived_path, "results")
+if (!file.exists(out_res_path)) system(paste("mkdir", out_res_path))
+
 studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	print(x)
 	df <- meta_dat[x, ]
@@ -110,7 +113,7 @@ studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	# if no results return null
 	if (nrow(derived_dat) == 0) return(NULL)
 	# write out results to already determined results file
-	write.csv(derived_dat, file = file.path(derived_path, "results", df$Results_file), 
+	write.csv(derived_dat, file = file.path(out_res_path, df$Results_file), 
 			  row.names = F, quote = F)
 	# extract data for studies file
 	studies_out <- df %>%
