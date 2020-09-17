@@ -87,6 +87,11 @@ prep_pheno_data <- function(phen, data_path, samples, covs)
         dplyr::select(one_of(samples), one_of(phen), one_of(covs)) %>%
         left_join(svs) %>%
         na.omit(.)
+
+    # If trait starts with number then change it
+    if (grepl("^\\d|^_", phen)) {
+        colnames(temp_phen)[colnames(temp_phen) == phen] <- paste0("X", phen)
+    }
     return(temp_phen)
 }
 
@@ -129,6 +134,11 @@ run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_pat
 
     # prep pheno data
     temp_phen <- prep_pheno_data(phen, data_path, samples, covs)
+
+    # If trait starts with number then change it
+    if (grepl("^\\d|^_", phen)) {
+        phen <- paste0("X", phen)
+    }
 
     sv_nam <- grep("sv[0-9]", colnames(temp_phen), value = T)
 
