@@ -70,6 +70,7 @@ ewas_failed_phens <- lapply(extra_cohort_dirs, function(di) {
 	})
 	return(failed_out)
 })
+ewas_failed_phens <- unlist(unlist(ewas_failed_phens))
 
 # extract those that failed due to another technical issue
 old_meta_dat <- map_dfr(extra_cohort_dirs, function(di) {
@@ -101,6 +102,10 @@ studies_columns <- c("Author", "Cohorts_or_consortium", "PMID", "Date", "Trait",
 
 out_res_path <- file.path(derived_path, "results")
 if (!file.exists(out_res_path)) system(paste("mkdir", out_res_path))
+
+# for umlaut values 
+# meta_dat[190, "phen"] <- "Anti_Müllerian_hormone__AMH__ng_ml__FOM1"
+# meta_dat[190, "full_stats_file"] <-"results/alspac/raw/FOM/full_stats/Anti_Müllerian_hormone__AMH__ng_ml__FOM1.txt"
 
 studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	print(x)

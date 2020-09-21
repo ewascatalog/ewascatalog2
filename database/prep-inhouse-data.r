@@ -115,6 +115,7 @@ generate_study_id <- function(studies)
     }
     if (!is.na(df$Analysis)) {
         analysis <- gsub(" ", "_", tolower(df$Analysis))
+        analysis <- gsub("(?!-)[[:punct:]]", "_", analysis, perl=TRUE)
     } else {
         analysis <- NULL
     }

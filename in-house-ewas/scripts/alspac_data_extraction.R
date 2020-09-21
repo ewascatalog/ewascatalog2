@@ -378,7 +378,7 @@ write.table(meta_data_out, file = phen_file_nam,
 			row.names = F, col.names = T, quote = F, sep = "\t")
 
 # Set new password each time
-PASSWORD <- password ## REMEMBER THIS!
+PASSWORD <- alsp_password ## REMEMBER THIS!
 
 zip(gsub(".txt", ".zip", res_file_nam), 
     files = res_file_nam, 
