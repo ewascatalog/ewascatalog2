@@ -69,19 +69,12 @@ devtools::load_all("~/repos/usefunc")
 ## CHANGE THIS --> ONLY WORKS FOR THIS ANALYSIS!
 pc_covs <- grep("pc[0-9]*", colnames(pheno_dat), 
                 value = TRUE, ignore.case = TRUE)
-if (length(pc_covs) != 0) {
-    pc_nam <- paste(length(pc_covs), "genetic principal components")
-} else {
-    pc_nam <- NULL
-}
 other_covs <- grep("^age$", colnames(pheno_dat), 
                    value = TRUE, ignore.case = TRUE)
 if (tolower(traits) %in% tolower(other_covs)) {
     other_covs <- other_covs[!tolower(other_covs) %in% tolower(traits)]
 }
-other_nam <- stringr::str_to_title(other_covs)
 covs <- c(pc_covs, other_covs)
-cov_nam <- paste(other_nam, pc_nam, sep = ", ")
 n_cov <- length(covs)
 
 prep_pheno_data <- function(phen, data_path, samples, covs)
@@ -94,6 +87,11 @@ prep_pheno_data <- function(phen, data_path, samples, covs)
         dplyr::select(one_of(samples), one_of(phen), one_of(covs)) %>%
         left_join(svs) %>%
         na.omit(.)
+
+    # If trait starts with number then change it
+    if (grepl("^\\d|^_", phen)) {
+        colnames(temp_phen)[colnames(temp_phen) == phen] <- paste0("X", phen)
+    }
     return(temp_phen)
 }
 
@@ -137,11 +135,14 @@ run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_pat
     # prep pheno data
     temp_phen <- prep_pheno_data(phen, data_path, samples, covs)
 
+    # If trait starts with number then change it
+    if (grepl("^\\d|^_", phen)) {
+        phen <- paste0("X", phen)
+    }
+
     sv_nam <- grep("sv[0-9]", colnames(temp_phen), value = T)
 
     all_covs <- c(covs, sv_nam)
-    sv_out_nam <- paste(length(sv_nam), "surrogate variables")
-    all_covs_nam <- paste(c(cov_nam, sv_out_nam), collapse = ", ")
 
     # Match meth to Pheno
     temp_meth <- meth_dat[, na.omit(match(temp_phen[[samples]], colnames(meth_dat)))]
@@ -149,7 +150,7 @@ run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_pat
 
     if (!all(temp_phen[[samples]] == colnames(temp_meth))) stop("phenotype and DNAm data not matched.")
 
-    model <- as.formula(paste0(addq(phen), " ~ ", paste(c("methylation", all_covs), collapse = " + ")))
+    model <- as.formula(paste0("methylation ~ ", paste(c(addq(phen), all_covs), collapse = " + ")))
 
     array <- ifelse(nrow(temp_meth) > 5e5, "Illumina MethylationEPIC", "Illumina HumanMethylation450")
 
@@ -159,7 +160,6 @@ run_all_ewas_steps <- function(meta_dat, pheno_dat, meth_dat, data_path, out_pat
 
     # extract meta data for catalog and output that!
     meta_dat$N <- nrow(temp_phen)
-    meta_dat$Covariates <- all_covs_nam
     meta_dat$Methylation_Array <- array
     meta_dat$full_stats_file <- res_file
     return(meta_dat)

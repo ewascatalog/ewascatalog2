@@ -60,16 +60,17 @@ write.table(meta_dat, file = comb_file_nam,
 # --------------------------------------------------------
 
 # extract those phens that failed in the EWAS stage
-ewas_failed_phens <- map_chr(extra_cohort_dirs, function(di) {
+ewas_failed_phens <- lapply(extra_cohort_dirs, function(di) {
 	failed_files <- grep("failed_ewas", list.files(file.path(raw_path, di)), value=T)
 	if (length(failed_files) == 0) return("")
-	failed_out <- map_chr(failed_files, function(f) {
+	failed_out <- lapply(failed_files, function(f) {
 		out <- readLines(file.path(raw_path, di, f))
 		system(paste0("rm ", raw_path, "/", di, "/", f))
 		return(out)
 	})
 	return(failed_out)
 })
+ewas_failed_phens <- unlist(unlist(ewas_failed_phens))
 
 # extract those that failed due to another technical issue
 old_meta_dat <- map_dfr(extra_cohort_dirs, function(di) {
@@ -109,6 +110,13 @@ format_res <- function(df)
 			   P = format_num(P))
 }
 
+out_res_path <- file.path(derived_path, "results")
+if (!file.exists(out_res_path)) system(paste("mkdir", out_res_path))
+
+# for umlaut values 
+# meta_dat[190, "phen"] <- "Anti_Müllerian_hormone__AMH__ng_ml__FOM1"
+# meta_dat[190, "full_stats_file"] <-"results/alspac/raw/FOM/full_stats/Anti_Müllerian_hormone__AMH__ng_ml__FOM1.txt"
+
 studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	print(x)
 	df <- meta_dat[x, ]
@@ -120,7 +128,7 @@ studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	# if no results return null
 	if (nrow(derived_dat) == 0) return(NULL)
 	# write out results to already determined results file
-	write.csv(derived_dat, file = file.path(derived_path, "results", df$Results_file), 
+	write.csv(derived_dat, file = file.path(out_res_path, df$Results_file), 
 			  row.names = F, quote = F)
 	# extract data for studies file
 	studies_out <- df %>%

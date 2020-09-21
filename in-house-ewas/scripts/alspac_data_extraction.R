@@ -330,7 +330,7 @@ studies <- tibble(Author = "Battram T",
                   dnam_units = "Beta Values", 
                   Analysis = NA, 
                   Source = NA, 
-                  Covariates = NA, 
+                  Covariates = "Batch effects, cell composition (reference free), ancestry (genomic PCs)", 
                   Methylation_Array = "Illumina HumanMethylation450", 
                   Tissue = "Whole blood", 
                   Further_Details = NA, 
@@ -378,7 +378,7 @@ write.table(meta_data_out, file = phen_file_nam,
 			row.names = F, col.names = T, quote = F, sep = "\t")
 
 # Set new password each time
-PASSWORD <- password ## REMEMBER THIS!
+PASSWORD <- alsp_password ## REMEMBER THIS!
 
 zip(gsub(".txt", ".zip", res_file_nam), 
     files = res_file_nam, 
