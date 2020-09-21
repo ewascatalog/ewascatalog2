@@ -137,6 +137,8 @@ check_efo <- function(efo_terms)
     }
 }
 
+comma <- function(x) as.numeric(format(x, digits = 2, big.mark = ","))
+
 load_results_file <- function(file, res_dir) 
 {
     ### read in results file and check columns
@@ -145,6 +147,10 @@ load_results_file <- function(file, res_dir)
     res <- read.csv(res_file_path)
     if (all(colnames(res) != results_cols)) stop("Results columns don't match template")
     
+    res$Beta <- comma(res$Beta)
+    res$SE <- comma(res$SE)
+    res$P <- comma(res$P)
+
     return(res)
 }
 

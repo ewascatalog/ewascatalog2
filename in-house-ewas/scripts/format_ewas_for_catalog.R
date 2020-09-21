@@ -107,6 +107,9 @@ if (!file.exists(out_res_path)) system(paste("mkdir", out_res_path))
 # meta_dat[190, "phen"] <- "Anti_Müllerian_hormone__AMH__ng_ml__FOM1"
 # meta_dat[190, "full_stats_file"] <-"results/alspac/raw/FOM/full_stats/Anti_Müllerian_hormone__AMH__ng_ml__FOM1.txt"
 
+# function for formatting numbers! 
+comma <- function(x) format(x, digits = 2, big.mark = ",")
+
 studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	print(x)
 	df <- meta_dat[x, ]
@@ -114,7 +117,7 @@ studies <- map_dfr(1:nrow(meta_dat), function(x) {
 	derived_dat <- read_tsv(df$full_stats_file) %>%
 		dplyr::filter(p.value < 1e-4) %>%
 		rename(CpG = probeID, Beta = estimate, SE = se, P = p.value) %>%
-		mutate(Beta = round(Beta, 10), SE = round(SE, 10), P = signif(P, 3))
+		mutate(Beta = comma(Beta), SE = comma(SE), P = comma(P))
 	# if no results return null
 	if (nrow(derived_dat) == 0) return(NULL)
 	# write out results to already determined results file
