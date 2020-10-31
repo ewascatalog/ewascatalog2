@@ -137,7 +137,7 @@ check_efo <- function(efo_terms)
     }
 }
 
-comma <- function(x) as.numeric(format(x, digits = 2, big.mark = ","))
+comma <- function(x) as.numeric(format(x, digits = 2, big.mark = ""))
 
 load_results_file <- function(file, res_dir) 
 {
