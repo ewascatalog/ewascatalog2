@@ -2,8 +2,9 @@
 # Sorting geo phenotypes for EWAS - manual sorting of data
 # -------------------------------------------------
 
-pkgs <- c("tidyverse", "readxl")
-lapply(pkgs, require, character.only = TRUE)
+## pkgs
+library(tidyverse) # tidy code and data
+library(readxl) # reading in excel spreadsheets
 
 source("scripts/read_filepaths.R")
 source("scripts/useful_functions.R")
@@ -12,13 +13,24 @@ read_filepaths("filepaths.sh")
 
 devtools::load_all("~/repos/usefunc")
 
-# read in messy list
+# read in messy list -- ASSUMES YOU ARE SORTING ON SAME DAY AS WRITING IT OUT!
 file_nam <- paste0("data/geo/messy_geo_data_to_sort_", Sys.Date(), ".RData")
 messy_dat <- new_load(file_nam)
 
 geo_asc <- messy_dat$geo_asc
 effect_phen_dat <- messy_dat$effect_phen_dat
 pub_dat <- messy_dat$pub_dat
+
+## currently struture of script is as follows:
+### Each time a new set of GEO data is extracted, a new section is added
+### There are subsections of each timepoint where values are checked and 
+### any manual changes are made! -- could change to a script per timepoint?
+
+#
+#
+# Timepoint 1: 2019-04
+#
+#
 
 # ---------------------------------------
 # Check values for each variable
@@ -138,4 +150,37 @@ clean_out_list <- list(geo_asc = geo_asc,
 
 out_nam <- paste0("data/geo/clean_geo_data_to_sort_", Sys.Date(), ".RData")
 save(clean_out_list, file = out_nam)
+
+#
+#
+# Timepoint 2: 2020-11
+#
+#
+
+# ---------------------------------------
+# Check values for each variable
+# ---------------------------------------
+
+# check there are no duplicated samples
+map_lgl(geo_asc, function(ga) {
+    some_dat <- effect_phen_dat[[ga]]
+    any(duplicated(some_dat[["sample_name"]]))
+})
+# all goooooood boi! 
+
+# check phenotypes manually!
+ga <- geo_asc[4]
+pub_dat[pub_dat$accession == ga, "comment", drop = T]
+effect_phen_dat[ga]
+str(effect_phen_dat[ga])
+table(effect_phen_dat[[ga]][[2]])
+
+## seems to be nothing to do here! 
+clean_out_list <- list(geo_asc = geo_asc, 
+                       effect_phen_dat = effect_phen_dat, 
+                       pub_dat = pub_dat)
+
+out_nam <- paste0("data/geo/clean_geo_data_to_sort_", Sys.Date(), ".RData")
+save(clean_out_list, file = out_nam)
+
 

@@ -2,16 +2,63 @@
 # Sorting geo phenotypes for EWAS
 # -------------------------------------------------
 
-pkgs <- c("tidyverse", "readxl")
-lapply(pkgs, require, character.only = TRUE)
+## script takes geo phenotype data extracted using the geograbi package
+## extracts the phenotypes of interest and sorts the data ready for EWAS
 
+## pkgs
+library(tidyverse) # tidy data and code
+library(readxl) # reading in excel spreadsheets
+
+## some functions needed for analyses
 source("scripts/read_filepaths.R")
 source("scripts/useful_functions.R")
 
+## all filepaths needed
 read_filepaths("filepaths.sh")
 
+## extra functions that may be needed
 devtools::load_all("~/repos/usefunc")
 
+# -------------------------------------------------
+# read in data
+# -------------------------------------------------
+data_folder <- "data/geo"
+
+all_df_files <- c(
+	my_gses = "get-ewas-cat-geo-data-01-my.gses.rds",
+	ecat_gses = "get-ewas-cat-geo-data-02-ecat.gses.rds",
+	ecat_data = "get-ewas-cat-geo-data-03-ecat.data.rds",
+	exception_data = "get-ewas-cat-geo-data-04-exception.data.rds",
+	ecat = "get-ewas-cat-geo-data-05-ecats.rds",
+	ecat_for_print = "get-ewas-cat-geo-data-06-ecats.for.print.rds"
+)
+
+all_df <- lapply(all_df_files, function(file) {
+	readRDS(file.path(data_folder, file)) %>%
+        as_tibble()
+})
+
+lapply(all_df, class)
+lapply(all_df, dim)
+
+## not sure any of the above files are useful... ignoring for now!
+
+chrs_file <- "get-ewas-cat-geo-data-02-chrs.rds"
+chrs <- readRDS(file.path(data_folder, chrs_file))
+head(chrs[[1]])
+names(chrs)[1]
+
+# remove matrix part from chrs names
+names(chrs) <- gsub("_series_matrix.txt.gz", "", names(chrs))
+
+## NB. The characters file currently does not have IDs that are 
+##     linked to the methylation data BUT for now have checked 
+##     the order of phenotypes (rows) is the same as the order of 
+##     columns in the corresponding methylation matrix
+
+## 
+## OLD FILE WHEN GEOGRABI EXTRACTION WAS DIFFERENT
+## 
 phenofile <- "data/geo/ewas-cat-cr02.rdata"
 load(phenofile)
 # phenofile contains
@@ -38,7 +85,8 @@ load(phenofile)
 
 # Manually reviewed to see if analysis could be done
 # for the catalog
-reviewed_data <- read_excel("data/geo/ewas_cat_gses_for_review.xlsx")
+new_geo_asc <- readLines(file.path(data_folder, "new-geo-accession-ids.txt"))
+reviewed_data <- read_excel(file.path(data_folder, "ewas-cat-gses-for-review.xlsx"))
 str(reviewed_data)
 colnames(reviewed_data)
 include_col <- grep("include", colnames(reviewed_data), value = TRUE)
@@ -48,10 +96,11 @@ effect_cols <- grep("effect.col.name", colnames(reviewed_data), value = T)
 
 pub_dat <- reviewed_data %>%
     rename(!!renam_var) %>%
-    dplyr::filter(include == 2) %>%
+    dplyr::filter(accession %in% new_geo_asc, 
+                  include == 2) %>%
     # removal of variables that haven't got anything in
     dplyr::select(which(!map_lgl(., function(x) {all(x == "NA")}))) %>%
-    dplyr::select(geo.accession, pubmed_id, main.effect, samples, include, comment,
+    dplyr::select(accession, pubmed_id, main.effect, samples, include, comment,
                   one_of(effect_cols), 
                   one_of(grep("chr.fld", colnames(reviewed_data), value = T)))
 
@@ -62,13 +111,16 @@ pub_dat <- reviewed_data %>%
 # traits for EWAS
 pub_dat$main.effect
 
-nrow(pub_dat) # 50 datasets selected
+nrow(pub_dat) # 4 datasets selected (2020-10-13)
 
+## 
+## OLD EXTRACTION WHEN GEOGRABI EXTRACTION WAS DIFFERENT
+## 
 # extract the phenotypes and sample_names
-geo_asc <- pub_dat$geo.accession
+geo_asc <- pub_dat$accession
 phen_list <- lapply(geo_asc, function(ga) {
     all_info <- geo[[ga]]
-	pheno <- chrs[[ga]]
+	  pheno <- chrs[[ga]]
     # some files have values as a row rather than a column
     # so this if statement sorts them out
 	if (nrow(pheno) == 1) {
@@ -83,19 +135,50 @@ phen_list <- lapply(geo_asc, function(ga) {
 })
 names(phen_list) <- geo_asc
 
+
+
+## newer script --
+## make directories of geo accession
+geo_asc <- pub_dat$accession
+lapply(geo_asc, function(ga) {
+    make_dir(file.path(data_folder, ga))
+})
+
+## function for getting sample names as they're not in chrs data...
+get_sample_names <- function(ga)
+{
+    ## read in meth matrix
+    meth_file <- file.path(data_folder, ga, paste0(tolower(ga), ".rda"))
+    meth <- new_load(meth_file)
+    return(colnames(meth))
+}
+ga <- geo_asc[1]
+phen_list <- lapply(geo_asc, function(ga) {
+    pheno <- chrs[[ga]]
+    # some files have values as a row rather than a column
+    # so this if statement sorts them out
+    if (nrow(pheno) == 1) {
+        print(ga)
+        values <- as.character(pheno[1,])
+        phe <- data.frame(values)
+        colnames(phe) <- colnames(pheno)[1]
+        pheno <- phe
+    }
+    pheno$sample_name <- get_sample_names(ga)
+    ## ADD SAMPLE NAMES HERE!
+    return(pheno)
+})
+names(phen_list) <- geo_asc
+
+
 # extract phenotype names
 phens <- lapply(phen_list, colnames)
 
-
-
-ga <- "GSE36054"
-ga <- "GSE100197"
-ga <- geo_asc[18]
 effect_phen_dat <- lapply(geo_asc, function(ga) {
     print(ga)
     d <- phen_list[[ga]]
     VoI <- pub_dat %>%
-        dplyr::filter(geo.accession == ga) %>%
+        dplyr::filter(accession == ga) %>%
         dplyr::select(one_of(effect_cols)) %>%
         as.character()
     empty_cols <- which(colnames(d) == "")
@@ -120,7 +203,7 @@ save(messy_out_list, file = out_nam)
 # when done there, load packages and stuff up top and start
 # again from here
 
-# continue with data sorting
+# continue with data sorting (load in all before data at start of script)
 clean_file_nam <- paste0("data/geo/clean_geo_data_to_sort_", Sys.Date(), ".RData")
 if (!file.exists(clean_file_nam)) stop("Sort out your data using the manual_geo_phenotype_sorting.R script")
 clean_dat <- new_load(clean_file_nam)
@@ -139,7 +222,7 @@ met_dat <- lapply(names(effect_phen_dat), function(nam) {
     print(nam)
     df <- effect_phen_dat[[nam]]
     pubmid <- pub_dat %>%
-        dplyr::filter(geo.accession == nam) %>%
+        dplyr::filter(accession == nam) %>%
         pull(pubmed_id)
     old_effect_nam <- colnames(df)[colnames(df) != "sample_name"]
     out_dat <- map_dfr(old_effect_nam, function(oen) {
@@ -273,5 +356,5 @@ lapply(geo_asc, function(ga) {
 
 # write out geo accession numbers being used
 write.table(geo_asc, file = "data/geo/geo_accession.txt", 
-            col.names = F, row.names = F, quote = F, sep = "\t")
+            col.names = F, row.names = F, quote = F, sep = "\n")
 

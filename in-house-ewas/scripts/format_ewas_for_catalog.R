@@ -100,7 +100,7 @@ studies_columns <- c("Author", "Cohorts_or_consortium", "PMID", "Date", "Trait",
 					 "Tissue", "Further_Details", "N", "N_Cohorts", "Age_group", "Sex",
 					 "Ethnicity", "Results_file")
 
-format_num <- function(x) as.numeric(format(x, digits = 4, big.mark = ","))
+format_num <- function(x) as.numeric(format(x, digits = 4, big.mark = ""))
 
 format_res <- function(df)
 {
