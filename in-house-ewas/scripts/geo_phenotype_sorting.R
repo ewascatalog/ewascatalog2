@@ -2,16 +2,63 @@
 # Sorting geo phenotypes for EWAS
 # -------------------------------------------------
 
-pkgs <- c("tidyverse", "readxl")
-lapply(pkgs, require, character.only = TRUE)
+## script takes geo phenotype data extracted using the geograbi package
+## extracts the phenotypes of interest and sorts the data ready for EWAS
 
+## pkgs
+library(tidyverse) # tidy data and code
+library(readxl) # reading in excel spreadsheets
+
+## some functions needed for analyses
 source("scripts/read_filepaths.R")
 source("scripts/useful_functions.R")
 
+## all filepaths needed
 read_filepaths("filepaths.sh")
 
+## extra functions that may be needed
 devtools::load_all("~/repos/usefunc")
 
+# -------------------------------------------------
+# read in data
+# -------------------------------------------------
+data_folder <- "data/geo"
+
+all_df_files <- c(
+	my_gses = "get-ewas-cat-geo-data-01-my.gses.rds",
+	ecat_gses = "get-ewas-cat-geo-data-02-ecat.gses.rds",
+	ecat_data = "get-ewas-cat-geo-data-03-ecat.data.rds",
+	exception_data = "get-ewas-cat-geo-data-04-exception.data.rds",
+	ecat = "get-ewas-cat-geo-data-05-ecats.rds",
+	ecat_for_print = "get-ewas-cat-geo-data-06-ecats.for.print.rds"
+)
+
+all_df <- lapply(all_df_files, function(file) {
+	readRDS(file.path(data_folder, file)) %>%
+        as_tibble()
+})
+
+lapply(all_df, class)
+lapply(all_df, dim)
+
+## not sure any of the above files are useful... ignoring for now!
+
+chrs_file <- "get-ewas-cat-geo-data-02-chrs.rds"
+chrs <- readRDS(file.path(data_folder, chrs_file))
+head(chrs[[1]])
+names(chrs)[1]
+
+# remove matrix part from chrs names
+names(chrs) <- gsub("_series_matrix.txt.gz", "", names(chrs))
+
+## NB. The characters file currently does not have IDs that are 
+##     linked to the methylation data BUT for now have checked 
+##     the order of phenotypes (rows) is the same as the order of 
+##     columns in the corresponding methylation matrix
+
+## 
+## OLD FILE WHEN GEOGRABI EXTRACTION WAS DIFFERENT
+## 
 phenofile <- "data/geo/ewas-cat-cr02.rdata"
 load(phenofile)
 # phenofile contains
@@ -38,7 +85,8 @@ load(phenofile)
 
 # Manually reviewed to see if analysis could be done
 # for the catalog
-reviewed_data <- read_excel("data/geo/ewas_cat_gses_for_review.xlsx")
+new_geo_asc <- readLines(file.path(data_folder, "new-geo-accession-ids.txt"))
+reviewed_data <- read_excel(file.path(data_folder, "ewas-cat-gses-for-review.xlsx"))
 str(reviewed_data)
 colnames(reviewed_data)
 include_col <- grep("include", colnames(reviewed_data), value = TRUE)
@@ -48,10 +96,11 @@ effect_cols <- grep("effect.col.name", colnames(reviewed_data), value = T)
 
 pub_dat <- reviewed_data %>%
     rename(!!renam_var) %>%
-    dplyr::filter(include == 2) %>%
+    dplyr::filter(accession %in% new_geo_asc, 
+                  include == 2) %>%
     # removal of variables that haven't got anything in
     dplyr::select(which(!map_lgl(., function(x) {all(x == "NA")}))) %>%
-    dplyr::select(geo.accession, pubmed_id, main.effect, samples, include, comment,
+    dplyr::select(accession, pubmed_id, main.effect, samples, include, comment,
                   one_of(effect_cols), 
                   one_of(grep("chr.fld", colnames(reviewed_data), value = T)))
 
@@ -62,13 +111,16 @@ pub_dat <- reviewed_data %>%
 # traits for EWAS
 pub_dat$main.effect
 
-nrow(pub_dat) # 50 datasets selected
+nrow(pub_dat) # 4 datasets selected (2020-10-13)
 
+## 
+## OLD EXTRACTION WHEN GEOGRABI EXTRACTION WAS DIFFERENT
+## 
 # extract the phenotypes and sample_names
-geo_asc <- pub_dat$geo.accession
+geo_asc <- pub_dat$accession
 phen_list <- lapply(geo_asc, function(ga) {
     all_info <- geo[[ga]]
-	pheno <- chrs[[ga]]
+	  pheno <- chrs[[ga]]
     # some files have values as a row rather than a column
     # so this if statement sorts them out
 	if (nrow(pheno) == 1) {
@@ -83,19 +135,50 @@ phen_list <- lapply(geo_asc, function(ga) {
 })
 names(phen_list) <- geo_asc
 
+
+
+## newer script --
+## make directories of geo accession
+geo_asc <- pub_dat$accession
+lapply(geo_asc, function(ga) {
+    make_dir(file.path(data_folder, ga))
+})
+
+## function for getting sample names as they're not in chrs data...
+get_sample_names <- function(ga)
+{
+    ## read in meth matrix
+    meth_file <- file.path(data_folder, ga, paste0(tolower(ga), ".rda"))
+    meth <- new_load(meth_file)
+    return(colnames(meth))
+}
+ga <- geo_asc[1]
+phen_list <- lapply(geo_asc, function(ga) {
+    pheno <- chrs[[ga]]
+    # some files have values as a row rather than a column
+    # so this if statement sorts them out
+    if (nrow(pheno) == 1) {
+        print(ga)
+        values <- as.character(pheno[1,])
+        phe <- data.frame(values)
+        colnames(phe) <- colnames(pheno)[1]
+        pheno <- phe
+    }
+    pheno$sample_name <- get_sample_names(ga)
+    ## ADD SAMPLE NAMES HERE!
+    return(pheno)
+})
+names(phen_list) <- geo_asc
+
+
 # extract phenotype names
 phens <- lapply(phen_list, colnames)
 
-
-
-ga <- "GSE36054"
-ga <- "GSE100197"
-ga <- geo_asc[18]
 effect_phen_dat <- lapply(geo_asc, function(ga) {
     print(ga)
     d <- phen_list[[ga]]
     VoI <- pub_dat %>%
-        dplyr::filter(geo.accession == ga) %>%
+        dplyr::filter(accession == ga) %>%
         dplyr::select(one_of(effect_cols)) %>%
         as.character()
     empty_cols <- which(colnames(d) == "")
@@ -108,117 +191,26 @@ effect_phen_dat <- lapply(geo_asc, function(ga) {
 })
 names(effect_phen_dat) <- geo_asc
 
+# write out the data so it can be manually sorted
+messy_out_list <- list(geo_asc = geo_asc, 
+                       effect_phen_dat = effect_phen_dat, 
+                       pub_dat = pub_dat)
 
-# ---------------------------------------
-# Check values for each variable
-# ---------------------------------------
+out_nam <- paste0("data/geo/messy_geo_data_to_sort_", Sys.Date(), ".RData")
+save(messy_out_list, file = out_nam)
 
-# check each VoI. Want to check that:
-#   1. that the values are as expected
-#   2. it needs to be split into different variables
-#   3. duplication of samples
+# go to manual_geo_phenotype_sorting.R
+# when done there, load packages and stuff up top and start
+# again from here
 
-# to ask about:
-# 1. 
-# 3. --> do I split by biopsy region??
-# 12. --> can't see age (check phen_list[[geo_asc[12]]])
-# 13. --> can't see recurrance and recurrance time variables...
-# 17. --> Just do adjacent vs. all the others? (what do the numbers mean??)
-# 22. --> comment mentions "multiple datasets", as in multiple GEO datasets???
-# 23. --> comment mentions "multiple datasets", as in multiple GEO datasets???
-# 26. --> comment mentions should split by cell type. Some cell types have <100 individuals
-#         the cell types are just blood cell types, so would SVs account for these differences?
-# 28. --> What is the control group?
-# 30. --> remove unclassified and bin normal and normal_hepatocyte together?
-# 32. --> How is birthweight coded as 0 and 1???
-# 36. --> Got 4 ages... Treat as continuous??
-# 42. --> what are the scales of the different measurements??
-# 46. --> no variable of interest, wtf?!?
-# 48. --> comment: "Paper used a discovery and replication cohort, so need to check numbers to see if they have uploaded the data for both. Clearly no column to help define them though"
+# continue with data sorting (load in all before data at start of script)
+clean_file_nam <- paste0("data/geo/clean_geo_data_to_sort_", Sys.Date(), ".RData")
+if (!file.exists(clean_file_nam)) stop("Sort out your data using the manual_geo_phenotype_sorting.R script")
+clean_dat <- new_load(clean_file_nam)
 
-# checking the phenotypes!
-ga <- geo_asc[1]
-pub_dat[pub_dat$geo.accession == ga, "comment", drop = T]
-effect_phen_dat[ga]
-str(effect_phen_dat[ga])
-table(effect_phen_dat[[ga]][[2]])
-
-omit_for_now <- c(1,3,12,13,17,22,23,26,28,30,32,36,42,46,48)
-effect_phen_dat <- effect_phen_dat[-omit_for_now]
-
-geo_asc <- names(effect_phen_dat)
-# check there are no duplicated samples
-map_lgl(geo_asc, function(ga) {
-    some_dat <- effect_phen_dat[[ga]]
-    any(duplicated(some_dat[["sample_name"]]))
-})
-# all goooooood boi! 
-
-# ---------------------------------------
-# manual changes to the datasets to revalue the variables
-# ---------------------------------------
-
-# changes to make
-effect_phen_dat[["GSE107080"]] <- effect_phen_dat[["GSE107080"]] %>%
-    mutate(idu_and_hcv_dx = case_when(idu == 1 & hcv_dx == 1 ~ "pos", 
-                                      idu == 0 & hcv_dx == 0 ~ "neg")) %>%
-    dplyr::filter(!is.na(idu_and_hcv_dx)) %>%
-    dplyr::select(sample_name, idu_and_hcv_dx)
-
-effect_phen_dat[["GSE112596"]] <- effect_phen_dat[["GSE112596"]] %>%
-    dplyr::filter(therapy != "GA")
-
-effect_phen_dat[["GSE113725"]] <- effect_phen_dat[["GSE113725"]] %>%
-    mutate(depression_status = case_when(groupid == 1 | groupid == 2 ~ "control", 
-                                         groupid == 3 | groupid == 4 ~ "case")) %>%
-    dplyr::select(sample_name, depression_status)
-
-effect_phen_dat[["GSE50660"]] <- effect_phen_dat[["GSE50660"]] %>% 
-    mutate(smoking_status_nf = 
-        case_when(`smoking (0, 1 and 2, which represent never, former and current smokers)` == 0 ~ "never", 
-                  `smoking (0, 1 and 2, which represent never, former and current smokers)` == 1 ~ "former")) %>%
-    mutate(smoking_status_nc = 
-        case_when(`smoking (0, 1 and 2, which represent never, former and current smokers)` == 0 ~ "never", 
-                  `smoking (0, 1 and 2, which represent never, former and current smokers)` == 2 ~ "current")) %>%
-    mutate(smoking_status_fc = 
-        case_when(`smoking (0, 1 and 2, which represent never, former and current smokers)` == 1 ~ "former", 
-                  `smoking (0, 1 and 2, which represent never, former and current smokers)` == 2 ~ "current")) %>%
-    dplyr::select(-`smoking (0, 1 and 2, which represent never, former and current smokers)`)
-
-effect_phen_dat[["GSE53740"]] <- effect_phen_dat[["GSE53740"]] %>%
-    mutate(FTD_status = case_when(diagnosis == "FTD" ~ "FTD", 
-                                  diagnosis == "Control" ~ "Control")) %>%
-    mutate(PSP_status = case_when(diagnosis == "PSP" ~ "PSP", 
-                                  diagnosis == "Control" ~ "Control")) %>%
-    dplyr::select(-diagnosis)
-
-effect_phen_dat[["GSE59592"]] <- effect_phen_dat[["GSE59592"]] %>%
-    dplyr::filter(!(`afb1 exposure` %in% c("dry", "rainy")))
-
-effect_phen_dat[["GSE60275"]] <- effect_phen_dat[["GSE60275"]] %>%
-    dplyr::filter(healthy_vs_disease != "healthy")
-
-effect_phen_dat[["GSE67530"]] <- effect_phen_dat[["GSE67530"]] %>%
-    dplyr::filter(ards != "NA")
-
-effect_phen_dat[["GSE69502"]] <- effect_phen_dat[["GSE69502"]] %>% 
-    mutate(anencephaly_status = case_when(`ntd status` == "anencephaly" ~ "anencephaly", 
-                                          `ntd status` == "control" ~ "control")) %>% 
-    mutate(spina_bifida_status = case_when(`ntd status` == "spina bifida" ~ "spina_bifida", 
-                                           `ntd status` == "control" ~ "control")) %>%
-    dplyr::select(-`ntd status`)
-
-effect_phen_dat[["GSE71678"]] <- effect_phen_dat[["GSE71678"]] %>%
-    dplyr::filter(`placental as levels` != "NA")
-
-effect_phen_dat[["GSE87640"]] <- effect_phen_dat[["GSE87640"]] %>% 
-    mutate(UC_diagnosis = case_when(full_diagnosis == "UC" ~ "UC",
-                                    full_diagnosis %in% c("HC", "HL", "IB", "OT") ~ "healthy")) %>%
-    mutate(CD_diagnosis = case_when(full_diagnosis == "CD" ~ "CD", 
-                                    full_diagnosis %in% c("HC", "HL", "IB", "OT") ~ "healthy")) %>%
-    mutate(IBD_diagnosis = case_when(full_diagnosis %in% c("CD", "UC") ~ "IBD", 
-                                     full_diagnosis %in% c("HC", "HL", "IB", "OT") ~ "healthy")) %>%
-    dplyr::select(-full_diagnosis)
+geo_asc <- clean_dat$geo_asc
+effect_phen_dat <- clean_dat$effect_phen_dat
+pub_dat <- clean_dat$pub_dat
 
 # ---------------------------------------
 # extract some useful meta data from datasets
@@ -230,7 +222,7 @@ met_dat <- lapply(names(effect_phen_dat), function(nam) {
     print(nam)
     df <- effect_phen_dat[[nam]]
     pubmid <- pub_dat %>%
-        dplyr::filter(geo.accession == nam) %>%
+        dplyr::filter(accession == nam) %>%
         pull(pubmed_id)
     old_effect_nam <- colnames(df)[colnames(df) != "sample_name"]
     out_dat <- map_dfr(old_effect_nam, function(oen) {
@@ -251,6 +243,32 @@ names(met_dat) <- geo_asc
 
 # for meta-data, the actual name of the trait will
 # need to be mannually edited using the review file
+
+generate_studies <- function(meta_dat)
+{
+    tibble(Author = "Battram T", 
+           Cohorts_or_consortium = "GEO", 
+           PMID = meta_dat$pmid, 
+           Date = Sys.Date(),
+           Trait = meta_dat$unedited_label, 
+           EFO = NA,
+           Trait_units = NA, 
+           dnam_in_model = "Outcome",
+           dnam_units = "Beta Values", 
+           Analysis = paste0("EWAS Catalog re-analysis of GEO data. GEO accession ID is ", meta_dat$geo_asc), 
+           Source = NA, 
+           Covariates = "Batch effects, cell composition (reference free)", 
+           Methylation_Array = "Illumina HumanMethylation450", 
+           Tissue = NA, 
+           Further_Details = NA, 
+           N = meta_dat$n, 
+           N_Cohorts = 1, 
+           Age_group = NA, 
+           Sex = NA, 
+           Ethnicity = NA, 
+           Results_file = NA
+          )
+}
 
 # ------------------------------------------------------
 # clean data
@@ -311,6 +329,12 @@ fin_dat <- no_out_phen
 # write out cleaned phenotype data and meta data
 lapply(geo_asc, function(ga) {
     meta_dat <- met_dat[[ga]]
+
+    # generate studies data and join back to meta-data
+    studies <- generate_studies(meta_dat) %>%
+        mutate(unedited_label = Trait)
+    meta_dat <- meta_dat %>%
+        left_join(studies)
     
     # rename variables as appropriate
     pheno_dat <- fin_dat[[ga]] %>%
@@ -332,5 +356,5 @@ lapply(geo_asc, function(ga) {
 
 # write out geo accession numbers being used
 write.table(geo_asc, file = "data/geo/geo_accession.txt", 
-            col.names = F, row.names = F, quote = F, sep = "\t")
+            col.names = F, row.names = F, quote = F, sep = "\n")
 

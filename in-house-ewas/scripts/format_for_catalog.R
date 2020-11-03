@@ -11,7 +11,7 @@ read_filepaths("filepaths.sh")
 
 args <- commandArgs(trailingOnly = TRUE)
 cohort <- args[1]
-# cohort <- "alspac"
+# cohort <- "alspac/FOM"
 # cohort <- "geo"
 
 res_dir <- paste0(local_rdsf_dir, "data/", cohort, "/results/")

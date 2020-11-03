@@ -59,4 +59,3 @@ KEY `pos` (`pos`)
 )
 ROW_FORMAT=COMPRESSED;  	
 
-

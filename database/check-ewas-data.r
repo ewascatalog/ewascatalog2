@@ -110,7 +110,7 @@ results_cols <- c("CpG",
 				  "P", 
 				  "Details")
 
-if (!all(colnames(results) == results_cols)) {
+if (!all(colnames(results)[1:5] == results_cols)) {
 	cat("Results file column names do not match the template columns")
 	quit("no")
 }
