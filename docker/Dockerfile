@@ -1,13 +1,15 @@
 ## Base installation on python
-FROM python:3 AS ewascatalog
+## see https://hub.docker.com/_/python
+FROM python:3.8.6-buster as ewascatalog
 ENV PYTHONUNBUFFERED 1
 
 ## Install libraries required for typical R packages
-RUN apt-get install libcurl4-openssl-dev && \
-    apt-get install libxml2-dev && \
-    apt-get install libssl-dev && \
-    apt-get install libcairo2-dev && \
-    apt-get install libxt-dev
+RUN apt-get update && \
+    apt-get install -y libcurl4-openssl-dev && \
+    apt-get install -y libxml2-dev && \
+    apt-get install -y libssl-dev && \
+    apt-get install -y libcairo2-dev && \
+    apt-get install -y libxt-dev
 
 ## Install R
 ##  Note: 'buster-cran35' below should match the version found in /etc/apt/sources.list	
