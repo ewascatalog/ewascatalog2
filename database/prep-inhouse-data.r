@@ -147,6 +147,7 @@ load_results_file <- function(file, res_dir)
     res <- read.csv(res_file_path)
     if (all(colnames(res) != results_cols)) stop("Results columns don't match template")
     
+    res <- res[res$CpG != "", ] # sometimes CpG column can be filled with empty cells
     res$Beta <- comma(res$Beta)
     res$SE <- comma(res$SE)
     res$P <- comma(res$P)
@@ -288,9 +289,9 @@ rchar50 <- c("P")
 rchar200 <- c("Details")
 rmax_chars <- c(20, 50, 200)
 
-schar50 <- c("Author", "Cohorts_or_consortium", "Source", "Trait_Units", "dnam_units",
+schar50 <- c("Author", "PMID", "Source", "Trait_Units", "dnam_units",
             "Methylation_Array")
-schar20 <- c("PMID", "Date", "N", "N_Cohorts", "Age_group", "Sex")
+schar20 <- c("Date", "N", "N_Cohorts", "Age_group", "Sex")
 schar100 <- c("Tissue", "EFO")
 schar300 <- "Covariates"
 schar200 <- template_study_cols[!template_study_cols %in% c(schar50, schar20, schar100, schar300)]
