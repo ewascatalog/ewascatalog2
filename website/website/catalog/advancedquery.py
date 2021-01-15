@@ -34,7 +34,7 @@ TSV_FIELDS = ["author","consortium","pmid","date","trait","efo",
               "beta","se","p","details","study_id"]
 
 
-def execute(db, query, max_associations, pvalue_threshold):
+def execute(db, query, pvalue_threshold):
     """ Structured query entry point. 
 
     This function is called in views.py to 
@@ -69,8 +69,8 @@ def execute(db, query, max_associations, pvalue_threshold):
     if isinstance(obj, objects.catalog_object):
         sql = response_sql("("+obj.where_sql()+") AND p<"+str(pvalue_threshold))
         ret = response(db, obj.title(), sql)
-        if ret.nrow() > max_associations:
-            ret.subset(rows=range(max_associations))
+        #if ret.nrow() > max_associations:
+        #    ret.subset(rows=range(max_associations))
     return ret
 
 def response_sql(where):
@@ -94,12 +94,13 @@ class response(query.response):
     def __init__(self, db, value, sql):
         super().__init__(db, sql)
         self.value = value
-        self.sort() ## sort ascending by author, PMID and then p-value.
+        self.sort() ## sort ascending by p-value.
     def sort(self):
-        aux = self.cols.index("author")
-        pmx = self.cols.index("pmid")
+        #aux = self.cols.index("author")
+        #pmx = self.cols.index("pmid")
         pvx = self.cols.index("p")
-        self.data.sort(key=lambda x: (x[aux], x[pmx], float(x[pvx])))
+        #self.data.sort(key=lambda x: (x[aux], x[pmx], float(x[pvx])))
+        self.data.sort(key=lambda x: (float(x[pvx])))
     def table(self):
         """ Returns the query table as a tuple of rows with formatted values. """
         cols = HTML_FIELDS

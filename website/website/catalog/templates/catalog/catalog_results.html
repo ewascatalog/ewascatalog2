@@ -11,7 +11,14 @@
 </script>
 
 
+{% if subset < total %}
+<h1> Search results for top {{ subset }} of {{ total }} for <i>{{query_label}}</i></h1>
+(the full set can be
+<a href="{% static "" %}/tmp/{{filename}}" download="{{query}}.tsv">downloaded</a>)
+{% else %}
 <h1> Search results for <i>{{query_label}}</i> </h1>
+{% endif %}
+
 <p class="small">&nbsp;</p>
 
 <div class="catalog">
@@ -47,7 +54,10 @@
 
 <a href="{% static "" %}/tmp/{{filename}}" download="{{query}}.tsv" style="font-size : 13pt" class="btn btn-default"><span class="glyphicon glyphicon-download-alt"></span> Download</a>
 <p class="small">&nbsp;</p>
-<p class="smalltext">*this tab-deliminated tsv file contains the full set of variables, i.e. those in the <a href="{% url 'catalog_download' %}#variables">downloadable catalog</a>. </p> 
+<p class="smalltext">*this tab-deliminated tsv file contains the full set of associations and variables, i.e. those in the <a href="{% url 'catalog_download' %}#variables">downloadable catalog</a>. </p> 
+
+
+
 
 {% endblock %}
 

@@ -48,11 +48,18 @@ def basicquery_response(request):
 def advancedquery_response(request):
     query = request.GET
     db = database.default_connection()
-    response = advancedquery.execute(db, query, constants.MAX_ASSOCIATIONS, constants.PVALUE_THRESHOLD)            
-    if isinstance(response, advancedquery.response):
+    #response = advancedquery.execute(db, query, constants.MAX_ASSOCIATIONS, constants.PVALUE_THRESHOLD)
+    response = advancedquery.execute(db, query, constants.PVALUE_THRESHOLD)
+    if isinstance(response, advancedquery.response):        
         filename = response.save(constants.TMP_DIR)
+        total=response.nrow()
+        toomuch=response.nrow() > constants.MAX_ASSOCIATIONS
+        if toomuch:
+            response.subset(rows=range(constants.MAX_ASSOCIATIONS))
         return render(request, 'catalog/catalog_results.html',
                       {'response':response.table(),
+                       'subset': response.nrow(),
+                       'total': total,
                        'query':response.value.replace(" ", "_"),
                        'query_label':response.value,
                        'filename':filename})
@@ -102,7 +109,7 @@ def catalog_upload(request):
 def catalog_api(request):
     db = database.default_connection()
     query = request.GET 
-    ret = advancedquery.execute(db, query, constants.MAX_ASSOCIATIONS*100, constants.PVALUE_THRESHOLD)
+    ret = advancedquery.execute(db, query, constants.MAX_ASSOCIATIONS*1000, constants.PVALUE_THRESHOLD)
     if isinstance(ret, advancedquery.response):
         return ret.json()
     else:

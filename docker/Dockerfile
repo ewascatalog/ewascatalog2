@@ -5,6 +5,7 @@ ENV PYTHONUNBUFFERED 1
 
 ## Install libraries required for typical R packages
 RUN apt-get update && \
+    apt-get install -y libgit2-dev && \
     apt-get install -y libcurl4-openssl-dev && \
     apt-get install -y libxml2-dev && \
     apt-get install -y libssl-dev && \
