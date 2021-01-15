@@ -29,6 +29,7 @@ ACCESS_TOKEN = access_token
 # create empty upload
 headers = {"Content-Type": "application/json"}
 r = requests.post('https://zenodo.org/api/deposit/depositions', params={'access_token': ACCESS_TOKEN}, json={}, headers=headers)
+# r = requests.post('https://sandbox.zenodo.org/api/deposit/depositions', params={'access_token': ACCESS_TOKEN}, json={}, headers=headers)
 
 r.status_code
 r.json()
@@ -40,6 +41,7 @@ deposition_id = r.json()['id']
 data = {'name': 'results.csv'}
 files = {'file': open(data_dir+'/results.csv')}
 r = requests.post('https://zenodo.org/api/deposit/depositions/%s/files' % deposition_id, params={'access_token': ACCESS_TOKEN}, data=data, files=files)
+# r = requests.post('https://sandbox.zenodo.org/api/deposit/depositions/%s/files' % deposition_id, params={'access_token': ACCESS_TOKEN}, data=data, files=files)
 
 r.status_code
 r.json()
@@ -58,12 +60,14 @@ data = {'metadata':
 				    'creators': [{'name': authors}]}}
 
 r = requests.put('https://zenodo.org/api/deposit/depositions/%s' % deposition_id, params={'access_token': ACCESS_TOKEN}, data=json.dumps(data), headers=headers)
+# r = requests.put('https://sandbox.zenodo.org/api/deposit/depositions/%s' % deposition_id, params={'access_token': ACCESS_TOKEN}, data=json.dumps(data), headers=headers)
 
 r.status_code
 r.json()
 
 # publish 
 r = requests.post('https://zenodo.org/api/deposit/depositions/%s/actions/publish' % deposition_id, params={'access_token': ACCESS_TOKEN} )
+# r = requests.post('https://sandbox.zenodo.org/api/deposit/depositions/%s/actions/publish' % deposition_id, params={'access_token': ACCESS_TOKEN} )
 
 status_code = r.status_code
 if status_code != 202:

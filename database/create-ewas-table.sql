@@ -3,8 +3,8 @@ DROP TABLE IF EXISTS `studies`;
 
 CREATE TABLE `studies` (
 `author` varchar(50),
-`consortium` varchar(50),
-`pmid` varchar(20),
+`consortium` varchar(200),
+`pmid` varchar(50),
 `date` varchar(20),
 `trait` varchar(200),
 `efo` varchar(100),

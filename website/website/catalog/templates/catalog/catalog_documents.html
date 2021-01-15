@@ -6,7 +6,7 @@
 <div class="information">
    <h1>Study identification</h1>
    <p class="small">&nbsp;</p> 
-   <p>Published epigenome-wide association studies are identified through periodic PubMed searches. The search terms are "epigenome-wide" OR "epigenome wide" OR "EWAS" OR "genome-wide AND methylation" OR "genome wide AND methylation". There are also restrictions placed on the year of publication (i.e. studies after 2010) and whether the study is in human samples.</p>
+   <p>Published epigenome-wide association studies are identified through periodic PubMed searches using the <a href="https://github.com/perishky/journalclub" target="_blank">journalclub R package</a>. The search terms are "epigenome-wide" OR "epigenome wide" OR "EWAS" OR "genome-wide AND methylation" OR "genome wide AND methylation". There are also restrictions placed on the year of publication (i.e. studies after 2010) and whether the study is in human samples.</p>
    <p class="small">&nbsp;</p> 
    <h1>Study eligibility</h1>
    <h2>Study inclusion</h2>      
@@ -41,7 +41,7 @@
       <li>PMID - the PubMedID of the publication.</li>
       <li>Date - the date the paper was published (YY-MM-DD).</li>
       <li>Trait - the name of the trait.</li>
-      <li>EFO - the corresponding <a href="http://www.ebi.ac.uk/efo/">ontology term(s)</a> for the trait. </li>
+      <li>EFO - the corresponding <a href="http://www.ebi.ac.uk/efo/" target="_blank">ontology term(s)</a> for the trait. </li>
       <li>Analysis - description of the analysis performed.</li>
       <li>Source - the table where the result can be found in the paper.</li>
    </ul>
@@ -65,15 +65,9 @@
       <li>N - the total number of participants used in the analysis.</li>
       <li>N_Cohorts - the total number of cohorts used in the analysis.</li>
       <li>Categories - the total number of individuals in each category (e.g. 200 smokers, 150 never smokers).</li>
-      <li>Age - the mean age of the participants in years.</li>
-      <li>N_Males - the total number of males used in the analysis.</li>
-      <li>N_Females - the total number of females used in the analysis.</li>
-      <li>N_EUR - the total number of European participants.</li>
-      <li>N_EAS - the total number of East Asian participants.</li>
-      <li>N_SAS - the total number of South Asian participants.</li>
-      <li>N_AFR - the total number of African participants.</li>
-      <li>N_AMR - the total number of Admixed American participants.</li>
-      <li>N_OTH - the total number of participants of non-EUR, non-EAS, non-SAS, non-AFR, non-AMR ancestry.</li>
+      <li>Age - the age group participants belonged to.</li>
+      <li>Sex - sex of individuals used in the analysis.</li>
+      <li>Ethnicity - ethnicity of the individuals used in the analysis.</li>
    </ul>
    <p class="small">&nbsp;</p> 
    <h2>CpG results</h2>      
@@ -87,12 +81,15 @@
    </ul>
    <p class="small">&nbsp;</p> 
    <h1>Query options</h1>  
-   <p>The EWAS Catalog has four query options:</p>
+   <p>The EWAS Catalog can be queried using a single term using main search bar or by a combination of two terms using the advanced search bar. After entering a query in the main search bar, a page will appear that enables further specification of the search term. There are seven query options:</p>
    <ul>
       <li>CpG - this presents all results with the CpG site. A CpG ID or a hg19 chromosome:position can be queried.</li>
       <li>Gene - this presents all CpG results within the gene.</li>
       <li>Region - this presents all CpG results within the region.</li>
-      <li>Trait - this presents all the CpG results with a trait. This query uses <a href="http://www.ebi.ac.uk/spot/zooma/">ZOOMA</a> and selects results based on their EFO terms.</li>
+      <li>Trait - this presents all the CpG results with a trait. This query uses <a href="http://www.ebi.ac.uk/spot/zooma/" target="_blank">ZOOMA</a> and selects results based on their EFO terms.</li>
+      <li>EFO term - an EFO term can be queried directly as an alternative to querying a trait by name</li>
+      <li>Author name - this refers to first authors and presents all results from papers by that author</li>
+      <li>PMID - this presents all results from a specific paper with the queried PubMed ID</li>
    </ul>
    <p>See example queries under the search box.</p>
    <p class="small">&nbsp;</p> 

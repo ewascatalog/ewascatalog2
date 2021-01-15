@@ -75,3 +75,15 @@ ${ROOT_CMD} ${DB} -e "drop table cpgs"
 bash catalog create-database
 ```
 
+It is possible to get direct access to the running database
+and experiment with changes.
+```
+## start a bash session in the database container
+docker exec -it dev.ewascatalog_db bash
+## start a mysql session (see settings.env for password) 
+mysql -uroot -p${MYSQL_ROOT_PASSWORD} ewascatalog
+```
+
+Any `drop` commands in mysql should only take a few seconds. If after multiple minutes the command has not completed then some other dormant processes may be interfering. To solve this you will need to access the running database (as above) and follow the instructions [here](https://stackoverflow.com/questions/24496918/mysql-slow-drop-table-command).
+
+

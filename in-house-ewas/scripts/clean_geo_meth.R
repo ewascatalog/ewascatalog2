@@ -2,8 +2,11 @@
 # checking geo methylation data and make SVs
 # ---------------------------------------------
 
-pkgs <- c("tidyverse", "sva", "SmartSVA", "matrixStats")
-lapply(pkgs, require, character.only = TRUE)
+## pkgs
+library(tidyverse) # tidy code and data
+library(sva) # surrogate variable analyses
+library(SmartSVA) # faster SVA
+library(matrixStats) # functions to create models for SVA
 
 source("scripts/useful_functions.R")
 
@@ -12,9 +15,7 @@ source("scripts/useful_functions.R")
 # ---------------------------------------------
 
 geo_path <- "data/geo"
-geo_accessions <- read_tsv(file.path(geo_path, "geo_accession.txt"), 
-						   col_names = FALSE) %>% pull(X1)
-
+geo_accessions <- readLines(file.path(geo_path, "geo_accession.txt"))
 
 # ---------------------------------------------
 # loop over datasets
@@ -24,17 +25,16 @@ geo_accessions <- read_tsv(file.path(geo_path, "geo_accession.txt"),
 # 1. column names match the sample_name column in the pheno data
 # 2. data is there
 
-check_cols <- function(meth_dat, phen_dat) {
+check_cols_and_rows <- function(meth_dat, phen_dat) 
+{
+	## Check column names of meth_dat are sample names in pheno data
 	cols <- colnames(meth_dat)
-	out <- ifelse(any(cols %in% phen_dat$sample_name), "good", "bad")
-	return(out)
-}
-
-# very primitive, but should be fine for now!
-check_rows <- function(meth_dat) {
-	rows <- rownames(meth_dat)
-	out <- ifelse(any(grepl("cg[0-9]*", rows)), "good", "bad")
-	return(out)
+	if (!any(cols %in% phen_dat$sample_name)) stop("methylation sample names not in phenotype sample name column")
+	message("columns are good")
+	## Check rownames of meth_dat are CpG site names
+	rows <- rownames(meth_dat)	
+	if (!all(grepl("^c", rows))) stop("rownames are not cpg sites")
+	message("rows are good")
 }
 
 check_betas <- function(meth_dat, n) {
@@ -45,9 +45,31 @@ check_betas <- function(meth_dat, n) {
 		out <- any(cpg > 1 | cpg < 0)
 		return(out)
 	})
-	out <- ifelse(any(test), "bad", "good")
-	return(out)
+	if (any(test == "bad")) {
+		stop("sort out betas")
+	} else {
+		message("All goood! Going ahead with generating SVs now!")
+	}
 }
+
+read_meth_data <- function(meth_file)
+{
+	ga_path <- file.path(geo_path, ga)
+	meth_file_nam <- paste0(tolower(ga), ".rda")
+	meth_file <- file.path(ga_path, meth_file_nam)
+	old_meth_file <- meth_file
+	if (!file.exists(meth_file)) {
+		meth_file <- file.path(ga_path, "cleaned_meth_data.RData")	
+	} 
+	if (!file.exists(meth_file)) {
+		stop("meth file doesn't exist. Have you moved it from the RDSF space?")
+	}
+	meth <- new_load(meth_file)	
+	## remove series_matrix from rownames if present
+	meth <- meth[!grepl("series_matrix", rownames(meth)), ]
+	return(meth)
+}
+
 rows <- rownames(meth)
 x <- rows[!grepl("cg", rows)]
 new_meth <- meth[rows %in% x, ]
@@ -58,49 +80,24 @@ lapply(x, function(i) {
 })
 check_betas(new_meth, n=nrow(new_meth))
 
-sites <- c("cg|ch\\.")
 ga=geo_accessions[1] # SHOULD WORK!
+ga <- "GSE120878"
 # check colnames and rownames
 lapply(geo_accessions, function(ga) {
 	## load in data
 	print(ga)
 	ga_path <- file.path(geo_path, ga)
 	# methylation data
-	meth_file_nam <- paste0(tolower(ga), ".rda")
-	meth_file <- file.path(ga_path, meth_file_nam)
-	old_meth_file <- meth_file
-	if (!file.exists(meth_file)) {
-		meth_file <- file.path(ga_path, "cleaned_meth_data.RData")	
-	} 
-	if (!file.exists(meth_file)) {
-		stop("meth file doesn't exist")
-	}
-	meth <- new_load(meth_file)	
+	meth <- read_meth_data(ga)
 	# pheno data
-	pheno_file <- file.path(ga_path, "cleaned_phenotype_data.txt")
-	pheno_dat <- read_tsv(pheno_file)
-	meta_file <- file.path(ga_path, "phenotype_metadata.txt")
-	meta_dat <- read_tsv(meta_file)
+	pheno_dat <- read_tsv(file.path(ga_path, "cleaned_phenotype_data.txt"))
+	meta_dat <- read_tsv(file.path(ga_path, "phenotype_metadata.txt"))
 
-	# check colnames are samples
-	col_test <- check_cols(meth, pheno_dat)
-	message("columns are ",  col_test)
-	# check rownames are CpG sites
-	row_test <- check_rows(meth)
-	message("rows are ", row_test)
-	if (row_test == "bad" | col_test == "bad") {
-		stop("sort out columns and rows and re-run!")
-	}
-	# extract just meth sites
+	# check colnames and rows of methylation data
 	meth <- meth[grep(sites, rownames(meth)), ]
+	check_cols_and_rows(meth, pheno_dat)
 	# check methylation betas 
-	betas_test <- check_betas(meth, n = 10)
-	message("betas are ", betas_test)
-	if (betas_test == "bad") {
-		stop("sort out betas")
-	} else {
-		message("All goood! Going ahead with generating SVs now!")
-	}
+	check_betas(meth, n = 100)
 	meth <- as.matrix(meth)
 	mdata <- impute_matrix(meth)
 	save(meth, file = file.path(ga_path, "cleaned_meth_data.RData"))
@@ -119,9 +116,12 @@ lapply(geo_accessions, function(ga) {
 					 samples = "sample_name")
 	})
 	# remove old methylation data! 
-	cmd <- paste("rm", old_meth_file)
-	system(cmd)
+	# cmd <- paste("rm", old_meth_file)
+	# system(cmd)
 })
+
+# geo_accessions <- readLines(file.path(geo_path, "geo_accession.txt"))
+
 
 # check which ones failed
 lapply(geo_accessions, function(ga) {

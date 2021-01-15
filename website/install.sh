@@ -20,10 +20,12 @@ cp ${SETTINGS} ${WEBSITE_DIR}
 ## create directory for temporary files
 mkdir -p ${WEBSITE_DIR}/catalog/static/tmp
 
-## copy ewas catalog download file
+## copy and gzip ewas catalog download files
 mkdir -p ${WEBSITE_DIR}/catalog/static/docs
-cp ${FILE_DIR}/catalog-download/ewascatalog.txt.gz \
-   ${WEBSITE_DIR}/catalog/static/docs
+gzip -c ${FILE_DIR}/ewas-sum-stats/combined_data/studies.txt > ${WEBSITE_DIR}/catalog/static/docs/ewascatalog-studies.txt.gz
+gzip -c ${FILE_DIR}/ewas-sum-stats/combined_data/results.txt > ${WEBSITE_DIR}/catalog/static/docs/ewascatalog-results.txt.gz
+# cp ${FILE_DIR}/catalog-download/ewascatalog.txt.gz \
+#    ${WEBSITE_DIR}/catalog/static/docs
 ## copy results template for uploads
 cp ${FILE_DIR}/ewas-sum-stats/results_template.csv \
    ${WEBSITE_DIR}/catalog/static/docs

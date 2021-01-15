@@ -88,9 +88,9 @@ if (nrow(too.lo) > 0) meth[too.lo] <- NA
 samp <- colnames(meth)
 
 # rank transform the methylation data...
-meth <- apply(meth, 1, rntransform)
-meth <- t(meth)
-colnames(meth) <- samp
+# meth <- apply(meth, 1, rntransform)
+# meth <- t(meth)
+# colnames(meth) <- samp
 
 # double check samples being used... 
 dim(meth)

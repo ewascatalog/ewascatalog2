@@ -189,23 +189,21 @@ def isNaN(num):
     return num != num
 
 def gen_study_id(study_dat):
-	""" Generating a Study ID from the study data.
+    """ Generating a Study ID from the study data.
 
-	This function is called in views.py to
-	generate the study ID 
-	"""    
-	df = study_dat
-	auth_nam = df.iloc[0]['Author'].replace(" ", "-")
-	trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
-	if isNaN(df.iloc[0]['PMID']):
-	    StudyID = auth_nam+"_"+trait_nam
-	else:
-	    StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
-	if isNaN(df.iloc[0]['Analysis']):
-		analysis_nam = df.iloc[0]['Analysis'].replace(" ", "_").lower()
-		StudyID = StudyID+'_'+analysis_nam
-
-	return StudyID
+    This function is called in views.py to
+    generate the study ID 
+    """    
+    df = study_dat
+    auth_nam = df.iloc[0]['Author'].replace(" ", "-")
+    trait_nam = df.iloc[0]['Trait'].replace(" ", "_").lower()
+    if isNaN(df.iloc[0]['PMID']):
+        StudyID = auth_nam+"_"+trait_nam
+    else:
+        StudyID = str(df.iloc[0]['PMID'])+"_"+auth_nam+"_"+trait_nam
+    analysis_nam = df.iloc[0]['Analysis'].replace(" ", "_").lower()
+    StudyID = StudyID+'_'+analysis_nam
+    return StudyID.strip('_')
 
 def extract_sql_data(var, cursor):
 	""" Extracting variables from database.

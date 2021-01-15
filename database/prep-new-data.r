@@ -5,8 +5,8 @@
 # Script objectives:
 #	1  Annotate the data (inc study ID!)
 #	2. Generate report
-# 3. Subset results
-#	4. Output data to FILE_DIR/ewas-sum-stats/published/STUDY-ID
+#   3. Subset results
+#	4. Output data to FILE_DIR/ewas-sum-stats/study-data/STUDY-ID
 #	5. Add STUDY-ID to "studies-to-add.txt"
 
 options(stringsAsFactors = FALSE)
@@ -43,21 +43,21 @@ cpg_annotations <- data.table::fread(file.path(file_dir, "cpg_annotation.txt"))
 full_results <- dplyr::left_join(results, cpg_annotations)
 
 generate_study_id <- function(studies_dat) {
-  df <- studies_dat
-  auth_nam <- gsub(" ", "-", df$Author)
-  trait_nam <- gsub(" ", "_", tolower(df$Trait))
-  if (is.na(df$PMID)) {
+    df <- studies_dat
+    auth_nam <- gsub(" ", "-", df$Author)
+    trait_nam <- gsub(" ", "_", tolower(df$Trait))
+    if (is.na(df$PMID)) {
     pmid <- NULL
-  } else {
+    } else {
     pmid <- df$PMID
-  }
-  if (!is.na(df$Analysis)) {
+    }
+    if (!is.na(df$Analysis)) {
     analysis <- gsub(" ", "_", tolower(df$Analysis))
-  } else {
+    } else {
     analysis <- NULL
-  }
-  StudyID <- paste(c(pmid, auth_nam, trait_nam, analysis), collapse = "_")
-  return(StudyID)
+    }
+    StudyID <- paste(c(pmid, auth_nam, trait_nam, analysis), collapse = "_")
+    return(StudyID)
 }
 
 sid <- generate_study_id(studies)
@@ -68,7 +68,7 @@ res_cols <- c("CpG", "Location", "Chr", "Pos", "Gene", "Type", "Beta", "SE", "P"
 
 full_results <- full_results[, res_cols]
 
-out_dir <- file.path(file_dir, "ewas-sum-stats/published", unique(sid))
+out_dir <- file.path(file_dir, "ewas-sum-stats/study-data", unique(sid))
 
 if (!file.exists(out_dir)) {
 	message("Making new directory: ", out_dir)
@@ -97,6 +97,9 @@ tukey_test <- function(vals) {
 if (betas_present) {
 	beta_range <- range(full_results$Beta)
 	beta_out <- full_results$Beta[tukey_test(full_results$Beta)]
+    n_beta_outliers <- length(beta_out)
+} else {
+    n_beta_outliers <- 0
 }
 if (se_present) {
 	se_range <- range(full_results$SE)	
@@ -129,7 +132,7 @@ rmdreport::rmdreport.generate(report, report_out_file)
 # subset and write out
 # ----------------------------------------------------
 
-full_results <- full_results[results$P < 1e-4, ]
+full_results <- full_results[full_results$P < 1e-4, ]
 
 message("Writing results to: ", out_dir)
 write.table(studies, file = file.path(out_dir, "studies.txt"),
@@ -137,8 +140,14 @@ write.table(studies, file = file.path(out_dir, "studies.txt"),
 write.table(full_results, file = file.path(out_dir, "results.txt"),
 			col.names = T, row.names = F, quote = F, sep = "\t")
 
+# write out results for zenodo
 if (file.exists(file.path(res_dir, zfile))) {
-  system(paste0("mv ", file.path(res_dir, rfile), " ", res_dir, "/results.csv"))
+    res <- results[, !unlist(lapply(results, function(x) all(is.na(x))))]
+    zres_out_nam <- file.path(res_dir, "results.csv")
+    write.csv(res, file = zres_out_nam, row.names = F, quote = F)
+    if (file.path(res_dir, rfile) != zres_out_nam) {
+        system(paste0("rm ", file.path(res_dir, rfile)))
+    }
 }
 
 # Write to studies-to-add.txt --> APPEND!!! 

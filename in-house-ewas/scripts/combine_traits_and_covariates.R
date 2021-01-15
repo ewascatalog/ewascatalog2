@@ -124,7 +124,7 @@ mdata <- impute_matrix(mdata)
 
 # make svs
 ### loop over all traits and save out results -- need diff results for each trait! 
-out_dir <- "data/alspac/svs/"
+out_dir <- "data/alspac/FOM/svs/"
 if (!file.exists(out_dir)) make_dir(out_dir)
 lapply(traits, function(trait) {
 	start_time <- proc.time()
