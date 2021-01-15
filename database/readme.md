@@ -22,14 +22,20 @@ the 'results' and 'studies' tables.
 
 ### Uploading via ewascatalog.org/upload/
 This is a 3 step process:
-1. Input study data on the website and upload the results file
-2. Run `bash catalog check-new-upload`
-	+ If you need to check data report generated it should be in `${FILE_DIR}/ewas-sum-stats/published/$STUDY-ID`
-3. Run `bash catalog update-database`
 
-More details of the pipeline found on notebook
+1. Input study data on the website (at [ewascatalog.org/upload]) and upload the results file
+   + Internally, the system (1) creates a folder with uploaded information and files in `${FILE_DIR}/ewas-sum-stats/to-add/` and then (2) runs `database/check-ewas-data.r` to check the upload and send a report to the uploader.
+   
+2. Run `bash catalog check-new-upload`
+   + Internally, runs `database/prep-new-data.sh` applying `database/prep-new-data.r` to the contents of each directory in `${FILES_DIR}/ewas-sum-stats/to-add`. For each new study, a study ID and QC report are generated and saved along with study information in a new folder `${FILES_DIR}/ewas-sum-stats/published/${STUDY_ID}`. The new study ID is then added to the file `${FILES_DIR}/ewas-sum-stats/studies-to-add.txt`. 
+
+3. Run `bash catalog update-database`
+   + Internally, for each study listed in `${FILES_DIR}/ewas-sum-stats/studies-to-add.txt`, a new Zenodo DOI is created and EWAS info uploaded to zenodo (`database/generate-zenodo-doi.sh` which runs `database/zenodo.py`), and the EWAS is added to the database (`database/add-to-ewas.sh`). 
+
+More details can be found [here](upload.md).
 
 ### Uploading EWAS data generated in-house
+
 THIS NEEDS TO BE UPDATED!  
 
 
@@ -39,6 +45,22 @@ command (create file/database/table) will be skipped if
 the file/database/table has already been created.
 If the item needs to be recreated, then it should be deleted.
 
+
+## Direct access to the database
+
+It is possible to get direct access to the running database
+and experiment with changes.
+```
+## start a bash session in the database container
+docker exec -it dev.ewascatalog_db bash
+## start a mysql session (see settings.env for password) 
+mysql -uroot -p${MYSQL_ROOT_PASSWORD} ewascatalog
+```
+
+A single table could be recreated by deleting that table
+and then recreating the database.
+Any existing table will be left as it is,
+missing tables will be created.
 ```
 ## gain command-line access to the mysql container
 docker exec -it dev.ewascatalog_db bash
@@ -53,11 +75,3 @@ ${ROOT_CMD} ${DB} -e "drop table cpgs"
 bash catalog create-database
 ```
 
-It is possible to get direct access to the running database
-and experiment with changes.
-```
-## start a bash session in the database container
-docker exec -it dev.ewascatalog_db bash
-## start a mysql session (see settings.env for password) 
-mysql -uroot -p${MYSQL_ROOT_PASSWORD} ewascatalog
-```

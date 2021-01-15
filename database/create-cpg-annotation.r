@@ -13,9 +13,6 @@
 args <- commandArgs(trailingOnly=TRUE)
 filename <- args[1]
 
-##### Clear #####
-rm(list=ls())
-
 ##### Options #####
 options(stringsAsFactors = F)
 
